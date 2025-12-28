@@ -18059,9 +18059,10 @@ else if (msg.type === 'share_link') {
     const waveformHTML = '<div></div><div></div><div></div><div></div><div></div>';
 
     if (isUser) {
-        
+        // 如果有音频数据，添加到 data 属性中
+        const audioDataAttr = msg.audioData ? `data-audio="${encodeURIComponent(msg.audioData)}" data-audio-mime="${msg.audioMimeType || 'audio/webm'}"` : '';
         contentHtml = `
-            <div class="voice-message-body" data-text="${encodeURIComponent(msg.content)}">
+            <div class="voice-message-body" data-text="${encodeURIComponent(msg.content)}" ${audioDataAttr}>
                 <div class="voice-waveform">${waveformHTML}</div>
                 <span class="voice-duration">${durationFormatted}</span>
             </div>
@@ -45560,11 +45561,32 @@ if (voiceBody) {
     const chat = state.chats[state.activeChatId];
     if (!chat) return; 
 
+    // 如果是用户发送的语音消息且有音频数据，播放录音
+    const bubble = voiceBody.closest('.message-bubble');
+    const isUserMessage = bubble && bubble.closest('.message-wrapper.user');
     
+    if (isUserMessage && voiceBody.dataset.audio) {
+        try {
+            const audioData = decodeURIComponent(voiceBody.dataset.audio);
+            const audioMimeType = voiceBody.dataset.audioMime || 'audio/webm';
+            
+            // 创建音频对象并播放
+            const audio = new Audio(audioData);
+            audio.play().catch(error => {
+                console.error('播放录音失败:', error);
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert('错误', '播放录音失败，请重试');
+                }
+            });
+        } catch (error) {
+            console.error('播放录音出错:', error);
+        }
+    }
+    
+    // 切换文字显示
     toggleVoiceTranscript(voiceBody);
 
     
-    const bubble = voiceBody.closest('.message-bubble');
     const transcriptEl = bubble ? bubble.querySelector('.voice-transcript') : null;
 
     
@@ -45576,7 +45598,7 @@ if (voiceBody) {
             return; 
         }
         if (chat.settings.enableTts === false) {
-            console.log(`“${chat.name}”的TTS功能已关闭，已禁止发起TTS请求。`);
+            console.log(`"${chat.name}"的TTS功能已关闭，已禁止发起TTS请求。`);
             return; 
         }
 
@@ -46347,14 +46369,17 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                     let audioChunks = [];
                     let recognition = null;
                     let currentStream = null;
+                    let recognizedTexts = []; // 存储所有识别到的文本（最终结果）
+                    let lastInterimText = ''; // 存储最后一个临时结果
+                    let onStopCallback = null; // 用于存储停止时的回调函数
                     
                     // 检查浏览器是否支持语音识别
                     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                     if (SpeechRecognition) {
                         recognition = new SpeechRecognition();
                         recognition.lang = 'zh-CN';
-                        recognition.continuous = false;
-                        recognition.interimResults = false;
+                        recognition.continuous = true; // 改为持续识别模式
+                        recognition.interimResults = true; // 启用临时结果，以便实时收集
                     }
                     
                     document.getElementById('real-voice-record-btn').addEventListener('click', async () => {
@@ -46368,8 +46393,40 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                         if (!isRecording) {
                             // 开始录音
                             try {
+                                // 检查浏览器是否支持媒体设备API
+                                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                                    throw new Error('您的浏览器不支持麦克风访问功能。请使用 Chrome、Edge 或 Firefox 等现代浏览器。');
+                                }
+                                
+                                // 检查权限状态（如果支持）
+                                if (navigator.permissions && navigator.permissions.query) {
+                                    try {
+                                        const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+                                        console.log('麦克风权限状态:', permissionStatus.state);
+                                        if (permissionStatus.state === 'denied') {
+                                            throw new Error('NotAllowedError');
+                                        }
+                                    } catch (permError) {
+                                        // 权限查询可能不支持，继续尝试请求权限
+                                        console.log('无法查询权限状态，继续尝试请求权限');
+                                    }
+                                }
+                                
+                                // 清空之前的识别文本
+                                recognizedTexts = [];
+                                lastInterimText = '';
+                                audioChunks = [];
+                                
                                 // 请求麦克风权限
-                                currentStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                                console.log('正在请求麦克风权限...');
+                                currentStream = await navigator.mediaDevices.getUserMedia({ 
+                                    audio: {
+                                        echoCancellation: true,
+                                        noiseSuppression: true,
+                                        autoGainControl: true
+                                    } 
+                                });
+                                console.log('麦克风权限已授予');
                                 
                                 // 使用MediaRecorder录音
                                 mediaRecorder = new MediaRecorder(currentStream);
@@ -46388,16 +46445,29 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                                         currentStream = null;
                                     }
                                     
-                                    // 如果使用语音识别，文本已经在recognition.onresult中处理
-                                    if (!recognition && audioChunks.length > 0) {
-                                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                                        await processAudioToText(audioBlob);
+                                    // 创建音频 Blob
+                                    const audioBlob = audioChunks.length > 0 ? new Blob(audioChunks, { type: 'audio/webm' }) : null;
+                                    
+                                    // 如果使用语音识别，文本已经在recognition.onresult中收集
+                                    // 调用回调函数处理结果
+                                    if (onStopCallback) {
+                                        await onStopCallback(audioBlob);
+                                        onStopCallback = null;
+                                    } else if (!recognition && audioBlob) {
+                                        const text = await processAudioToText(audioBlob);
+                                        if (text) {
+                                            await sendVoiceMessage(text, audioBlob);
+                                        }
                                     }
+                                    
+                                    // 清空音频块
+                                    audioChunks = [];
                                 };
                                 
                                 // 开始录音
                                 mediaRecorder.start();
                                 isRecording = true;
+                                onStopCallback = null; // 重置回调
                                 
                                 // 更新按钮样式
                                 const btn = document.getElementById('real-voice-record-btn');
@@ -46407,62 +46477,63 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                                 
                                 // 如果支持语音识别，同时启动语音识别
                                 if (recognition) {
-                                    recognition.onresult = async (event) => {
-                                        const transcript = event.results[0][0].transcript;
-                                        if (transcript && transcript.trim()) {
-                                            // 停止录音
-                                            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                                                mediaRecorder.stop();
-                                            }
-                                            if (recognition) {
-                                                recognition.stop();
-                                            }
-                                            isRecording = false;
+                                    recognition.onresult = (event) => {
+                                        console.log('语音识别结果事件触发');
+                                        console.log('结果总数:', event.results.length);
+                                        console.log('新结果起始索引:', event.resultIndex);
+                                        
+                                        // 在continuous模式下，只处理新的结果（从resultIndex开始）
+                                        // 只收集最终结果（isFinal === true），忽略临时结果
+                                        for (let i = event.resultIndex; i < event.results.length; i++) {
+                                            const result = event.results[i];
+                                            const isFinal = result.isFinal;
+                                            let transcript = result[0].transcript;
                                             
-                                            // 恢复按钮样式
-                                            const btn = document.getElementById('real-voice-record-btn');
-                                            btn.style.backgroundColor = '';
-                                            btn.style.color = '';
-                                            btn.querySelector('span').textContent = '录音';
+                                            console.log(`结果 ${i}: isFinal=${isFinal}, transcript="${transcript}"`);
                                             
-                                            // 发送识别到的文本
-                                            await sendVoiceMessage(transcript.trim());
+                                            // 不做任何文本处理，直接使用原始识别结果
+                                            if (transcript && transcript.trim()) {
+                                                transcript = transcript.trim(); // 只去除首尾空白
+                                                if (isFinal) {
+                                                    // 收集最终结果
+                                                    recognizedTexts.push(transcript);
+                                                    console.log('✓ 添加最终结果:', transcript);
+                                                    // 清空临时结果（因为已经有最终结果了）
+                                                    lastInterimText = '';
+                                                } else {
+                                                    // 保存最后一个临时结果（用于停止时如果没有最终结果）
+                                                    lastInterimText = transcript;
+                                                    console.log('~ 更新临时结果:', transcript);
+                                                }
+                                            }
                                         }
+                                        console.log('当前已收集的最终结果数量:', recognizedTexts.length);
+                                        console.log('已收集的文本:', recognizedTexts);
                                     };
                                     
                                     recognition.onerror = (event) => {
                                         console.error('语音识别错误:', event.error);
-                                        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                                            mediaRecorder.stop();
+                                        // 错误时也不自动停止，让用户手动停止
+                                        if (event.error === 'no-speech') {
+                                            // 没有检测到语音是正常的，不显示错误
+                                            return;
                                         }
-                                        if (recognition) {
-                                            recognition.stop();
-                                        }
-                                        isRecording = false;
-                                        
-                                        // 恢复按钮样式
-                                        const btn = document.getElementById('real-voice-record-btn');
-                                        btn.style.backgroundColor = '';
-                                        btn.style.color = '';
-                                        btn.querySelector('span').textContent = '录音';
-                                        
-                                        if (typeof showCustomAlert === 'function') {
-                                            showCustomAlert('错误', '语音识别失败: ' + event.error);
+                                        // 其他错误才显示提示，但不停止录音
+                                        if (typeof showCustomAlert === 'function' && event.error !== 'aborted') {
+                                            showCustomAlert('提示', '语音识别遇到问题: ' + event.error + '，但录音仍在继续');
                                         }
                                     };
                                     
                                     recognition.onend = () => {
-                                        if (isRecording) {
-                                            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                                                mediaRecorder.stop();
+                                        // 在continuous模式下，onend会在每次识别结束时触发
+                                        // 如果仍在录音状态，自动重新启动识别
+                                        if (isRecording && recognition) {
+                                            try {
+                                                recognition.start();
+                                            } catch (e) {
+                                                // 如果已经在运行，忽略错误
+                                                console.log('语音识别已在运行中');
                                             }
-                                            isRecording = false;
-                                            
-                                            // 恢复按钮样式
-                                            const btn = document.getElementById('real-voice-record-btn');
-                                            btn.style.backgroundColor = '';
-                                            btn.style.color = '';
-                                            btn.querySelector('span').textContent = '录音';
                                         }
                                     };
                                     
@@ -46471,21 +46542,111 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                                 
                             } catch (error) {
                                 console.error('无法访问麦克风:', error);
-                                if (typeof showCustomAlert === 'function') {
-                                    showCustomAlert('错误', '无法访问麦克风，请检查权限设置');
+                                console.error('错误名称:', error.name);
+                                console.error('错误消息:', error.message);
+                                
+                                let errorMessage = '无法访问麦克风';
+                                
+                                // 根据不同的错误类型提供更具体的提示
+                                if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                                    errorMessage = '麦克风权限被拒绝。\n\n请按以下步骤操作：\n1. 点击地址栏左侧的锁图标\n2. 找到"麦克风"权限\n3. 选择"允许"\n4. 刷新页面后重试';
+                                } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                                    errorMessage = '未检测到麦克风设备。\n\n请检查：\n1. 麦克风是否已正确连接\n2. 设备管理器中麦克风是否正常工作\n3. 其他应用是否能使用麦克风';
+                                } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                                    errorMessage = '麦克风被其他应用占用。\n\n请关闭其他正在使用麦克风的应用（如 Skype、Zoom、Teams 等），然后重试。';
+                                } else if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
+                                    errorMessage = '麦克风不支持所需的设置。\n\n请尝试使用其他浏览器或检查麦克风驱动是否最新。';
+                                } else if (error.message) {
+                                    errorMessage = `无法访问麦克风：${error.message}\n\n请检查浏览器权限设置。`;
                                 } else {
-                                    alert('无法访问麦克风，请检查权限设置');
+                                    errorMessage = '无法访问麦克风。\n\n请检查：\n1. 浏览器是否支持麦克风访问\n2. 是否已授予麦克风权限\n3. 麦克风设备是否正常工作';
+                                }
+                                
+                                if (typeof showCustomAlert === 'function') {
+                                    showCustomAlert('麦克风访问失败', errorMessage);
+                                } else {
+                                    alert(errorMessage);
                                 }
                                 isRecording = false;
+                                
+                                // 清理状态
+                                if (currentStream) {
+                                    currentStream.getTracks().forEach(track => track.stop());
+                                    currentStream = null;
+                                }
                             }
                         } else {
-                            // 停止录音
-                            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                                mediaRecorder.stop();
-                            }
+                            // 停止录音（只有点击停止按钮才会执行这里）
                             if (recognition) {
                                 recognition.stop();
                             }
+                            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                                // 设置停止回调，在 onstop 中处理
+                                onStopCallback = async (audioBlob) => {
+                                    // 等待一小段时间，让识别完成最终结果
+                                    await new Promise(resolve => setTimeout(resolve, 300));
+                                    
+                                    // 处理识别到的文本
+                                    console.log('停止录音，处理识别结果');
+                                    console.log('recognizedTexts (最终结果):', recognizedTexts);
+                                    console.log('lastInterimText (临时结果):', lastInterimText);
+                                    
+                                    let finalText = '';
+                                    
+                                    if (recognizedTexts.length > 0) {
+                                        // 有最终结果，使用最终结果
+                                        finalText = recognizedTexts.join(' ').trim();
+                                        console.log('使用最终结果:', finalText);
+                                    } else if (lastInterimText) {
+                                        // 没有最终结果，但有临时结果，使用临时结果
+                                        finalText = lastInterimText.trim();
+                                        console.log('使用临时结果:', finalText);
+                                    }
+                                    
+                                    // 不做任何文本处理，直接使用原始识别结果
+                                    if (finalText) {
+                                        finalText = finalText.trim(); // 只去除首尾空白
+                                        console.log('最终文本:', finalText);
+                                    }
+                                    
+                                    if (finalText) {
+                                        // 发送消息，包含音频数据
+                                        await sendVoiceMessage(finalText, audioBlob);
+                                    } else {
+                                        console.warn('未识别到有效语音内容');
+                                        if (typeof showCustomAlert === 'function') {
+                                            showCustomAlert('提示', '未检测到语音内容，请确保麦克风权限已授予且正在说话');
+                                        }
+                                    }
+                                    
+                                    // 清空识别文本
+                                    recognizedTexts = [];
+                                    lastInterimText = '';
+                                };
+                                
+                                mediaRecorder.stop();
+                            } else {
+                                // 如果没有 mediaRecorder，直接处理
+                                let finalText = '';
+                                if (recognizedTexts.length > 0) {
+                                    finalText = recognizedTexts.join(' ').trim();
+                                } else if (lastInterimText) {
+                                    finalText = lastInterimText.trim();
+                                }
+                                
+                                if (finalText) {
+                                    await sendVoiceMessage(finalText, null);
+                                } else {
+                                    if (typeof showCustomAlert === 'function') {
+                                        showCustomAlert('提示', '未检测到语音内容');
+                                    }
+                                }
+                                
+                                // 清空识别文本
+                                recognizedTexts = [];
+                                lastInterimText = '';
+                            }
+                            
                             isRecording = false;
                             
                             // 恢复按钮样式
@@ -46505,19 +46666,18 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                             
                             // 提示用户手动输入
                             const text = await showCustomPrompt("语音识别", "请手动输入您刚才说的话：");
-                            if (text && text.trim()) {
-                                await sendVoiceMessage(text.trim());
-                            }
+                            return text && text.trim() ? text.trim() : null;
                         } catch (error) {
                             console.error('处理音频失败:', error);
                             if (typeof showCustomAlert === 'function') {
                                 showCustomAlert('错误', '处理音频失败，请重试');
                             }
+                            return null;
                         }
                     }
                     
                     // 发送语音消息并触发AI回复
-                    async function sendVoiceMessage(text) {
+                    async function sendVoiceMessage(text, audioBlob = null) {
                         if (!state.activeChatId || !text) return;
                         
                         const chat = state.chats[state.activeChatId];
@@ -46528,6 +46688,21 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                             content: text,
                             timestamp: Date.now()
                         };
+                        
+                        // 如果有音频数据，转换为 base64 并保存
+                        if (audioBlob) {
+                            try {
+                                const reader = new FileReader();
+                                msg.audioData = await new Promise((resolve, reject) => {
+                                    reader.onload = () => resolve(reader.result);
+                                    reader.onerror = reject;
+                                    reader.readAsDataURL(audioBlob);
+                                });
+                                msg.audioMimeType = audioBlob.type || 'audio/webm';
+                            } catch (error) {
+                                console.error('保存音频数据失败:', error);
+                            }
+                        }
                         
                         chat.history.push(msg);
                         await db.chats.put(chat);
@@ -50670,20 +50845,59 @@ ${userPersona.trim()}
             const requestDuration = Date.now() - (typeof requestStartTime !== 'undefined' ? requestStartTime : Date.now());
             console.log(`API请求耗时: ${requestDuration}ms`);
             console.log('API调用成功，开始解析响应...');
-            const data = await response.json();
-            console.log('API响应数据结构:', data);
+            
+            // 先获取响应文本，以便调试
+            const responseText = await response.text();
+            console.log('API响应原始文本:', responseText);
+            console.log('API响应文本长度:', responseText.length);
+            
+            let data;
+            try {
+                data = JSON.parse(responseText);
+                console.log('API响应数据结构:', data);
+            } catch (parseError) {
+                console.error('API响应JSON解析失败:', parseError);
+                console.error('响应文本:', responseText);
+                throw new Error(`API响应格式错误，无法解析JSON。响应内容：${responseText.substring(0, 200)}`);
+            }
             
             let balanceText = '';
             if (isGemini) {
-                balanceText = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+                // Gemini API 响应结构
+                if (data.candidates && data.candidates.length > 0) {
+                    const candidate = data.candidates[0];
+                    if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+                        balanceText = (candidate.content.parts[0].text || '').trim();
+                    }
+                }
+                console.log('Gemini API提取的文本:', balanceText);
             } else {
-                balanceText = (data.choices?.[0]?.message?.content || '').trim();
+                // OpenAI兼容API 响应结构
+                if (data.choices && data.choices.length > 0) {
+                    const choice = data.choices[0];
+                    if (choice.message && choice.message.content) {
+                        balanceText = (choice.message.content || '').trim();
+                    }
+                }
+                console.log('OpenAI API提取的文本:', balanceText);
             }
             
             // 检查是否为空响应
             if (!balanceText || balanceText.length === 0) {
-                console.error('API返回空响应:', data);
-                throw new Error('API返回空响应，请检查API配置和网络连接');
+                console.error('API返回空响应 - 完整响应数据:', JSON.stringify(data, null, 2));
+                console.error('API响应路径检查:');
+                if (isGemini) {
+                    console.error('  - data.candidates:', data.candidates);
+                    console.error('  - data.candidates[0]:', data.candidates?.[0]);
+                    console.error('  - data.candidates[0].content:', data.candidates?.[0]?.content);
+                    console.error('  - data.candidates[0].content.parts:', data.candidates?.[0]?.content?.parts);
+                } else {
+                    console.error('  - data.choices:', data.choices);
+                    console.error('  - data.choices[0]:', data.choices?.[0]);
+                    console.error('  - data.choices[0].message:', data.choices?.[0]?.message);
+                    console.error('  - data.choices[0].message.content:', data.choices?.[0]?.message?.content);
+                }
+                throw new Error('API返回空响应。请检查：1) API配置是否正确 2) 网络连接是否正常 3) API服务是否可用');
             }
             
             // 调试：输出原始返回内容
