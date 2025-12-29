@@ -1895,8 +1895,7 @@
         #contact-picker-screen,
         #member-management-screen,
         #world-book-editor-screen,
-        #wallet-screen,
-        #character-wallet-detail-screen {  
+        #wallet-screen {  
             background-color: var(--secondary-bg);
         }
         #api-settings-screen .form-container,
@@ -8977,7 +8976,7 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
               <div class="app-subgrid">
                 <div class="small-widget" onclick="showScreen('wallet-screen')">
                   <div class="small-widget-icon-wrapper"> <img class="small-widget-img" id="icon-img-wallet" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='55' height='55'%3E%3Crect width='55' height='55' fill='%23e0e0e0' rx='14'/%3E%3C/svg%3E" alt="钱包"> </div> <span class="small-widget-label">钱包</span>
-                </div>
+            </div>
                 <div class="small-widget">
                   <div class="small-widget-icon-wrapper"> <img class="small-widget-img" id="icon-img-farm" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='55' height='55'%3E%3Crect width='55' height='55' fill='%23e0e0e0' rx='14'/%3E%3C/svg%3E" alt="农场"> </div> <span class="small-widget-label">农场</span>
                 </div>
@@ -10083,13 +10082,17 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
             <div class="wallet-balance-label">我的余额</div>
             <div class="wallet-balance-amount" id="wallet-user-balance">¥0.00</div>
           </div>
-          <div style="margin-top: 10px;">
-            <div class="wallet-section-header" style="margin-bottom: 12px;">
-              <span>角色余额</span>
+          <div style="margin-top: 15px;">
+            <div class="wallet-section-header" style="margin-bottom: 8px;">
+              <span>选择用户身份</span>
             </div>
-            <div class="wallet-character-list" id="wallet-character-list">
-              <!-- 角色余额列表将在这里动态生成 -->
-            </div>
+            <select id="wallet-user-select" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--secondary-bg); color: var(--text-primary); font-size: 14px;">
+              <option value="">-- 选择聊天（使用该聊天中的人设生成余额）--</option>
+            </select>
+          </div>
+          <div style="margin-top: 15px; display: flex; gap: 10px;">
+            <button id="add-income-btn" class="form-button" style="flex: 1; margin-top: 0; background-color: #4caf50;">添加收入</button>
+            <button id="add-expense-btn" class="form-button" style="flex: 1; margin-top: 0; background-color: #f44336;">添加支出</button>
           </div>
         </div>
         <div class="wallet-transactions-section">
@@ -10098,32 +10101,6 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
           </div>
           <div class="wallet-transactions-list" id="wallet-transactions-list">
             <!-- 交易记录将在这里动态生成 -->
-          </div>
-        </div>
-      </div>
-    </div>
-    <div id="character-wallet-detail-screen" class="screen">
-      <div class="header"> <span class="back-btn" onclick="showScreen('wallet-screen')">‹</span> <span id="character-wallet-detail-title">角色钱包</span>
-        <div class="header-actions">
-          <span class="action-btn" id="generate-character-balance-btn" title="生成余额"> <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 11A8.1 8.1 0 0 0 4.5 9M4 5v4h4"></path>
-              <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"></path>
-            </svg> </span>
-        </div>
-      </div>
-      <div class="wallet-container">
-        <div class="wallet-balance-section">
-          <div class="wallet-balance-card">
-            <div class="wallet-balance-label" id="character-wallet-detail-name">角色名称</div>
-            <div class="wallet-balance-amount" id="character-wallet-detail-balance">¥0.00</div>
-          </div>
-        </div>
-        <div class="wallet-transactions-section">
-          <div class="wallet-section-header">
-            <span>交易记录</span>
-          </div>
-          <div class="wallet-transactions-list" id="character-wallet-detail-transactions">
-            <!-- 角色交易记录将在这里动态生成 -->
           </div>
         </div>
       </div>
@@ -13282,9 +13259,6 @@ window.db = db;
                     if (screenId === 'x-social-screen') window.renderXSocialScreenProxy();
                      if (screenId === 'douban-screen') renderDoubanScreen();
                     if (screenId === 'wallet-screen') renderWalletScreen();
-                    if (screenId === 'character-wallet-detail-screen') {
-                        // 角色详情页面在showCharacterWalletDetail函数中处理
-                    }
                     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
                     const screenToShow = document.getElementById(screenId);
                     if (screenToShow) screenToShow.classList.add('active');
@@ -45568,18 +45542,122 @@ if (voiceBody) {
     if (isUserMessage && voiceBody.dataset.audio) {
         try {
             const audioData = decodeURIComponent(voiceBody.dataset.audio);
-            const audioMimeType = voiceBody.dataset.audioMime || 'audio/webm';
+            let audioMimeType = voiceBody.dataset.audioMime || 'audio/webm';
+            
+            console.log('准备播放录音，MIME类型:', audioMimeType);
+            
+            // 将 base64 转换为 Blob，然后创建 Blob URL（更兼容手机端）
+            const base64Data = audioData.split(',')[1] || audioData;
+            const binaryString = atob(base64Data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            
+            // 检测并修正手机端不支持的MIME类型
+            // iOS Safari 对 webm 支持不好，需要转换为 mp4 或使用通用格式
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isAndroid = /Android/.test(navigator.userAgent);
+            
+            if (isIOS && audioMimeType === 'audio/webm') {
+                // iOS 不支持 webm，尝试使用通用格式
+                audioMimeType = 'audio/mp4';
+                console.log('检测到iOS设备，转换MIME类型为:', audioMimeType);
+            }
+            
+            const blob = new Blob([bytes], { type: audioMimeType });
+            const blobUrl = URL.createObjectURL(blob);
             
             // 创建音频对象并播放
-            const audio = new Audio(audioData);
-            audio.play().catch(error => {
-                console.error('播放录音失败:', error);
+            const audio = new Audio(blobUrl);
+            
+            // 设置音频属性以提高手机端兼容性
+            audio.preload = 'auto';
+            audio.volume = 1.0;
+            
+            // 添加错误处理
+            audio.addEventListener('error', (e) => {
+                console.error('音频加载错误:', e);
+                console.error('错误详情:', audio.error);
+                const errorCode = audio.error?.code;
+                let errorMsg = '音频格式不支持或已损坏';
+                
+                if (errorCode === 4) {
+                    errorMsg = '音频格式不支持，请尝试使用其他浏览器';
+                } else if (errorCode === 3) {
+                    errorMsg = '音频解码失败，文件可能已损坏';
+                } else if (errorCode === 2) {
+                    errorMsg = '网络错误，无法加载音频';
+                }
+                
+                URL.revokeObjectURL(blobUrl);
                 if (typeof showCustomAlert === 'function') {
-                    showCustomAlert('错误', '播放录音失败，请重试');
+                    showCustomAlert('播放失败', `${errorMsg}。错误代码: ${errorCode || '未知'}`);
                 }
             });
+            
+            // 播放完成后清理 URL
+            audio.addEventListener('ended', () => {
+                URL.revokeObjectURL(blobUrl);
+            });
+            
+            // 等待音频可以播放后再播放（提高手机端成功率）
+            const playAudio = () => {
+                // 尝试播放
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log('录音播放成功');
+                    }).catch(error => {
+                        console.error('播放录音失败:', error);
+                        URL.revokeObjectURL(blobUrl);
+                        if (typeof showCustomAlert === 'function') {
+                            let errorMsg = '播放录音失败';
+                            if (error.name === 'NotAllowedError') {
+                                errorMsg = '播放被阻止，请确保在用户交互后播放';
+                            } else if (error.name === 'NotSupportedError') {
+                                errorMsg = '音频格式不支持，请尝试使用其他浏览器';
+                            } else if (error.name === 'AbortError') {
+                                errorMsg = '播放被中断';
+                            } else {
+                                errorMsg = `播放失败: ${error.message || error.name}`;
+                            }
+                            showCustomAlert('播放失败', errorMsg);
+                        }
+                    });
+                } else {
+                    // 旧版浏览器，直接播放
+                    audio.play().catch(e => {
+                        console.error('播放失败:', e);
+                        URL.revokeObjectURL(blobUrl);
+                        if (typeof showCustomAlert === 'function') {
+                            showCustomAlert('播放失败', '无法播放音频，请检查浏览器支持');
+                        }
+                    });
+                }
+            };
+            
+            // 如果音频已经可以播放，直接播放；否则等待加载完成
+            if (audio.readyState >= 2) { // HAVE_CURRENT_DATA
+                playAudio();
+            } else {
+                // 等待音频加载完成
+                audio.addEventListener('canplaythrough', playAudio, { once: true });
+                // 设置超时，避免无限等待
+                setTimeout(() => {
+                    if (audio.readyState >= 2) {
+                        playAudio();
+                    } else {
+                        console.warn('音频加载超时，尝试直接播放');
+                        playAudio();
+                    }
+                }, 1000);
+            }
         } catch (error) {
             console.error('播放录音出错:', error);
+            if (typeof showCustomAlert === 'function') {
+                showCustomAlert('错误', '播放录音时发生错误: ' + error.message);
+            }
         }
     }
     
@@ -46372,6 +46450,7 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                     let recognizedTexts = []; // 存储所有识别到的文本（最终结果）
                     let lastInterimText = ''; // 存储最后一个临时结果
                     let onStopCallback = null; // 用于存储停止时的回调函数
+                    let recognitionAvailable = false; // 标记语音识别是否真的可用
                     
                     // 检查浏览器是否支持语音识别
                     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -46429,7 +46508,60 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                                 console.log('麦克风权限已授予');
                                 
                                 // 使用MediaRecorder录音
-                                mediaRecorder = new MediaRecorder(currentStream);
+                                // 检测浏览器支持的音频格式，优先使用手机端兼容的格式
+                                let mimeType = 'audio/webm';
+                                
+                                // 检测设备类型
+                                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                                const isAndroid = /Android/.test(navigator.userAgent);
+                                
+                                // 根据设备类型选择优先格式
+                                let supportedTypes;
+                                if (isIOS) {
+                                    // iOS 优先使用 mp4 或 mpeg
+                                    supportedTypes = [
+                                        'audio/mp4',      // iOS Safari 最佳支持
+                                        'audio/mpeg',     // iOS 通用支持
+                                        'audio/webm',     // 备用
+                                        'audio/ogg'       // 备用
+                                    ];
+                                } else if (isAndroid) {
+                                    // Android 优先使用 webm 或 mp4
+                                    supportedTypes = [
+                                        'audio/webm',     // Android Chrome 最佳支持
+                                        'audio/mp4',      // Android 通用支持
+                                        'audio/mpeg',     // 备用
+                                        'audio/ogg'       // 备用
+                                    ];
+                                } else {
+                                    // 桌面端
+                                    supportedTypes = [
+                                        'audio/webm',     // Chrome/Edge 支持
+                                        'audio/mp4',      // Safari 支持
+                                        'audio/mpeg',     // 通用支持
+                                        'audio/ogg'       // Firefox 支持
+                                    ];
+                                }
+                                
+                                // 检测浏览器支持的最佳格式
+                                for (const type of supportedTypes) {
+                                    if (MediaRecorder.isTypeSupported(type)) {
+                                        mimeType = type;
+                                        console.log('检测到设备类型:', isIOS ? 'iOS' : (isAndroid ? 'Android' : 'Desktop'), '使用音频格式:', mimeType);
+                                        break;
+                                    }
+                                }
+                                
+                                try {
+                                    mediaRecorder = new MediaRecorder(currentStream, { mimeType: mimeType });
+                                } catch (e) {
+                                    // 如果指定格式失败，使用默认格式
+                                    console.warn('使用指定格式失败，使用默认格式:', e);
+                                    mediaRecorder = new MediaRecorder(currentStream);
+                                    mimeType = mediaRecorder.mimeType || 'audio/webm';
+                                }
+                                
+                                console.log('实际使用的音频格式:', mediaRecorder.mimeType || mimeType);
                                 audioChunks = [];
                                 
                                 mediaRecorder.ondataavailable = (event) => {
@@ -46438,6 +46570,9 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                                     }
                                 };
                                 
+                                // 保存当前使用的 MIME 类型
+                                const recordedMimeType = mediaRecorder.mimeType || mimeType;
+                                
                                 mediaRecorder.onstop = async () => {
                                     // 停止所有音频轨道
                                     if (currentStream) {
@@ -46445,8 +46580,8 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                                         currentStream = null;
                                     }
                                     
-                                    // 创建音频 Blob
-                                    const audioBlob = audioChunks.length > 0 ? new Blob(audioChunks, { type: 'audio/webm' }) : null;
+                                    // 创建音频 Blob（使用实际录制的格式）
+                                    const audioBlob = audioChunks.length > 0 ? new Blob(audioChunks, { type: recordedMimeType }) : null;
                                     
                                     // 如果使用语音识别，文本已经在recognition.onresult中收集
                                     // 调用回调函数处理结果
@@ -46518,16 +46653,31 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                                             // 没有检测到语音是正常的，不显示错误
                                             return;
                                         }
-                                        // 其他错误才显示提示，但不停止录音
-                                        if (typeof showCustomAlert === 'function' && event.error !== 'aborted') {
-                                            showCustomAlert('提示', '语音识别遇到问题: ' + event.error + '，但录音仍在继续');
+                                        // service-not-allowed 和 not-allowed 可能是暂时性错误，不立即标记为不可用
+                                        // 让录音继续，停止时再检查是否收集到了文本
+                                        if (event.error === 'service-not-allowed' || event.error === 'not-allowed') {
+                                            console.log('语音识别权限问题，但不影响录音，停止时会检查是否有识别结果');
+                                            // 不设置 recognitionAvailable = false，让它有机会识别
+                                            return;
                                         }
+                                        // network 错误也不标记为不可用，可能只是网络问题
+                                        if (event.error === 'network') {
+                                            console.log('网络问题，但录音继续');
+                                            return;
+                                        }
+                                        // aborted 错误是正常停止，不处理
+                                        if (event.error === 'aborted') {
+                                            return;
+                                        }
+                                        // 其他错误才标记为不可用
+                                        console.log('语音识别遇到其他错误:', event.error);
+                                        recognitionAvailable = false;
                                     };
                                     
                                     recognition.onend = () => {
                                         // 在continuous模式下，onend会在每次识别结束时触发
-                                        // 如果仍在录音状态，自动重新启动识别
-                                        if (isRecording && recognition) {
+                                        // 如果仍在录音状态且识别可用，自动重新启动识别
+                                        if (isRecording && recognition && recognitionAvailable) {
                                             try {
                                                 recognition.start();
                                             } catch (e) {
@@ -46537,7 +46687,19 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                                         }
                                     };
                                     
-                                    recognition.start();
+                                    recognition.onstart = () => {
+                                        // 语音识别成功启动，标记为可用
+                                        recognitionAvailable = true;
+                                        console.log('语音识别已启动');
+                                    };
+                                    
+                                    try {
+                                        recognitionAvailable = false; // 初始设为不可用，启动成功后会设为true
+                                        recognition.start();
+                                    } catch (e) {
+                                        console.error('启动语音识别失败:', e);
+                                        recognitionAvailable = false;
+                                    }
                                 }
                                 
                             } catch (error) {
@@ -46612,10 +46774,19 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                                     if (finalText) {
                                         // 发送消息，包含音频数据
                                         await sendVoiceMessage(finalText, audioBlob);
+                                    } else if (audioBlob) {
+                                        // 没有识别到文本，让用户手动输入
+                                        console.log('语音识别未收集到文本，让用户手动输入');
+                                        const text = await showCustomPrompt("手动输入", "未能自动识别语音，请手动输入您说的内容：");
+                                        if (text && text.trim()) {
+                                            await sendVoiceMessage(text.trim(), audioBlob);
+                                        } else {
+                                            console.log('用户取消输入');
+                                        }
                                     } else {
-                                        console.warn('未识别到有效语音内容');
+                                        console.warn('未识别到有效语音内容，且没有录音文件');
                                         if (typeof showCustomAlert === 'function') {
-                                            showCustomAlert('提示', '未检测到语音内容，请确保麦克风权限已授予且正在说话');
+                                            showCustomAlert('提示', '未检测到语音内容，请重试');
                                         }
                                     }
                                     
@@ -46637,8 +46808,11 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                                 if (finalText) {
                                     await sendVoiceMessage(finalText, null);
                                 } else {
-                                    if (typeof showCustomAlert === 'function') {
-                                        showCustomAlert('提示', '未检测到语音内容');
+                                    console.warn('未识别到有效语音内容');
+                                    // 提示用户手动输入
+                                    const text = await showCustomPrompt("手动输入", "未能自动识别语音，请手动输入您说的内容：");
+                                    if (text && text.trim()) {
+                                        await sendVoiceMessage(text.trim(), null);
                                     }
                                 }
                                 
@@ -46657,24 +46831,6 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                         }
                     });
                     
-                    // 处理音频转文本（如果浏览器不支持语音识别）
-                    async function processAudioToText(audioBlob) {
-                        try {
-                            if (typeof showCustomAlert === 'function') {
-                                showCustomAlert('提示', '浏览器不支持语音识别，请手动输入');
-                            }
-                            
-                            // 提示用户手动输入
-                            const text = await showCustomPrompt("语音识别", "请手动输入您刚才说的话：");
-                            return text && text.trim() ? text.trim() : null;
-                        } catch (error) {
-                            console.error('处理音频失败:', error);
-                            if (typeof showCustomAlert === 'function') {
-                                showCustomAlert('错误', '处理音频失败，请重试');
-                            }
-                            return null;
-                        }
-                    }
                     
                     // 发送语音消息并触发AI回复
                     async function sendVoiceMessage(text, audioBlob = null) {
@@ -50949,7 +51105,7 @@ ${userPersona.trim()}
         }
     }
     
-    // 生成所有余额（用户和角色）
+    // 生成用户余额
     async function generateAllBalances() {
         const generateBtn = document.getElementById('generate-wallet-balance-btn');
         const originalHtml = generateBtn.innerHTML;
@@ -50967,9 +51123,22 @@ ${userPersona.trim()}
             
             const walletData = getWalletData();
             
-            // 获取用户人设（如果有的话）
+            // 获取选中的聊天ID
+            const userSelect = document.getElementById('wallet-user-select');
+            const selectedChatId = userSelect ? userSelect.value : '';
+            
+            // 获取用户人设
             let userPersona = '';
-            // 可以在这里获取用户的人设信息，如果有的话
+            if (selectedChatId) {
+                const currentState = typeof state !== 'undefined' ? state : (typeof window !== 'undefined' && window.state ? window.state : null);
+                if (currentState && currentState.chats && currentState.chats[selectedChatId]) {
+                    const chat = currentState.chats[selectedChatId];
+                    userPersona = chat.settings?.myPersona || '';
+                    if (userPersona) {
+                        console.log('使用选中聊天的人设生成余额:', chat.name || '未命名聊天');
+                    }
+                }
+            }
             
             // 生成用户余额（每次点击都重新生成）
             try {
@@ -50978,71 +51147,6 @@ ${userPersona.trim()}
                 console.error('生成用户余额失败:', error);
                 // 如果API调用失败，抛出错误而不是使用默认值，让用户知道API调用失败
                 throw new Error(`生成用户余额失败: ${error.message}`);
-            }
-            
-            // 获取所有角色（使用和renderCharacterSelector相同的逻辑）
-            const characters = [];
-            // 获取state（支持全局和局部作用域）
-            const currentState = typeof state !== 'undefined' ? state : (typeof window !== 'undefined' && window.state ? window.state : null);
-            if (currentState && currentState.chats) {
-                // 获取所有非群聊的聊天（即角色）
-                const allCharacters = Object.values(currentState.chats).filter(chat => !chat.isGroup);
-                
-                for (const chat of allCharacters) {
-                    if (chat) {
-                        // 使用chat.name作为角色名称（和renderCharacterSelector一致）
-                        const characterName = chat.name || chat.settings?.characterName || '未命名角色';
-                        // 获取角色人设（单聊使用aiPersona字段）
-                        const persona = chat.settings?.aiPersona ||           // 单聊角色人设
-                                       chat.settings?.systemPrompt ||        // 可能的人设字段
-                                       chat.settings?.characterPrompt ||     // 可能的人设字段
-                                       chat.settings?.persona ||             // 可能的人设字段
-                                       '';
-                        characters.push({
-                            id: chat.id,
-                            name: characterName,
-                            persona: persona
-                        });
-                    }
-                }
-            }
-            
-            // 生成每个角色的余额（每次点击都重新生成）
-            if (!walletData.characters) {
-                walletData.characters = {};
-            }
-            
-            // 更新加载提示，显示正在生成角色余额
-            if (loadingAlert && characters.length > 0) {
-                if (typeof loadingAlert.update === 'function') {
-                    loadingAlert.update('生成中', `正在生成 ${characters.length} 个角色的余额，请稍候...`);
-                } else if (typeof showCustomAlert === 'function') {
-                    loadingAlert.close && loadingAlert.close();
-                    loadingAlert = showCustomAlert('生成中', `正在生成 ${characters.length} 个角色的余额，请稍候...`, 0);
-                }
-            }
-            
-            for (let i = 0; i < characters.length; i++) {
-                const char = characters[i];
-                try {
-                    console.log(`正在为角色 ${char.name} 生成余额... (${i + 1}/${characters.length})`);
-                    
-                    // 更新加载提示，显示当前进度
-                    if (loadingAlert && typeof loadingAlert.update === 'function') {
-                        loadingAlert.update('生成中', `正在为 ${char.name} 生成余额... (${i + 1}/${characters.length})`);
-                    } else if (loadingAlert && typeof showCustomAlert === 'function') {
-                        loadingAlert.close && loadingAlert.close();
-                        loadingAlert = showCustomAlert('生成中', `正在为 ${char.name} 生成余额... (${i + 1}/${characters.length})`, 0);
-                    }
-                    
-                    walletData.characters[char.id] = await generateBalanceViaAPI(char.name, char.persona, null);
-                    console.log(`角色 ${char.name} 余额生成成功: ${walletData.characters[char.id]}`);
-                } catch (error) {
-                    console.error(`生成角色 ${char.name} 余额失败:`, error);
-                    // 如果API调用失败，跳过这个角色，不要使用默认值
-                    console.warn(`跳过角色 ${char.name}，API调用失败`);
-                    // 不设置默认值，让用户知道API调用失败
-                }
             }
             
             // 保存数据
@@ -51056,9 +51160,9 @@ ${userPersona.trim()}
                 loadingAlert.close();
             }
             if (typeof showCustomAlert === 'function') {
-                showCustomAlert('成功', '余额已生成！');
+                showCustomAlert('成功', '用户余额已生成！');
             } else {
-                alert('余额已生成！');
+                alert('用户余额已生成！');
             }
         } catch (error) {
             console.error('生成余额过程出错:', error);
@@ -51085,64 +51189,41 @@ ${userPersona.trim()}
         // 更新用户余额显示
         document.getElementById('wallet-user-balance').textContent = `¥${walletData.userBalance.toFixed(2)}`;
         
-        // 渲染角色余额列表
-        const characterListContainer = document.getElementById('wallet-character-list');
-        characterListContainer.innerHTML = '';
-        
-        // 获取所有角色（使用和renderCharacterSelector相同的逻辑）
-        const characters = [];
-        // 获取state（支持全局和局部作用域）
-        const currentState = typeof state !== 'undefined' ? state : (typeof window !== 'undefined' && window.state ? window.state : null);
-        if (currentState && currentState.chats) {
-            // 获取所有非群聊的聊天（即角色）
-            const allCharacters = Object.values(currentState.chats).filter(chat => !chat.isGroup);
+        // 填充用户选择器
+        const userSelect = document.getElementById('wallet-user-select');
+        if (userSelect) {
+            // 保存当前选中的值
+            const currentValue = userSelect.value;
+            userSelect.innerHTML = '<option value="">-- 选择聊天（使用该聊天中的人设生成余额）--</option>';
             
-            for (const chat of allCharacters) {
-                if (chat) {
-                    // 使用chat.name作为角色名称（和renderCharacterSelector一致）
-                    const characterName = chat.name || chat.settings?.characterName || '未命名角色';
-                    // 获取角色人设（单聊使用aiPersona字段）
-                    const persona = chat.settings?.aiPersona ||           // 单聊角色人设
-                                   chat.settings?.systemPrompt ||        // 可能的人设字段
-                                   chat.settings?.characterPrompt ||     // 可能的人设字段
-                                   chat.settings?.persona ||             // 可能的人设字段
-                                   '';
-                    characters.push({
-                        id: chat.id,
-                        name: characterName,
-                        persona: persona
-                    });
+            // 获取所有聊天（包括单聊和群聊）
+            const chats = [];
+            const currentState = typeof state !== 'undefined' ? state : (typeof window !== 'undefined' && window.state ? window.state : null);
+            if (currentState && currentState.chats) {
+                const allChats = Object.values(currentState.chats);
+                
+                for (const chat of allChats) {
+                    if (chat) {
+                        const chatName = chat.name || chat.settings?.characterName || '未命名聊天';
+                        const myPersona = chat.settings?.myPersona || '';
+                        chats.push({
+                            id: chat.id,
+                            name: chatName,
+                            myPersona: myPersona
+                        });
+                    }
                 }
             }
-        }
-        
-        // 为每个角色显示余额
-        if (characters.length === 0) {
-            characterListContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 20px; font-size: 14px;">暂无角色数据<br/>请先创建聊天角色</div>';
-        } else {
-            for (const char of characters) {
-                let balance = walletData.characters && walletData.characters[char.id] ? walletData.characters[char.id] : 0;
-                
-            const charItem = document.createElement('div');
-            charItem.className = 'wallet-character-item';
-            charItem.innerHTML = `
-                <div style="flex: 1; cursor: pointer;" onclick="showCharacterWalletDetail('${char.id}', '${char.name.replace(/'/g, "\\'")}')">
-                    <div class="wallet-character-name">${char.name}</div>
-                    <div class="wallet-character-balance">¥${balance.toFixed(2)}</div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div class="wallet-generate-btn" onclick="event.stopPropagation(); generateCharacterBalance('${char.id}', '${char.name.replace(/'/g, "\\'")}');" title="生成余额" style="padding: 6px; cursor: pointer; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--accent-color); transition: background-color 0.2s;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 11A8.1 8.1 0 0 0 4.5 9M4 5v4h4"></path>
-                            <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"></path>
-                        </svg>
-                    </div>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-secondary); cursor: pointer;" onclick="showCharacterWalletDetail('${char.id}', '${char.name.replace(/'/g, "\\'")}')">
-                        <path d="M9 18l6-6-6-6"></path>
-                    </svg>
-                </div>
-            `;
-            characterListContainer.appendChild(charItem);
+            
+            // 填充选择器
+            for (const chat of chats) {
+                const option = document.createElement('option');
+                option.value = chat.id;
+                option.textContent = chat.name + (chat.myPersona ? ' (有人设)' : '');
+                if (option.value === currentValue) {
+                    option.selected = true;
+                }
+                userSelect.appendChild(option);
             }
         }
         
@@ -51164,7 +51245,7 @@ ${userPersona.trim()}
                 transItem.innerHTML = `
                     <div class="wallet-transaction-info">
                         <div class="wallet-transaction-title">${transaction.title || '交易'}</div>
-                        <div class="wallet-transaction-meta">${date} ${transaction.characterName ? '· ' + transaction.characterName : ''}</div>
+                        <div class="wallet-transaction-meta">${date}</div>
                     </div>
                     <div class="wallet-transaction-amount ${amountClass}">${amountPrefix}¥${Math.abs(transaction.amount).toFixed(2)}</div>
                 `;
@@ -51194,239 +51275,163 @@ ${userPersona.trim()}
             walletData.userBalance -= transaction.amount;
         }
         
-        // 如果是角色相关的交易，更新角色余额
-        if (transaction.characterId) {
-            if (!walletData.characters) {
-                walletData.characters = {};
-            }
-            if (!walletData.characters[transaction.characterId]) {
-                walletData.characters[transaction.characterId] = 0;
-            }
-            if (transaction.type === 'income') {
-                walletData.characters[transaction.characterId] += transaction.amount;
-            } else if (transaction.type === 'expense') {
-                walletData.characters[transaction.characterId] -= transaction.amount;
-            }
-        }
-        
             saveWalletData(walletData);
     }
     
-    // 为单个角色生成余额（全局函数，供HTML onclick调用）
-    window.generateCharacterBalance = async function(characterId, characterName) {
-        // 显示加载提示
-        let loadingAlert = null;
-        if (typeof showCustomAlert === 'function') {
-            loadingAlert = showCustomAlert('生成中', `正在为 ${characterName} 生成余额，请稍候...`, 0); // 0表示不自动关闭
+    
+    // 显示添加交易模态框
+    function showAddTransactionModal(type) {
+        let modal = document.getElementById('wallet-transaction-modal');
+        if (!modal) {
+            // 创建模态框
+            const modalHTML = `
+                <div id="wallet-transaction-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+                    <div style="background-color: var(--secondary-bg); border-radius: 12px; padding: 20px; width: 90%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 id="wallet-transaction-modal-title" style="margin: 0; color: var(--text-primary);">添加交易</h3>
+                            <button id="wallet-transaction-modal-close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary);">&times;</button>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; color: var(--text-primary);">交易标题</label>
+                            <input type="text" id="wallet-transaction-title" placeholder="例如：工资、购物、转账等" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--secondary-bg); color: var(--text-primary); box-sizing: border-box;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; color: var(--text-primary);">金额</label>
+                            <input type="number" id="wallet-transaction-amount" placeholder="0.00" step="0.01" min="0" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--secondary-bg); color: var(--text-primary); box-sizing: border-box;">
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="wallet-transaction-submit" class="form-button" style="flex: 1; margin-top: 0;">确认</button>
+                            <button id="wallet-transaction-cancel" class="form-button form-button-secondary" style="flex: 1; margin-top: 0;">取消</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            modal = document.getElementById('wallet-transaction-modal');
+        }
+        const titleEl = document.getElementById('wallet-transaction-modal-title');
+        const titleInput = document.getElementById('wallet-transaction-title');
+        const amountInput = document.getElementById('wallet-transaction-amount');
+        const submitBtn = document.getElementById('wallet-transaction-submit');
+        const cancelBtn = document.getElementById('wallet-transaction-modal-close');
+        const cancelBtn2 = document.getElementById('wallet-transaction-cancel');
+        
+        // 设置标题和按钮颜色
+        if (type === 'income') {
+            titleEl.textContent = '添加收入';
+            submitBtn.style.backgroundColor = '#4caf50';
         } else {
-            alert(`正在为 ${characterName} 生成余额，请稍候...`);
+            titleEl.textContent = '添加支出';
+            submitBtn.style.backgroundColor = '#f44336';
         }
         
-        try {
+        // 清空输入
+        titleInput.value = '';
+        amountInput.value = '';
+        
+        // 显示模态框
+        modal.style.display = 'flex';
+        
+        // 绑定事件
+        const closeModal = () => {
+            modal.style.display = 'none';
+        };
+        
+        const submitTransaction = () => {
+            const title = titleInput.value.trim();
+            const amount = parseFloat(amountInput.value);
             
-            // 总是重新从state中获取角色人设（确保获取最新的人设信息）
-            const currentState = typeof state !== 'undefined' ? state : (typeof window !== 'undefined' && window.state ? window.state : null);
-            let finalPersona = '';
-            let finalCharacterName = characterName;
-            
-            if (currentState && currentState.chats && currentState.chats[characterId]) {
-                const chat = currentState.chats[characterId];
-                
-                // 获取角色名称
-                finalCharacterName = chat.name || chat.settings?.characterName || characterName || '未命名角色';
-                
-                // 尝试多个可能的字段来获取人设（按优先级，aiPersona是单聊中的人设字段）
-                finalPersona = chat.settings?.aiPersona ||           // 单聊角色人设
-                               chat.settings?.systemPrompt ||        // 可能的人设字段
-                               chat.settings?.characterPrompt ||     // 可能的人设字段
-                               chat.settings?.persona ||             // 可能的人设字段
-                               chat.aiPersona ||                     // 直接的人设字段
-                               chat.systemPrompt ||                  // 直接的人设字段
-                               '';
-                
-                // 调试信息
-                console.log('=== 生成角色余额 ===');
-                console.log('角色ID:', characterId);
-                console.log('角色名称:', finalCharacterName);
-                console.log('chat对象:', chat);
-                console.log('chat.settings:', chat.settings);
-                if (chat.settings) {
-                    console.log('chat.settings的所有键:', Object.keys(chat.settings));
-                    console.log('chat.settings.aiPersona存在:', !!chat.settings.aiPersona);
-                    console.log('chat.settings.aiPersona值（前200字符）:', chat.settings.aiPersona ? chat.settings.aiPersona.substring(0, 200) + '...' : '（空）');
+            if (!title) {
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert('错误', '请输入交易标题');
                 } else {
-                    console.warn('chat.settings 不存在！');
+                    alert('请输入交易标题');
                 }
-                console.log('chat.settings.systemPrompt存在:', !!chat.settings?.systemPrompt);
-                console.log('最终获取到的人设长度:', finalPersona ? finalPersona.length : 0);
-                console.log('最终获取到的人设预览（前500字符）:', finalPersona ? finalPersona.substring(0, 500) + '...' : '（空）');
-                
-                if (!finalPersona || finalPersona.trim() === '') {
-                    console.error('错误：未能获取到角色人设信息（所有字段都为空）');
-                    console.error('chat对象完整内容:', JSON.stringify(chat, null, 2));
-                    throw new Error(`无法获取角色 "${finalCharacterName}" 的人设信息，请确保在聊天设置中已填入角色人设`);
-                }
-            } else {
-                console.error('错误：无法找到角色数据，characterId:', characterId);
+                return;
             }
             
-            // 生成余额（使用获取到的人设）
-            const balance = await generateBalanceViaAPI(finalCharacterName, finalPersona, null);
-            
-            // 保存余额
-            const walletData = getWalletData();
-            if (!walletData.characters) {
-                walletData.characters = {};
+            if (isNaN(amount) || amount <= 0) {
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert('错误', '请输入有效的金额');
+                } else {
+                    alert('请输入有效的金额');
+                }
+                return;
             }
-            walletData.characters[characterId] = balance;
-            saveWalletData(walletData);
+            
+            // 添加交易
+            addWalletTransaction({
+                type: type,
+                title: title,
+                amount: amount
+            });
             
             // 重新渲染页面
-            await renderWalletScreen();
+            renderWalletScreen();
             
-            // 如果当前在角色详情页面，更新详情页面显示
-            const detailScreen = document.getElementById('character-wallet-detail-screen');
-            if (detailScreen && detailScreen.classList.contains('active')) {
-                const currentName = document.getElementById('character-wallet-detail-name').textContent;
-                if (currentName === characterName) {
-                    document.getElementById('character-wallet-detail-balance').textContent = `¥${balance.toFixed(2)}`;
-                }
-            }
+            // 关闭模态框
+            closeModal();
             
-            // 关闭加载提示并显示成功提示
-            if (loadingAlert && typeof loadingAlert.close === 'function') {
-                loadingAlert.close();
-            }
+            // 显示成功提示
             if (typeof showCustomAlert === 'function') {
-                showCustomAlert('成功', `${characterName} 的余额已生成：¥${balance.toFixed(2)}`);
+                showCustomAlert('成功', type === 'income' ? '收入已添加' : '支出已添加');
             } else {
-                alert(`${characterName} 的余额已生成：¥${balance.toFixed(2)}`);
+                alert(type === 'income' ? '收入已添加' : '支出已添加');
             }
-        } catch (error) {
-            console.error(`生成角色 ${characterName} 余额失败:`, error);
-            // 关闭加载提示
-            if (loadingAlert && typeof loadingAlert.close === 'function') {
-                loadingAlert.close();
+        };
+        
+        // 移除旧的事件监听器（通过克隆节点）
+        const newSubmitBtn = submitBtn.cloneNode(true);
+        submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+        newSubmitBtn.addEventListener('click', submitTransaction);
+        
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        newCancelBtn.addEventListener('click', closeModal);
+        
+        const newCancelBtn2 = cancelBtn2.cloneNode(true);
+        cancelBtn2.parentNode.replaceChild(newCancelBtn2, cancelBtn2);
+        newCancelBtn2.addEventListener('click', closeModal);
+        
+        // 点击背景关闭
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
             }
-            if (typeof showCustomAlert === 'function') {
-                showCustomAlert('错误', `生成余额失败: ${error.message}`);
-            } else {
-                alert(`生成余额失败: ${error.message}`);
+        });
+        
+        // 回车提交
+        amountInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                submitTransaction();
             }
-        }
-    };
+        });
+    }
     
-    // 显示角色钱包详情（全局函数）
-    window.showCharacterWalletDetail = function(characterId, characterName) {
-        const walletData = getWalletData();
-        const balance = walletData.characters && walletData.characters[characterId] ? walletData.characters[characterId] : 0;
-        
-        // 保存当前角色ID到全局变量，供生成按钮使用
-        window.currentWalletCharacterId = characterId;
-        window.currentWalletCharacterName = characterName;
-        
-        // 更新页面标题和余额
-        document.getElementById('character-wallet-detail-title').textContent = characterName + ' 的钱包';
-        document.getElementById('character-wallet-detail-name').textContent = characterName;
-        document.getElementById('character-wallet-detail-balance').textContent = `¥${balance.toFixed(2)}`;
-        
-        // 渲染该角色的交易记录
-        const transactionsContainer = document.getElementById('character-wallet-detail-transactions');
-        transactionsContainer.innerHTML = '';
-        
-        if (walletData.transactions && walletData.transactions.length > 0) {
-            // 筛选出该角色的交易记录
-            const characterTransactions = walletData.transactions.filter(t => t.characterId === characterId);
-            
-            if (characterTransactions.length > 0) {
-                // 按时间倒序排序
-                const sortedTransactions = [...characterTransactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                
-                for (const transaction of sortedTransactions) {
-                    const transItem = document.createElement('div');
-                    transItem.className = 'wallet-transaction-item';
-                    const amountClass = transaction.type === 'income' ? 'income' : 'expense';
-                    const amountPrefix = transaction.type === 'income' ? '+' : '-';
-                    const date = new Date(transaction.timestamp).toLocaleString('zh-CN');
-                    
-                    transItem.innerHTML = `
-                        <div class="wallet-transaction-info">
-                            <div class="wallet-transaction-title">${transaction.title || '交易'}</div>
-                            <div class="wallet-transaction-meta">${date}</div>
-                        </div>
-                        <div class="wallet-transaction-amount ${amountClass}">${amountPrefix}¥${Math.abs(transaction.amount).toFixed(2)}</div>
-                    `;
-                    transactionsContainer.appendChild(transItem);
-                }
-            } else {
-                transactionsContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">该角色暂无交易记录</div>';
-            }
-        } else {
-            transactionsContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">该角色暂无交易记录</div>';
-        }
-        
-        // 显示角色详情页面
-        showScreen('character-wallet-detail-screen');
-        
-        // 绑定角色详情页面的生成按钮
-        setTimeout(() => {
-            const generateBtn = document.getElementById('generate-character-balance-btn');
-            if (generateBtn) {
-                // 移除旧的事件监听器
-                generateBtn.replaceWith(generateBtn.cloneNode(true));
-                const newBtn = document.getElementById('generate-character-balance-btn');
-                newBtn.addEventListener('click', async () => {
-                    const currentState = typeof state !== 'undefined' ? state : (typeof window !== 'undefined' && window.state ? window.state : null);
-                    await generateCharacterBalance(characterId, characterName);
-                });
-            }
-        }, 100);
-    };
-    
-    // 绑定生成余额按钮的事件监听器（延迟绑定，确保DOM已加载）
+    // 绑定生成余额按钮和支出收入按钮的事件监听器（延迟绑定，确保DOM已加载）
     setTimeout(function() {
         const generateBtn = document.getElementById('generate-wallet-balance-btn');
         if (generateBtn) {
             generateBtn.addEventListener('click', async () => {
-                // 只生成用户余额
-                const walletData = getWalletData();
-                let userPersona = '';
-                // 显示加载提示
-                let loadingAlert = null;
-                if (typeof showCustomAlert === 'function') {
-                    loadingAlert = showCustomAlert('生成中', '正在生成用户余额，请稍候...', 0);
-                }
-                
-                try {
-                    walletData.userBalance = await generateBalanceViaAPI(null, null, userPersona);
-                    saveWalletData(walletData);
-                    await renderWalletScreen();
-                    
-                    // 关闭加载提示并显示成功提示
-                    if (loadingAlert && typeof loadingAlert.close === 'function') {
-                        loadingAlert.close();
-                    }
-                    if (typeof showCustomAlert === 'function') {
-                        showCustomAlert('成功', '用户余额已生成！');
-                    } else {
-                        alert('用户余额已生成！');
-                    }
-                } catch (error) {
-                    console.error('生成用户余额失败:', error);
-                    // 关闭加载提示
-                    if (loadingAlert && typeof loadingAlert.close === 'function') {
-                        loadingAlert.close();
-                    }
-                    if (typeof showCustomAlert === 'function') {
-                        showCustomAlert('错误', `生成用户余额失败: ${error.message}`);
-                    } else {
-                        alert(`生成用户余额失败: ${error.message}`);
-                    }
-                }
+                await generateAllBalances();
+            });
+        }
+        
+        const addIncomeBtn = document.getElementById('add-income-btn');
+        if (addIncomeBtn) {
+            addIncomeBtn.addEventListener('click', () => {
+                showAddTransactionModal('income');
+            });
+        }
+        
+        const addExpenseBtn = document.getElementById('add-expense-btn');
+        if (addExpenseBtn) {
+            addExpenseBtn.addEventListener('click', () => {
+                showAddTransactionModal('expense');
             });
         }
     }, 100);
-     </script>
+     </script>   
         
 
 </body>
