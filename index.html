@@ -9851,19 +9851,12 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
                             <button class="pixel-btn pet-interaction-btn" onclick="interactWithCabinPet('train')" style="background: #ff9ed2; color: white; font-size: 9px; padding: 8px;">📚 训练</button>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-                            <button class="pixel-btn" onclick="openRenameCabinPetModal()" style="background: #fff0f5; font-size: 9px; padding: 8px;">✏️ 重命名</button>
+                            <button class="pixel-btn" onclick="openCabinPetDiaryModal()" style="background: #fff0f5; font-size: 9px; padding: 8px;">📅 查看它的一天</button>
                             <button class="pixel-btn" onclick="viewCabinPetDetails()" style="background: #e06c9f; color: white; font-size: 9px; padding: 8px;">📊 详细信息</button>
                         </div>
                     </div>
                 </div>
                 
-                <!-- 生成一天的按钮 -->
-                <div id="cabin-pet-diary-area" style="width: 100%; margin-bottom: 15px; display: none;">
-                    <button class="pixel-btn" id="btn-generate-pet-diary" onclick="generateCabinPetDiaryFromButton()" style="width: 100%; background: #aedeef; margin-bottom: 10px;">📅 生成它的一天</button>
-                    <div id="cabin-pet-diary-list" style="width: 100%; margin-top: 10px;">
-                        <!-- 日记列表将在这里动态生成 -->
-                    </div>
-                </div>
                 
                 <!-- 生成和列表按钮 -->
                 <div style="width: 100%; margin-bottom: 15px;">
@@ -55858,6 +55851,32 @@ ${userPersona.trim()}
         window.cabinGachaState.currentPet = null;
         window.cabinGachaState.petCounter = 0;
     }
+    
+    // 添加宠物预览框CSS样式（修复SVG显示问题）
+    if (!document.getElementById('cabin-pet-display-style')) {
+        const style = document.createElement('style');
+        style.id = 'cabin-pet-display-style';
+        style.innerHTML = `
+            /* 强制宠物预览框内的 SVG 自适应大小 */
+            #cabin-pet-display svg {
+                width: 100% !important;
+                height: 100% !important;
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain; /* 保持比例 */
+                display: block;
+            }
+            
+            /* 确保预览容器本身有正确的布局属性 */
+            #cabin-pet-display {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                overflow: hidden; /* 防止溢出 */
+            }
+        `;
+        document.head.appendChild(style);
+    }
 
     // 辅助函数：生成随机属性
     function generateCabinPetAbilities(count) {
@@ -55882,25 +55901,19 @@ ${userPersona.trim()}
         return abilities;
     }
 
-    // 渲染宠物显示
+    // 渲染宠物显示 (修复版：强制适配尺寸)
     function renderCabinPetDisplay(pet) {
         const petDisplay = document.getElementById('cabin-pet-display');
         const petName = document.getElementById('cabin-pet-name');
         const petStatus = document.getElementById('cabin-pet-status');
         const interactionArea = document.getElementById('cabin-pet-interaction-area');
-        
         if (!petDisplay) return;
         
-        // 确保展示区域已显示且有尺寸，避免在display:none状态下创建absolute定位元素
-        // 注意：即使没有宠物，我们也需要显示空状态，所以只检查元素是否存在，不检查是否可见
-        // 但如果元素不可见，延迟渲染（这种情况不应该发生，因为应该通过waitForElementVisible调用）
+        // 确保展示区域可见
         if (!isElementVisible(petDisplay)) {
-            console.warn('宠物展示区域不可见，延迟渲染');
-            waitForElementVisible(petDisplay, () => renderCabinPetDisplay(pet));
+            requestAnimationFrame(() => renderCabinPetDisplay(pet));
             return;
         }
-        
-        const diaryArea = document.getElementById('cabin-pet-diary-area');
         
         if (!pet) {
             // 显示空状态
@@ -55908,7 +55921,6 @@ ${userPersona.trim()}
             if (petName) petName.textContent = '未命名宠物';
             if (petStatus) petStatus.style.display = 'none';
             if (interactionArea) interactionArea.style.display = 'none';
-            if (diaryArea) diaryArea.style.display = 'none';
             return;
         }
         
@@ -55917,30 +55929,41 @@ ${userPersona.trim()}
             pet.diaries = [];
         }
         
+        // 【核心修复】：处理 SVG 字符串，移除固定的宽高，改用 viewBox
+        let svgContent = pet.svg || pet.svgNormal;
+        
+        if (svgContent) {
+            // 1. 移除硬编码的 width 和 height 属性
+            svgContent = svgContent.replace(/\s(width|height)="[^"]*"/g, '');
+            
+            // 2. 确保有 viewBox (如果没有，默认给一个 128 128)
+            if (!svgContent.includes('viewBox')) {
+                svgContent = svgContent.replace('<svg', '<svg viewBox="0 0 128 128"');
+            }
+            
+            // 3. 强制添加 100% 宽高设置
+            svgContent = svgContent.replace('<svg', '<svg width="100%" height="100%" preserveAspectRatio="xMidYMid meet"');
+        }
+
         // 显示宠物
-        petDisplay.innerHTML = pet.svg || pet.svgNormal;
+        petDisplay.innerHTML = svgContent || '<div style="font-size:20px">❓</div>';
+        
         if (petName) petName.textContent = pet.name;
         
         // 显示状态
         if (petStatus) {
             petStatus.style.display = 'block';
-            document.getElementById('cabin-pet-level').textContent = pet.level;
-            document.getElementById('cabin-pet-mood').textContent = getMoodEmoji(pet.mood);
-            document.getElementById('cabin-pet-mood-value').textContent = pet.mood + '%';
+            document.getElementById('cabin-pet-level').textContent = pet.level || 1;
+            document.getElementById('cabin-pet-mood').textContent = getMoodEmoji(pet.mood || 80);
+            document.getElementById('cabin-pet-mood-value').textContent = (pet.mood || 80) + '%';
             document.getElementById('cabin-pet-energy').textContent = (pet.energy || 100) + '%';
             document.getElementById('cabin-pet-hunger').textContent = (pet.hunger || 100) + '%';
-            document.getElementById('cabin-pet-exp').textContent = pet.experience + '/' + pet.experienceToNext;
+            document.getElementById('cabin-pet-exp').textContent = (pet.experience || 0) + '/' + (pet.experienceToNext || 100);
             document.getElementById('cabin-pet-personality').textContent = pet.personality || '未知';
         }
         
         // 显示互动按钮
         if (interactionArea) interactionArea.style.display = 'block';
-        
-        // 显示日记区域
-        if (diaryArea) {
-            diaryArea.style.display = 'block';
-            renderCabinPetDiaryList(pet);
-        }
     }
 
     // 更新宠物数量
@@ -56030,7 +56053,7 @@ ${userPersona.trim()}
         return null;
     }
 
-    // 选择宠物（修改版：绑定到当前房间）
+    // 选择宠物 (修复版：立即刷新UI)
     function selectCabinPet(index) {
         const state = window.cabinGachaState;
         const currentRoom = getCurrentRoom();
@@ -56039,9 +56062,14 @@ ${userPersona.trim()}
             // 将宠物绑定到当前房间
             currentRoom.currentPet = state.pets[index];
             
-            renderCabinPetDisplay(currentRoom.currentPet);
+            // 1. 保存数据
             saveCabinGachaData();
+            
+            // 2. 关闭弹窗
             closeCabinPetListModal();
+            
+            // 3. 强制立即渲染
+            renderCabinPetDisplay(currentRoom.currentPet);
             
             const charName = getCabinCurrentOwnerName();
             showToast(`已选择宠物: ${state.pets[index].name} (绑定至 ${charName})`);
@@ -56277,6 +56305,132 @@ ${userPersona.trim()}
         };
     }
 
+    // 打开查看它的一天弹窗
+    function openCabinPetDiaryModal() {
+        const pet = getCurrentCabinPet();
+        if (!pet) {
+            showToast("请先选择宠物");
+            return;
+        }
+        
+        // 初始化日记数组（如果不存在）
+        if (!pet.diaries) {
+            pet.diaries = [];
+        }
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'flex';
+        modal.id = 'cabin-pet-diary-modal';
+        
+        // 渲染日记列表的函数（在弹窗中使用）
+        const renderDiaryListInModal = () => {
+            const diaryListContainer = modal.querySelector('#diary-list-container');
+            if (!diaryListContainer) return;
+            
+            diaryListContainer.innerHTML = '';
+            
+            if (!pet.diaries || pet.diaries.length === 0) {
+                diaryListContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #999; font-size: 11px;">还没有生成过日记，点击下方按钮生成第一条吧！</div>';
+                return;
+            }
+            
+            pet.diaries.forEach((diary) => {
+                const diaryItem = document.createElement('div');
+                diaryItem.style.cssText = 'width: 100%; margin-bottom: 8px; border: 2px solid #ff9ed2; border-radius: 8px; background: #fff0f5; overflow: hidden;';
+                
+                const diaryHeader = document.createElement('div');
+                diaryHeader.style.cssText = 'padding: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #ffe0f0;';
+                diaryHeader.innerHTML = `
+                    <span style="font-size: 11px; font-weight: bold; color: #e06c9f;">📅 ${formatDiaryDate(diary.date)}</span>
+                    <span style="font-size: 10px; color: #999;" class="diary-toggle-modal">▼</span>
+                `;
+                
+                const diaryContent = document.createElement('div');
+                diaryContent.style.cssText = 'padding: 0 10px; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease;';
+                diaryContent.innerHTML = `
+                    <div style="padding: 10px 0; font-size: 11px; line-height: 1.6; color: #333; white-space: pre-wrap;">${diary.content}</div>
+                `;
+                
+                // 折叠/展开功能（默认折叠）
+                let isExpanded = false;
+                diaryHeader.onclick = () => {
+                    isExpanded = !isExpanded;
+                    const toggle = diaryHeader.querySelector('.diary-toggle-modal');
+                    if (isExpanded) {
+                        diaryContent.style.maxHeight = '500px';
+                        diaryContent.style.padding = '10px';
+                        if (toggle) toggle.textContent = '▲';
+                    } else {
+                        diaryContent.style.maxHeight = '0';
+                        diaryContent.style.padding = '0 10px';
+                        if (toggle) toggle.textContent = '▼';
+                    }
+                };
+                
+                diaryItem.appendChild(diaryHeader);
+                diaryItem.appendChild(diaryContent);
+                diaryListContainer.appendChild(diaryItem);
+            });
+        };
+        
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 400px; background:#fff; padding:20px; border-radius:10px; border:4px solid #aedeef; max-height: 80vh; display: flex; flex-direction: column;">
+                <div class="modal-title" style="color:#000; margin-bottom:15px; text-align:center;">📅 ${pet.name}的一天</div>
+                <div id="diary-list-container" style="flex: 1; overflow-y: auto; margin-bottom: 15px; min-height: 100px;">
+                    <!-- 日记列表将在这里动态生成 -->
+                </div>
+                <div style="border-top: 1px solid #ddd; padding-top: 15px;">
+                    <button class="pixel-btn pink" id="btn-generate-diary-modal" style="width: 100%; margin-bottom: 10px;">✨ 生成今天的一天</button>
+                    <button class="pixel-btn" onclick="document.getElementById('cabin-pet-diary-modal').remove()" style="width: 100%; background:#aedeef;">关闭</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // 保存渲染函数到modal，以便在生成后可以调用
+        modal._renderDiaryList = renderDiaryListInModal;
+        
+        // 初始渲染日记列表
+        renderDiaryListInModal();
+        
+        // 生成按钮事件
+        document.getElementById('btn-generate-diary-modal').onclick = async () => {
+            const generateBtn = document.getElementById('btn-generate-diary-modal');
+            const originalText = generateBtn.textContent;
+            
+            // 检查今天是否已经生成过
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            const hasTodayDiary = pet.diaries && pet.diaries.some(d => d.date === todayStr);
+            
+            if (hasTodayDiary) {
+                if (!confirm('今天已经生成过日记了，是否重新生成？')) {
+                    return;
+                }
+            }
+            
+            // 显示生成中状态
+            generateBtn.disabled = true;
+            generateBtn.textContent = '正在生成中...';
+            generateBtn.style.opacity = '0.6';
+            
+            try {
+                await generateCabinPetDiary(pet);
+                // 重新渲染列表
+                renderDiaryListInModal();
+                showToast('生成完成！');
+            } catch (e) {
+                alert('生成失败: ' + e.message);
+            } finally {
+                // 恢复按钮状态
+                generateBtn.disabled = false;
+                generateBtn.textContent = originalText;
+                generateBtn.style.opacity = '1';
+            }
+        };
+    }
+
     function viewCabinPetDetails() {
         const pet = getCurrentCabinPet();
         if(!pet) { showToast("请先选择宠物"); return; }
@@ -56307,16 +56461,16 @@ ${userPersona.trim()}
                     <div style="margin-top:5px; color:#999;">创建于: ${new Date(pet.createdAt).toLocaleDateString()}</div>
                 </div>
                 <div style="margin-top:15px; text-align:center; display:flex; flex-direction:column; gap:8px;">
-                    <button class="pixel-btn pink" id="btn-pet-diary">📅 生成它的一天</button>
+                    <button class="pixel-btn pink" id="btn-pet-rename-detail">✏️ 重命名</button>
                     <button class="pixel-btn" onclick="this.closest('.modal').remove()" style="background:#ccc;">关闭</button>
                 </div>
             </div>
         `;
         document.body.appendChild(modal);
         
-        document.getElementById('btn-pet-diary').onclick = () => {
+        document.getElementById('btn-pet-rename-detail').onclick = () => {
              modal.remove();
-             generateCabinPetDiaryFromButton();
+             openRenameCabinPetModal();
         };
     }
     
@@ -56409,9 +56563,6 @@ ${userPersona.trim()}
             
             // 保存数据
             saveCabinGachaData();
-            
-            // 重新渲染日记列表
-            renderCabinPetDiaryList(pet);
             
             showToast(`已为${pet.name}生成今天的一天记录`);
             
