@@ -9817,7 +9817,7 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
             
             <div style="flex: 1; overflow-y: auto; padding: 0 15px 60px 15px;">
                 <!-- 宠物显示区域 -->
-                <div style="width: 100%; background: #fff0f5; border: 4px solid #ff9ed2; border-radius: 8px; padding: 15px; margin-bottom: 15px; position: relative;">
+                <div style="width: 85%; max-width: 300px; margin: 0 auto; background: #fff0f5; border: 4px solid #ff9ed2; border-radius: 8px; padding: 15px; margin-bottom: 15px; position: relative;">
                     <div style="width: 100%; text-align: center; margin-bottom: 10px;">
                         <div style="font-size: 14px; font-weight: bold; color: #e06c9f;">
                             <span id="cabin-pet-name">未命名宠物</span>
@@ -9854,6 +9854,14 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
                             <button class="pixel-btn" onclick="openRenameCabinPetModal()" style="background: #fff0f5; font-size: 9px; padding: 8px;">✏️ 重命名</button>
                             <button class="pixel-btn" onclick="viewCabinPetDetails()" style="background: #e06c9f; color: white; font-size: 9px; padding: 8px;">📊 详细信息</button>
                         </div>
+                    </div>
+                </div>
+                
+                <!-- 生成一天的按钮 -->
+                <div id="cabin-pet-diary-area" style="width: 100%; margin-bottom: 15px; display: none;">
+                    <button class="pixel-btn" id="btn-generate-pet-diary" onclick="generateCabinPetDiaryFromButton()" style="width: 100%; background: #aedeef; margin-bottom: 10px;">📅 生成它的一天</button>
+                    <div id="cabin-pet-diary-list" style="width: 100%; margin-top: 10px;">
+                        <!-- 日记列表将在这里动态生成 -->
                     </div>
                 </div>
                 
@@ -51924,15 +51932,28 @@ document.getElementById('chat-expand-btn').addEventListener('click', () => {
         const data = localStorage.getItem(WALLET_STORAGE_KEY);
         if (data) {
             try {
-                return JSON.parse(data);
+                const parsed = JSON.parse(data);
+                // 兼容旧数据结构，迁移到新结构
+                if (parsed.userBalance !== undefined && !parsed.userWallet) {
+                    parsed.userWallet = {
+                        balance: parsed.userBalance || 0,
+                        transactions: parsed.transactions || []
+                    };
+                    delete parsed.userBalance;
+                    delete parsed.transactions;
+                }
+                return parsed;
             } catch (e) {
                 console.error('解析钱包数据失败:', e);
             }
         }
+        // 新数据结构：完全独立的双钱包系统
         return {
-            userBalance: 0,
-            characters: {},
-            transactions: []
+            userWallet: {
+                balance: 0,
+                transactions: []
+            },
+            roleWallets: {} // { [chatId]: { balance, transactions } }
         };
     }
     
@@ -52175,7 +52196,7 @@ ${userPersona.trim()}
     // 当前钱包视图状态
     let currentWalletView = 'user';
 
-    // 生成用户余额 (及角色余额)
+    // 生成用户余额和角色余额（双钱包系统）
     async function generateAllBalances() {
         const generateBtn = document.getElementById('generate-wallet-balance-btn');
         
@@ -52193,6 +52214,14 @@ ${userPersona.trim()}
             const userSelect = document.getElementById('wallet-user-select');
             const selectedChatId = userSelect ? userSelect.value : '';
             
+            // 确保数据结构正确
+            if (!walletData.userWallet) {
+                walletData.userWallet = { balance: 0, transactions: [] };
+            }
+            if (!walletData.roleWallets) {
+                walletData.roleWallets = {};
+            }
+            
             // 获取人设信息
             let userPersona = '';
             let characterPersona = '';
@@ -52203,10 +52232,13 @@ ${userPersona.trim()}
                 if (currentState && currentState.chats && currentState.chats[selectedChatId]) {
                     const chat = currentState.chats[selectedChatId];
                     userPersona = chat.settings?.myPersona || '';
-                    characterPersona = chat.settings?.aiPersona || '';
-                    characterName = chat.name || '对方';
+                    characterPersona = chat.settings?.aiPersona || chat.settings?.characterPersona || '';
+                    characterName = chat.name || chat.settings?.characterName || '对方';
+                    
                     if (userPersona || characterPersona) {
                         console.log('使用选中聊天的人设生成余额:', chat.name);
+                        console.log('- 用户人设长度:', userPersona.length);
+                        console.log('- 角色人设长度:', characterPersona.length);
                     }
                 }
             }
@@ -52214,24 +52246,59 @@ ${userPersona.trim()}
             // 生成 Promise 列表
             const promises = [];
             
-            // 1. 生成用户余额
+            // 1. 生成用户余额（独立钱包）
             promises.push(generateBalanceViaAPI(null, null, userPersona).then(balance => {
-                walletData.userBalance = balance;
+                // 初始化用户钱包
+                walletData.userWallet.balance = balance;
+                // 生成用户初始流水（如果还没有流水）
+                if (!walletData.userWallet.transactions || walletData.userWallet.transactions.length === 0) {
+                    walletData.userWallet.transactions = [{
+                        type: 'income',
+                        title: '初始余额',
+                        amount: balance,
+                        timestamp: new Date().toISOString()
+                    }];
+                }
+                console.log(`用户余额生成成功: ${balance}`);
                 return balance;
+            }).catch(e => {
+                console.error('用户余额生成失败:', e);
+                throw e; // 用户余额生成失败应该中断流程
             }));
             
-            // 2. 如果选中了角色，也生成角色余额
+            // 2. 如果选中了角色，生成角色余额（独立钱包）
             if (selectedChatId && characterName) {
-                 promises.push(generateBalanceViaAPI(characterName, characterPersona, null).then(balance => {
-                    if (!walletData.characters) walletData.characters = {};
-                    if (!walletData.characters[selectedChatId]) walletData.characters[selectedChatId] = {};
-                    
-                    walletData.characters[selectedChatId].balance = balance;
-                    // 初始化 transactions 如果不存在
-                    if (!walletData.characters[selectedChatId].transactions) {
-                        walletData.characters[selectedChatId].transactions = [];
+                console.log(`正在请求生成角色余额，角色名: ${characterName}`);
+                promises.push(generateBalanceViaAPI(characterName, characterPersona, null).then(balance => {
+                    // 初始化角色钱包（完全独立）
+                    if (!walletData.roleWallets[selectedChatId]) {
+                        walletData.roleWallets[selectedChatId] = {
+                            balance: 0,
+                            transactions: []
+                        };
                     }
+                    
+                    walletData.roleWallets[selectedChatId].balance = balance;
+                    
+                    // 生成角色初始流水（如果还没有流水）
+                    if (!walletData.roleWallets[selectedChatId].transactions || walletData.roleWallets[selectedChatId].transactions.length === 0) {
+                        walletData.roleWallets[selectedChatId].transactions = [{
+                            type: 'income',
+                            title: '初始余额',
+                            amount: balance,
+                            timestamp: new Date().toISOString()
+                        }];
+                    }
+                    
+                    console.log(`角色 ${characterName} 余额生成成功: ${balance}`);
                     return balance;
+                }).catch(e => {
+                    console.error(`角色余额生成失败: ${characterName}`, e);
+                    // 角色余额生成失败不影响用户余额，但记录错误
+                    if (typeof showCustomAlert === 'function') {
+                        showCustomAlert('部分失败', `用户余额已生成，但角色余额生成失败: ${e.message}`);
+                    }
+                    return 0;
                 }));
             }
             
@@ -52309,24 +52376,43 @@ ${userPersona.trim()}
             }
         }
         
-        // 准备显示数据
+        // 准备显示数据（分别读取用户钱包和角色钱包）
         let displayBalance = 0;
         let displayTransactions = [];
         let displayName = '我的余额';
         
         if (currentWalletView === 'user') {
-            displayBalance = walletData.userBalance || 0;
-            displayTransactions = walletData.transactions || [];
+            // 读取用户钱包（完全独立）
+            const userWallet = walletData.userWallet || { balance: 0, transactions: [] };
+            displayBalance = userWallet.balance || 0;
+            displayTransactions = userWallet.transactions || [];
             displayName = '我的余额';
         } else {
-            // Char View
+            // 读取角色钱包（完全独立）
             const currentState = typeof state !== 'undefined' ? state : (typeof window !== 'undefined' && window.state ? window.state : null);
             const chatName = currentState?.chats[selectedChatId]?.name || '对方';
             displayName = `${chatName}的余额`;
             
-            if (walletData.characters && walletData.characters[selectedChatId]) {
-                displayBalance = walletData.characters[selectedChatId].balance || 0;
-                displayTransactions = walletData.characters[selectedChatId].transactions || [];
+            // 从 roleWallets 读取（不是 characters）
+            const roleWallets = walletData.roleWallets || {};
+            if (roleWallets[selectedChatId]) {
+                const roleWallet = roleWallets[selectedChatId];
+                displayBalance = roleWallet.balance || 0;
+                displayTransactions = roleWallet.transactions || [];
+            } else {
+                // 兼容旧数据：尝试从 characters 读取并迁移
+                if (walletData.characters && walletData.characters[selectedChatId]) {
+                    const oldCharData = walletData.characters[selectedChatId];
+                    if (!roleWallets[selectedChatId]) {
+                        roleWallets[selectedChatId] = {
+                            balance: oldCharData.balance || 0,
+                            transactions: oldCharData.transactions || []
+                        };
+                        saveWalletData(walletData);
+                    }
+                    displayBalance = roleWallets[selectedChatId].balance || 0;
+                    displayTransactions = roleWallets[selectedChatId].transactions || [];
+                }
             }
         }
         
@@ -52369,46 +52455,59 @@ ${userPersona.trim()}
         }
     }
     
-    // 添加交易记录（可在转账或购物时调用）
+    // 添加交易记录（双钱包系统：分别写入用户钱包或角色钱包）
     function addWalletTransaction(transaction) {
         const walletData = getWalletData();
         const userSelect = document.getElementById('wallet-user-select');
         const selectedChatId = userSelect ? userSelect.value : '';
 
-        // 根据当前视图决定添加到谁的钱包
-        // 注意：如果是在Char视图，就添加到Char钱包；否则添加到User钱包
+        // 确保数据结构正确
+        if (!walletData.userWallet) {
+            walletData.userWallet = { balance: 0, transactions: [] };
+        }
+        if (!walletData.roleWallets) {
+            walletData.roleWallets = {};
+        }
+
+        // 根据当前视图决定添加到谁的钱包（完全独立）
         if (currentWalletView === 'char' && selectedChatId) {
-            if (!walletData.characters) walletData.characters = {};
-            if (!walletData.characters[selectedChatId]) walletData.characters[selectedChatId] = { balance: 0, transactions: [] };
-            if (!walletData.characters[selectedChatId].transactions) walletData.characters[selectedChatId].transactions = [];
+            // 添加到角色钱包（完全独立）
+            if (!walletData.roleWallets[selectedChatId]) {
+                walletData.roleWallets[selectedChatId] = { balance: 0, transactions: [] };
+            }
             
-            walletData.characters[selectedChatId].transactions.push({
+            const roleWallet = walletData.roleWallets[selectedChatId];
+            roleWallet.transactions.push({
                 ...transaction,
                 timestamp: transaction.timestamp || new Date().toISOString()
             });
             
-            const currentBalance = walletData.characters[selectedChatId].balance || 0;
+            // 更新角色余额
+            const currentBalance = roleWallet.balance || 0;
             if (transaction.type === 'income') {
-                walletData.characters[selectedChatId].balance = currentBalance + transaction.amount;
+                roleWallet.balance = currentBalance + transaction.amount;
             } else if (transaction.type === 'expense') {
-                walletData.characters[selectedChatId].balance = currentBalance - transaction.amount;
+                roleWallet.balance = currentBalance - transaction.amount;
             }
+            
+            console.log(`已添加交易到角色钱包 ${selectedChatId}:`, transaction);
         } else {
-            if (!walletData.transactions) {
-                walletData.transactions = [];
-            }
-            
-            walletData.transactions.push({
+            // 添加到用户钱包（完全独立）
+            const userWallet = walletData.userWallet;
+            userWallet.transactions.push({
                 ...transaction,
                 timestamp: transaction.timestamp || new Date().toISOString()
             });
             
-            // 更新余额
+            // 更新用户余额
+            const currentBalance = userWallet.balance || 0;
             if (transaction.type === 'income') {
-                walletData.userBalance += transaction.amount;
+                userWallet.balance = currentBalance + transaction.amount;
             } else if (transaction.type === 'expense') {
-                walletData.userBalance -= transaction.amount;
+                userWallet.balance = currentBalance - transaction.amount;
             }
+            
+            console.log(`已添加交易到用户钱包:`, transaction);
         }
         
         saveWalletData(walletData);
@@ -53005,7 +53104,13 @@ ${userPersona.trim()}
     // 处理充值
     function processRecharge(amount) {
         const walletData = getWalletData();
-        const userBalance = walletData.userBalance || 0;
+        
+        // 确保用户钱包存在
+        if (!walletData.userWallet) {
+            walletData.userWallet = { balance: 0, transactions: [] };
+        }
+        
+        const userBalance = walletData.userWallet.balance || 0;
         
         if (userBalance < amount) {
             alert(`钱包余额不足！\n当前余额: ¥${userBalance.toFixed(2)}\n需要: ¥${amount.toFixed(2)}`);
@@ -53013,12 +53118,14 @@ ${userPersona.trim()}
         }
         
         if (confirm(`确认支付 ¥${amount} 充值 ${amount} 金币吗？`)) {
-            // 扣除钱包余额
-            walletData.userBalance -= amount;
+            // 扣除用户钱包余额
+            walletData.userWallet.balance -= amount;
             
-            // 记录交易
-            if (!walletData.transactions) walletData.transactions = [];
-            walletData.transactions.push({
+            // 记录交易到用户钱包（完全独立）
+            if (!walletData.userWallet.transactions) {
+                walletData.userWallet.transactions = [];
+            }
+            walletData.userWallet.transactions.push({
                 type: 'expense',
                 title: '小屋金币充值',
                 amount: amount,
@@ -53035,7 +53142,7 @@ ${userPersona.trim()}
             document.getElementById('recharge-modal').style.display = 'none';
             
             // 显示成功提示
-            alert(`充值成功！\n已获得 ${amount} 金币\n钱包余额剩余: ¥${walletData.userBalance.toFixed(2)}`);
+            alert(`充值成功！\n已获得 ${amount} 金币\n钱包余额剩余: ¥${walletData.userWallet.balance.toFixed(2)}`);
             
             // 如果钱包页面打开，刷新钱包页面
             if (document.getElementById('wallet-screen').style.display !== 'none') {
@@ -53226,30 +53333,76 @@ ${userPersona.trim()}
         if (petScreen) petScreen.style.display = 'none';
         
         if (screen === 'room') {
+            // 先显示房间屏幕
             if (roomScreen) roomScreen.style.display = 'flex';
             if (navTabs[2]) navTabs[2].classList.add('active');
-            setTimeout(() => {
-                renderCabinRoom();
-                renderCabinInventory();
-            }, 100);
+            
+            // 获取房间容器元素，确保在页面真正可见后才渲染
+            const roomArea = document.getElementById('cabin-room-area');
+            if (roomArea) {
+                // 等待房间容器可见后再渲染（避免在display:none状态下创建absolute定位元素）
+                waitForElementVisible(roomArea, () => {
+                    // 房间容器已可见，可以安全地创建家具和人物
+                    renderCabinRoom();
+                    renderCabinInventory();
+                    cabinRoomInitialized = true;
+                });
+            } else {
+                // 如果元素不存在，使用requestAnimationFrame延迟一下
+                requestAnimationFrame(() => {
+                    renderCabinRoom();
+                    renderCabinInventory();
+                    cabinRoomInitialized = true;
+                });
+            }
         } else if (screen === 'character') {
+            // 先显示人物屏幕
             if (characterScreen) characterScreen.style.display = 'flex';
             if (navTabs[3]) navTabs[3].classList.add('active');
-            setTimeout(() => {
-                renderCabinBaseModel();
-                renderCabinCharacterList();
-                renderCabinClothesInventory();
-                renderCabinCharacterScreenHeader(); // Add header
-            }, 100);
+            
+            // 获取人物展示区域，确保在页面真正可见后才渲染
+            const characterDisplay = document.getElementById('cabin-character-display');
+            if (characterDisplay) {
+                waitForElementVisible(characterDisplay, () => {
+                    renderCabinBaseModel();
+                    renderCabinCharacterList();
+                    renderCabinClothesInventory();
+                    renderCabinCharacterScreenHeader();
+                    cabinCharacterInitialized = true;
+                });
+            } else {
+                requestAnimationFrame(() => {
+                    renderCabinBaseModel();
+                    renderCabinCharacterList();
+                    renderCabinClothesInventory();
+                    renderCabinCharacterScreenHeader();
+                    cabinCharacterInitialized = true;
+                });
+            }
         } else if (screen === 'pet') {
+            // 先显示宠物屏幕
             if (petScreen) petScreen.style.display = 'flex';
             if (navTabs[4]) navTabs[4].classList.add('active');
-            setTimeout(() => {
-                const pet = getCurrentCabinPet();
-                renderCabinPetDisplay(pet);
-                renderCabinPetScreenHeader();
-                updateCabinPetCount();
-            }, 100);
+            
+            // 获取宠物展示区域，确保在页面真正可见后才渲染
+            const petDisplay = document.getElementById('cabin-pet-display');
+            if (petDisplay) {
+                waitForElementVisible(petDisplay, () => {
+                    const pet = getCurrentCabinPet();
+                    renderCabinPetDisplay(pet);
+                    renderCabinPetScreenHeader();
+                    updateCabinPetCount();
+                    cabinPetInitialized = true;
+                });
+            } else {
+                requestAnimationFrame(() => {
+                    const pet = getCurrentCabinPet();
+                    renderCabinPetDisplay(pet);
+                    renderCabinPetScreenHeader();
+                    updateCabinPetCount();
+                    cabinPetInitialized = true;
+                });
+            }
         } else {
             if (gachaScreen) gachaScreen.style.display = 'flex';
             if (navTabs[0]) navTabs[0].classList.add('active');
@@ -53262,6 +53415,40 @@ ${userPersona.trim()}
     const CABIN_ROOM_WIDTH = 11;
     const CABIN_ROOM_HEIGHT = 10;
     const CABIN_WALL_HEIGHT = 2;
+    
+    // 小屋页面初始化标记 - 确保只在页面激活后初始化
+    let cabinRoomInitialized = false;
+    let cabinCharacterInitialized = false;
+    let cabinPetInitialized = false;
+    
+    // 辅助函数：检查元素是否真正可见（有明确的宽高和display不为none）
+    function isElementVisible(element) {
+        if (!element) return false;
+        const style = window.getComputedStyle(element);
+        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+            return false;
+        }
+        const rect = element.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    }
+    
+    // 辅助函数：等待元素可见后执行回调
+    function waitForElementVisible(element, callback, maxAttempts = 10) {
+        if (isElementVisible(element)) {
+            callback();
+            return;
+        }
+        let attempts = 0;
+        const check = () => {
+            attempts++;
+            if (isElementVisible(element)) {
+                callback();
+            } else if (attempts < maxAttempts) {
+                requestAnimationFrame(check);
+            }
+        };
+        requestAnimationFrame(check);
+    }
     
     // 初始化房间状态
     if (!window.cabinGachaState.rooms) {
@@ -53416,11 +53603,15 @@ ${userPersona.trim()}
         const room = document.getElementById('cabin-room-area');
         if (!room) return;
         
+        // 注意：在用户交互（如拖拽、放置）后调用时，房间容器应该是可见的
+        // 只有在初始化时才需要检查可见性（通过 waitForElementVisible 调用）
+        // 这里不强制检查可见性，因为如果容器不存在或不可见，getBoundingClientRect 会返回空值，但不应该阻止渲染
+        
         const wallArea = document.getElementById('cabin-wall-area');
         const floorArea = document.getElementById('cabin-floor-area');
         
-        // 清空房间（保留墙和地板）
-        const existingItems = room.querySelectorAll('.placed-furniture, .placed-character');
+        // 清空房间（保留墙和地板）- 只移除已放置的家具和人物，保留临时拖拽的家具
+        const existingItems = room.querySelectorAll('.placed-furniture:not(.temp-drag), .placed-character');
         existingItems.forEach(el => el.remove());
         
         const currentRoom = getCurrentRoom();
@@ -53452,9 +53643,12 @@ ${userPersona.trim()}
                 el.style.width = ((pItem.width || meta.width || 1) * CABIN_GRID_SIZE) + 'px';
                 el.style.height = ((pItem.height || meta.height || 1) * CABIN_GRID_SIZE) + 'px';
                 el.style.transform = `rotate(${pItem.rotation || 0}deg)`;
-                el.style.zIndex = '50'; 
+                el.style.zIndex = '50';
                 el.style.cursor = 'move';
                 el.style.touchAction = 'none';
+                el.style.display = 'block'; // 确保显示
+                el.style.visibility = 'visible'; // 确保可见
+                el.style.opacity = '1'; // 确保不透明
                 el.setAttribute('data-index', index);
                 
                 el.innerHTML = `
@@ -53498,6 +53692,7 @@ ${userPersona.trim()}
         const state = window.cabinGachaState;
         const charMeta = state.customItems[charId];
         const room = document.getElementById('cabin-room-area');
+        if (!room) return;
         
         const pixelPos = getCabinPixelPosition(pos.x, pos.y);
         
@@ -53511,6 +53706,9 @@ ${userPersona.trim()}
         charEl.style.zIndex = '60';
         charEl.style.cursor = 'move';
         charEl.style.touchAction = 'none';
+        charEl.style.display = 'block'; // 确保显示
+        charEl.style.visibility = 'visible'; // 确保可见
+        charEl.style.opacity = '1'; // 确保不透明
         
         charEl.innerHTML = `
             <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
@@ -53669,7 +53867,8 @@ ${userPersona.trim()}
         
         // 获取家具数据以检查边界
         const state = window.cabinGachaState;
-        const pItem = state.placedItems[index];
+        const currentRoom = getCurrentRoom(); // 获取当前房间数据
+        const pItem = currentRoom.placedItems[index]; // 使用当前房间的 placedItems
         const itemMeta = state.customItems[pItem.itemId];
         const w = (pItem.width || itemMeta.width || 1);
         const h = (pItem.height || itemMeta.height || 1);
@@ -53717,7 +53916,8 @@ ${userPersona.trim()}
         if (isNaN(index)) return;
         
         const state = window.cabinGachaState;
-        const pItem = state.placedItems[index];
+        const currentRoom = getCurrentRoom(); // 获取当前房间数据
+        const pItem = currentRoom.placedItems[index]; // 使用当前房间的 placedItems
         if (!pItem) return;
         
         const item = state.customItems[pItem.itemId];
@@ -53740,8 +53940,8 @@ ${userPersona.trim()}
         `;
         dragIndicator.style.display = 'block';
         
-        // 临时隐藏原物品
-        target.style.opacity = '0.5';
+        // 临时隐藏原物品（完全隐藏，避免显示两个）
+        target.style.opacity = '0';
         
         window.cabinDraggingItem = {
             type: 'placed',
@@ -53827,7 +54027,8 @@ ${userPersona.trim()}
         
         if (itemData) {
             if (window.cabinDraggingItem.type === 'placed') {
-                 const pItem = state.placedItems[window.cabinDraggingItem.index];
+                 const currentRoom = getCurrentRoom(); // 获取当前房间数据
+                 const pItem = currentRoom.placedItems[window.cabinDraggingItem.index]; // 使用当前房间的 placedItems
                  itemWidth = pItem.width || itemData.width || 1;
                  itemHeight = pItem.height || itemData.height || 1;
             } else {
@@ -53964,7 +54165,8 @@ ${userPersona.trim()}
                 } else {
                     // 从背包放置新物品
                     if (state.inventory[window.cabinDraggingItem.id] > 0) {
-                         state.placedItems.push({ 
+                        const currentRoom = getCurrentRoom(); // 获取当前房间数据
+                        currentRoom.placedItems.push({ // 使用当前房间的 placedItems
                             itemId: window.cabinDraggingItem.id, 
                             gridX: gridX, 
                             gridY: gridY,
@@ -54006,7 +54208,8 @@ ${userPersona.trim()}
     // 移动已放置物品
     function moveCabinPlacedItem(itemIndex, newGridX, newGridY) {
         const state = window.cabinGachaState;
-        const item = state.placedItems[itemIndex];
+        const currentRoom = getCurrentRoom(); // 获取当前房间数据
+        const item = currentRoom.placedItems[itemIndex]; // 使用当前房间的 placedItems
         if (!item) return false;
         
         const itemData = state.customItems[item.itemId];
@@ -54014,8 +54217,8 @@ ${userPersona.trim()}
         
         if (item.gridX === newGridX && item.gridY === newGridY) return true;
         
-        // 临时移除当前物品占用的格子
-        const tempGrid = { ...state.occupiedGrid };
+        // 临时移除当前物品占用的格子 - 使用当前房间的 occupiedGrid
+        const tempGrid = { ...currentRoom.occupiedGrid };
         for (let key in tempGrid) {
             if (tempGrid[key].id === item.itemId && tempGrid[key].index === itemIndex) {
                 delete tempGrid[key];
@@ -54128,10 +54331,16 @@ ${userPersona.trim()}
     // === 背包物品拖拽逻辑 (重写：从背包拖入房间) ===
     let bagDragState = null;
 
-    // 开始拖拽背包物品 (Touchstart)
+    // 开始拖拽背包物品 (Touchstart) - 修复版
     function startCabinDrag(e) {
         // 仅处理 Touch 事件
         if (e.type !== 'touchstart') return;
+        
+        // 【新增安全措施】开始新拖拽前，强制清理所有残留的临时拖拽元素
+        const room = document.getElementById('cabin-room-area');
+        if (room) {
+            room.querySelectorAll('.temp-drag').forEach(el => el.remove());
+        }
         
         const targetEl = e.target.closest('[data-item-id]');
         if (!targetEl) return;
@@ -54265,19 +54474,28 @@ ${userPersona.trim()}
         bagDragState.lastValidGrid = isValid ? { x: gridX, y: gridY } : null;
     }
 
-    // 结束拖拽
+    // 结束拖拽 (修复版)
     function handleBagDragEnd(e) {
         document.removeEventListener('touchmove', handleBagDragMove);
         document.removeEventListener('touchend', handleBagDragEnd);
         
         if (bagDragState && bagDragState.el) {
-            // 如果有有效放置位置，则放置
+            // 【核心修复】: 无论放置是否成功，先把那个带绿色/红色框的临时元素删掉
+            // 这样就不会出现"两个家具"的情况了
+            const tempElement = bagDragState.el;
+            if (tempElement && tempElement.parentNode) {
+                tempElement.parentNode.removeChild(tempElement);
+            }
+            bagDragState.el = null;
+
+            // 如果有有效放置位置，则更新数据并渲染正式家具
             if (bagDragState.lastValidGrid) {
                 const { x, y } = bagDragState.lastValidGrid;
                 const state = window.cabinGachaState;
+                const currentRoom = getCurrentRoom(); // 获取当前房间数据
                 
-                // 执行放置数据更新
-                state.placedItems.push({
+                // 执行放置数据更新 - 使用当前房间的 placedItems
+                currentRoom.placedItems.push({
                     itemId: bagDragState.itemId,
                     gridX: x,
                     gridY: y,
@@ -54287,13 +54505,12 @@ ${userPersona.trim()}
                 
                 updateCabinOccupiedGrid();
                 saveCabinGachaData();
+                
+                // 重新渲染房间以显示新增的家具 (正式的家具)
                 renderCabinRoom();
                 renderCabinInventory();
                 showCabinToast("放置成功!");
             }
-            
-            // 无论成功与否，移除临时元素
-            bagDragState.el.remove();
         }
         
         bagDragState = null;
@@ -55309,6 +55526,13 @@ ${userPersona.trim()}
         const display = document.getElementById('cabin-character-display');
         if (!display) return;
         
+        // 确保展示区域已显示且有尺寸，避免在display:none状态下创建absolute定位元素
+        if (!isElementVisible(display)) {
+            console.warn('人物展示区域不可见，延迟渲染');
+            waitForElementVisible(display, () => renderCabinBaseModel());
+            return;
+        }
+        
         const state = window.cabinGachaState;
         state.currentDisplayedCharacterId = null;
         
@@ -55667,13 +55891,30 @@ ${userPersona.trim()}
         
         if (!petDisplay) return;
         
+        // 确保展示区域已显示且有尺寸，避免在display:none状态下创建absolute定位元素
+        // 注意：即使没有宠物，我们也需要显示空状态，所以只检查元素是否存在，不检查是否可见
+        // 但如果元素不可见，延迟渲染（这种情况不应该发生，因为应该通过waitForElementVisible调用）
+        if (!isElementVisible(petDisplay)) {
+            console.warn('宠物展示区域不可见，延迟渲染');
+            waitForElementVisible(petDisplay, () => renderCabinPetDisplay(pet));
+            return;
+        }
+        
+        const diaryArea = document.getElementById('cabin-pet-diary-area');
+        
         if (!pet) {
             // 显示空状态
             petDisplay.innerHTML = '<div style="font-size: 10px; color: #aaa;">暂无宠物</div>';
             if (petName) petName.textContent = '未命名宠物';
             if (petStatus) petStatus.style.display = 'none';
             if (interactionArea) interactionArea.style.display = 'none';
+            if (diaryArea) diaryArea.style.display = 'none';
             return;
+        }
+        
+        // 初始化日记数组（如果不存在）
+        if (!pet.diaries) {
+            pet.diaries = [];
         }
         
         // 显示宠物
@@ -55694,6 +55935,12 @@ ${userPersona.trim()}
         
         // 显示互动按钮
         if (interactionArea) interactionArea.style.display = 'block';
+        
+        // 显示日记区域
+        if (diaryArea) {
+            diaryArea.style.display = 'block';
+            renderCabinPetDiaryList(pet);
+        }
     }
 
     // 更新宠物数量
@@ -56060,7 +56307,7 @@ ${userPersona.trim()}
                     <div style="margin-top:5px; color:#999;">创建于: ${new Date(pet.createdAt).toLocaleDateString()}</div>
                 </div>
                 <div style="margin-top:15px; text-align:center; display:flex; flex-direction:column; gap:8px;">
-                    <button class="pixel-btn pink" id="btn-pet-diary">📅 查看它的一天</button>
+                    <button class="pixel-btn pink" id="btn-pet-diary">📅 生成它的一天</button>
                     <button class="pixel-btn" onclick="this.closest('.modal').remove()" style="background:#ccc;">关闭</button>
                 </div>
             </div>
@@ -56069,7 +56316,7 @@ ${userPersona.trim()}
         
         document.getElementById('btn-pet-diary').onclick = () => {
              modal.remove();
-             generateCabinPetDiary(pet);
+             generateCabinPetDiaryFromButton();
         };
     }
     
@@ -56093,7 +56340,7 @@ ${userPersona.trim()}
              ownerPersona = state.chats[roomId].settings.aiPersona;
         }
         
-        showCustomAlert('正在观察...', '正在生成宠物的一天，请稍候...');
+        showToast('正在生成宠物的一天，请稍候...');
         
         try {
             const systemPrompt = `你是一个充满想象力的宠物观察员。请根据宠物设定和主人信息，写一篇约300字的“宠物观察日记”。
@@ -56130,25 +56377,137 @@ ${userPersona.trim()}
             });
             
             const data = await response.json();
-            const diary = data.choices[0].message.content;
+            const diaryContent = data.choices[0].message.content;
             
-            // 展示日记
-            const diaryModal = document.createElement('div');
-            diaryModal.className = 'modal';
-            diaryModal.style.display = 'flex';
-            diaryModal.innerHTML = `
-                <div class="modal-content" style="max-width: 400px; background:#fff; padding:20px; border-radius:10px; border:4px solid #aedeef; max-height: 80vh; overflow-y: auto;">
-                    <div class="modal-title" style="color:#000; margin-bottom:15px; text-align:center;">📅 ${pet.name}的一天</div>
-                    <div style="font-size:12px; line-height:1.8; color:#333; text-align:left; white-space: pre-wrap;">${diary}</div>
-                    <div style="margin-top:20px; text-align:center;">
-                        <button class="pixel-btn" onclick="this.closest('.modal').remove()" style="background:#aedeef;">关闭日记</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(diaryModal);
+            // 初始化日记数组（如果不存在）
+            if (!pet.diaries) {
+                pet.diaries = [];
+            }
+            
+            // 获取今天的日期字符串（YYYY-MM-DD格式）
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            
+            // 检查今天是否已经生成过日记
+            const todayDiaryIndex = pet.diaries.findIndex(d => d.date === todayStr);
+            
+            if (todayDiaryIndex >= 0) {
+                // 如果今天已经有日记，更新它
+                pet.diaries[todayDiaryIndex].content = diaryContent;
+                pet.diaries[todayDiaryIndex].timestamp = Date.now();
+            } else {
+                // 如果今天没有日记，添加新的
+                pet.diaries.push({
+                    date: todayStr,
+                    content: diaryContent,
+                    timestamp: Date.now()
+                });
+            }
+            
+            // 按日期倒序排列（最新的在前）
+            pet.diaries.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // 保存数据
+            saveCabinGachaData();
+            
+            // 重新渲染日记列表
+            renderCabinPetDiaryList(pet);
+            
+            showToast(`已为${pet.name}生成今天的一天记录`);
             
         } catch (e) {
             alert('生成失败: ' + e.message);
+        }
+    }
+    
+    // 从按钮生成日记（新增函数）
+    async function generateCabinPetDiaryFromButton() {
+        const pet = getCurrentCabinPet();
+        if (!pet) {
+            showToast("请先选择宠物");
+            return;
+        }
+        
+        // 检查今天是否已经生成过
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        if (pet.diaries && pet.diaries.some(d => d.date === todayStr)) {
+            if (!confirm('今天已经生成过日记了，是否重新生成？')) {
+                return;
+            }
+        }
+        
+        await generateCabinPetDiary(pet);
+    }
+    
+    // 渲染日记列表
+    function renderCabinPetDiaryList(pet) {
+        const diaryList = document.getElementById('cabin-pet-diary-list');
+        if (!diaryList || !pet || !pet.diaries || pet.diaries.length === 0) {
+            if (diaryList) diaryList.innerHTML = '';
+            return;
+        }
+        
+        diaryList.innerHTML = '';
+        
+        pet.diaries.forEach((diary, index) => {
+            const diaryItem = document.createElement('div');
+            diaryItem.style.cssText = 'width: 100%; margin-bottom: 8px; border: 2px solid #ff9ed2; border-radius: 8px; background: #fff0f5; overflow: hidden;';
+            
+            const diaryHeader = document.createElement('div');
+            diaryHeader.style.cssText = 'padding: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #ffe0f0;';
+            diaryHeader.innerHTML = `
+                <span style="font-size: 10px; font-weight: bold; color: #e06c9f;">📅 ${formatDiaryDate(diary.date)}</span>
+                <span style="font-size: 10px; color: #999;" class="diary-toggle">▼</span>
+            `;
+            
+            const diaryContent = document.createElement('div');
+            diaryContent.style.cssText = 'padding: 0 8px; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease;';
+            diaryContent.innerHTML = `
+                <div style="padding: 8px 0; font-size: 10px; line-height: 1.6; color: #333; white-space: pre-wrap;">${diary.content}</div>
+            `;
+            
+            // 折叠/展开功能
+            let isExpanded = false;
+            diaryHeader.onclick = () => {
+                isExpanded = !isExpanded;
+                const toggle = diaryHeader.querySelector('.diary-toggle');
+                if (isExpanded) {
+                    diaryContent.style.maxHeight = '500px';
+                    diaryContent.style.padding = '0 8px';
+                    if (toggle) toggle.textContent = '▲';
+                } else {
+                    diaryContent.style.maxHeight = '0';
+                    diaryContent.style.padding = '0 8px';
+                    if (toggle) toggle.textContent = '▼';
+                }
+            };
+            
+            diaryItem.appendChild(diaryHeader);
+            diaryItem.appendChild(diaryContent);
+            diaryList.appendChild(diaryItem);
+        });
+    }
+    
+    // 格式化日期显示
+    function formatDiaryDate(dateStr) {
+        const date = new Date(dateStr);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diaryDate = new Date(date);
+        diaryDate.setHours(0, 0, 0, 0);
+        
+        const diffTime = today - diaryDate;
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) {
+            return '今天';
+        } else if (diffDays === 1) {
+            return '昨天';
+        } else if (diffDays < 7) {
+            return `${diffDays}天前`;
+        } else {
+            return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
         }
     }
 
