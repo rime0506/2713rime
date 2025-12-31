@@ -9140,6 +9140,136 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         }
         .pet-interaction-btn { transition: all 0.2s ease; }
         .pet-interaction-btn:active { transform: scale(0.95); }
+/* Cabin Character Selector Modal & Button */
+#cabin-owner-indicator {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 5px 12px 5px 5px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+    z-index: 90;
+    transition: transform 0.2s;
+    font-size: 14px;
+    font-weight: bold;
+    color: #555;
+    border: 2px solid #fff;
+}
+
+#cabin-owner-indicator:active {
+    transform: scale(0.95);
+}
+
+#cabin-owner-indicator img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #eee;
+}
+
+/* Modal Styles Reuse existing modal logic but custom content */
+#cabin-room-selector-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.cabin-selector-content {
+    background: white;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 20px;
+    padding: 20px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.cabin-selector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.cabin-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1px));
+    gap: 15px;
+    overflow-y: auto;
+    padding: 5px;
+    margin-bottom: 15px;
+}
+
+.cabin-selector-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.cabin-selector-item img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.cabin-selector-item.active img {
+    border-color: #ff6b6b;
+    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
+}
+
+.cabin-selector-item span {
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.cabin-ai-btn-large {
+    background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s;
+    margin-top: 10px;
+}
+
+.cabin-ai-btn-large:active {
+    opacity: 0.9;
+}
 }</style>
   <link rel="apple-touch-icon" href="https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1758510900942_qdqqd_djw0z2.jpeg">
   <link rel="manifest" href="manifest.json">
@@ -9541,8 +9671,11 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
       </div>
       <div style="flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; align-items: center;">
         <!-- 金币显示 -->
-        <div style="font-size: 10px; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; gap: 5px; margin-bottom: 10px;">
-            🟡 <span id="cabin-coin-count">200</span>
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div onclick="openCabinWalletModal()" style="font-size: 10px; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; gap: 5px; cursor: pointer; border: 1px solid rgba(255,255,255,0.5);">
+                🟡 <span id="cabin-coin-count">200</span> <span style="font-size: 8px;">(点击查看钱包)</span>
+            </div>
+            <button class="pixel-btn" onclick="openRechargeModal()" style="margin: 0; padding: 4px 12px; font-size: 10px; background: #ffd700; color: #d32f2f; border: 2px solid #ff6f00; font-weight: bold;">💰 充值</button>
         </div>
         <!-- 扭蛋机切换控件 -->
         <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px; gap: 10px; width: 100%;">
@@ -9561,8 +9694,11 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
                 </div>
             </div>
             <div class="knob-area">
-                <div style="font-size: 10px; color: #e06c9f;">普通 🟡1</div>
-                <button class="gacha-knob" onclick="playNormalGacha()" id="furniture-gacha-btn">⭐</button>
+                <div style="font-size: 10px; color: #e06c9f;">普通 🟡10</div>
+                <div style="display: flex; gap: 5px;">
+                    <button class="gacha-knob" onclick="playNormalGacha()" id="furniture-gacha-btn">⭐</button>
+                    <button class="gacha-knob" onclick="playTenGacha()" style="background: #ffeb3b; color: #ff5722; font-size: 10px;" id="furniture-ten-gacha-btn">10连</button>
+                </div>
             </div>
         </div>
         
@@ -9577,8 +9713,11 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
                 </div>
             </div>
             <div class="knob-area">
-                <div style="font-size: 10px; color: #e06c9f;">普通 🟡1</div>
-                <button class="gacha-knob" onclick="playNormalGacha()" id="clothes-gacha-btn">⭐</button>
+                <div style="font-size: 10px; color: #e06c9f;">普通 🟡10</div>
+                <div style="display: flex; gap: 5px;">
+                    <button class="gacha-knob" onclick="playNormalGacha()" id="clothes-gacha-btn">⭐</button>
+                    <button class="gacha-knob" onclick="playTenGacha()" style="background: #ffeb3b; color: #ff5722; font-size: 10px;" id="clothes-ten-gacha-btn">10连</button>
+                </div>
             </div>
         </div>
         
@@ -9591,13 +9730,13 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         <!-- AI生成按钮 -->
         <button class="pixel-btn ai" style="width: 100%; margin-top:10px;" onclick="openAIModal()">
             ✨ AI魔法工坊 ✨<br>
-            <span style="font-size:8px;">消耗 🟡1 | 生成10个独家家具</span>
+            <span style="font-size:8px;">消耗 🟡10 | 生成10个独家家具</span>
         </button>
         
         <!-- 像素小人生成按钮 -->
         <button class="pixel-btn ai" style="width: 100%; margin-top:10px;" onclick="openPixelCharacterModal()">
             🧙‍♂️ 像素小人生成器 🧙‍♂️<br>
-            <span style="font-size:8px;">消耗 🟡1 | 生成1个128×128像素小人</span>
+            <span style="font-size:8px;">消耗 🟡10 | 生成1个128×128像素小人</span>
         </button>
         
         <!-- 导航栏 -->
@@ -9792,11 +9931,12 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
             
             <textarea id="cabin-character-prompt-input" class="prompt-input" placeholder="例如：可爱的蓝色猫咪像素小人、科幻风格机器人像素小人、复古骑士像素小人、粉色魔法少女像素小人..." style="width: 100%; padding: 10px; margin: 10px 0; border: 2px solid #e06c9f; font-family: inherit; font-size: 10px; border-radius: 4px; resize: vertical; min-height: 60px;"></textarea>
             
-            <div class="modal-info" style="font-size: 9px; color: #666; margin: 8px 0;">消耗：🟡1 | 生成：1个128×128像素小人（每个像素1px） | 将加入背包</div>
+            <div class="modal-info" style="font-size: 9px; color: #666; margin: 8px 0;">消耗：🟡1 | 生成：1个128×128像素小人 | 直接出现在房间</div>
             
-            <div class="modal-buttons" style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+            <div class="modal-buttons" style="display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap;">
                 <button class="pixel-btn" onclick="closeCabinPixelCharacterModal()" style="background:#ccc;">取消</button>
                 <button class="pixel-btn pink" onclick="generateCabinPixelCharacter()">生成像素小人</button>
+                <button class="pixel-btn" onclick="generateBaseModel()" style="background:#aedeef; width: 100%;">🧘 生成素体人模</button>
             </div>
         </div>
       </div>
@@ -10659,7 +10799,7 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         <div id="participant-avatars-grid"> </div>
       </div>
       <div id="video-call-main" class="video-call-main"> </div>
-      <div class="video-call-controls"> <button id="user-speak-btn" class="control-btn speak-btn"></button> <button id="hang-up-btn" class="control-btn hangup-btn"></button> <button id="regenerate-call-btn" class="control-btn regenerate-btn"></button> <button id="join-call-btn"
+      <div class="video-call-controls"> <button id="user-speak-btn" class="control-btn speak-btn" title="长按说话"></button> <button id="hang-up-btn" class="control-btn hangup-btn"></button> <button id="regenerate-call-btn" class="control-btn regenerate-btn"></button> <button id="join-call-btn"
           class="control-btn join-btn" style="display: none;"></button> </div>
     </div>
     <div id="outgoing-call-screen" class="screen">
@@ -10730,8 +10870,9 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
       <div class="wallet-container">
         <div class="wallet-balance-section">
           <div class="wallet-balance-card">
-            <div class="wallet-balance-label">我的余额</div>
+            <div class="wallet-balance-label" id="wallet-balance-label">我的余额</div>
             <div class="wallet-balance-amount" id="wallet-user-balance">¥0.00</div>
+            <button id="switch-wallet-view-btn" style="margin-top: 10px; font-size: 12px; padding: 4px 12px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 15px; color: white; cursor: pointer; display: none;">切换到对方钱包</button>
           </div>
           <div style="margin-top: 15px;">
             <div class="wallet-section-header" style="margin-bottom: 8px;">
@@ -47102,6 +47243,41 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                     let lastInterimText = ''; // 存储最后一个临时结果
                     let onStopCallback = null; // 用于存储停止时的回调函数
                     let recognitionAvailable = false; // 标记语音识别是否真的可用
+                    // 语气分析相关变量
+                    let audioToneData = {
+                        context: null,
+                        source: null,
+                        analyser: null,
+                        volumes: [],
+                        interval: null,
+                        startTime: 0
+                    };
+
+                    // 语气分析函数
+                    function analyzeTone(volumes, text, durationSec) {
+                        if (!volumes || volumes.length === 0) return null;
+                        
+                        const avgVol = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+                        const maxVol = Math.max(...volumes);
+                        // 简单的动态阈值：假设正常音量在 20-50 之间
+                        const speed = text.length / Math.max(durationSec, 0.1); // 字/秒
+                        
+                        console.log(`[语气分析] AvgVol: ${avgVol.toFixed(1)}, MaxVol: ${maxVol}, Speed: ${speed.toFixed(1)}字/秒`);
+                        
+                        let tone = '';
+                        
+                        if (avgVol > 55) {
+                            tone = speed > 4.5 ? '激动/愤怒' : '大声/兴奋';
+                        } else if (avgVol < 15) {
+                            tone = speed < 2.0 ? '悲伤/失落' : '温柔/轻声';
+                        } else {
+                            if (speed > 5.5) tone = '急切/慌张';
+                            else if (speed < 1.5) tone = '犹豫/沉思';
+                            else if (maxVol - avgVol > 40) tone = '情绪激动';
+                        }
+                        
+                        return tone;
+                    }
                     
                     // 检查浏览器是否支持语音识别
                     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -47157,6 +47333,41 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                                     } 
                                 });
                                 console.log('麦克风权限已授予');
+                                
+                                // 初始化语气分析
+                                try {
+                                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                                    if (AudioContext) {
+                                        audioToneData.context = new AudioContext();
+                                        audioToneData.source = audioToneData.context.createMediaStreamSource(currentStream);
+                                        audioToneData.analyser = audioToneData.context.createAnalyser();
+                                        audioToneData.analyser.fftSize = 256;
+                                        audioToneData.source.connect(audioToneData.analyser);
+                                        
+                                        audioToneData.volumes = [];
+                                        audioToneData.startTime = Date.now();
+                                        const bufferLength = audioToneData.analyser.frequencyBinCount;
+                                        const dataArray = new Uint8Array(bufferLength);
+                                        
+                                        // 每 100ms 采样一次音量
+                                        audioToneData.interval = setInterval(() => {
+                                            if (!isRecording) return;
+                                            audioToneData.analyser.getByteFrequencyData(dataArray);
+                                            let sum = 0;
+                                            for(let i = 0; i < bufferLength; i++) {
+                                                sum += dataArray[i];
+                                            }
+                                            const average = sum / bufferLength;
+                                            // 只有当音量大于一定底噪时才记录，避免静音拉低平均值
+                                            if (average > 5) {
+                                                audioToneData.volumes.push(average);
+                                            }
+                                        }, 100);
+                                        console.log('语气分析模块已启动');
+                                    }
+                                } catch (e) {
+                                    console.error('启动语气分析失败:', e);
+                                }
                                 
                                 // 使用MediaRecorder录音
                                 // 检测浏览器支持的音频格式，优先使用手机端兼容的格式
@@ -47225,6 +47436,24 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                                 const recordedMimeType = mediaRecorder.mimeType || mimeType;
                                 
                                 mediaRecorder.onstop = async () => {
+                                    // 停止语气分析
+                                    let detectedTone = null;
+                                    if (audioToneData.interval) clearInterval(audioToneData.interval);
+                                    if (audioToneData.context && audioToneData.context.state !== 'closed') {
+                                        try {
+                                            // 此时计算语气
+                                            const durationSec = (Date.now() - audioToneData.startTime) / 1000;
+                                            // 临时获取一下文本用于计算语速（虽然此时finalText还没完全生成，但可以用recognizedTexts估算）
+                                            const tempText = recognizedTexts.join('') + lastInterimText;
+                                            detectedTone = analyzeTone(audioToneData.volumes, tempText, durationSec);
+                                            
+                                            audioToneData.context.close();
+                                        } catch (e) { console.error('关闭语气分析上下文失败:', e); }
+                                    }
+                                    audioToneData.context = null;
+                                    audioToneData.source = null;
+                                    audioToneData.analyser = null;
+
                                     // 停止所有音频轨道
                                     if (currentStream) {
                                         currentStream.getTracks().forEach(track => track.stop());
@@ -47237,12 +47466,13 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                                     // 如果使用语音识别，文本已经在recognition.onresult中收集
                                     // 调用回调函数处理结果
                                     if (onStopCallback) {
-                                        await onStopCallback(audioBlob);
+                                        await onStopCallback(audioBlob, detectedTone);
                                         onStopCallback = null;
                                     } else if (!recognition && audioBlob) {
                                         const text = await processAudioToText(audioBlob);
                                         if (text) {
-                                            await sendVoiceMessage(text, audioBlob);
+                                            const fullText = detectedTone ? `(语气: ${detectedTone}) ${text}` : text;
+                                            await sendVoiceMessage(fullText, audioBlob);
                                         }
                                     }
                                     
@@ -47395,7 +47625,7 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                             }
                             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                                 // 设置停止回调，在 onstop 中处理
-                                onStopCallback = async (audioBlob) => {
+                                onStopCallback = async (audioBlob, tone) => {
                                     // 等待一小段时间，让识别完成最终结果
                                     await new Promise(resolve => setTimeout(resolve, 300));
                                     
@@ -47419,6 +47649,17 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                                     // 不做任何文本处理，直接使用原始识别结果
                                     if (finalText) {
                                         finalText = finalText.trim(); // 只去除首尾空白
+                                        
+                                        // 注入语气
+                                        if (tone) {
+                                            console.log('检测到的语气:', tone);
+                                            finalText = `(语气: ${tone}) ${finalText}`;
+                                            if (typeof showCustomAlert === 'function') {
+                                                // 悄悄提示一下用户识别到的语气
+                                                // showCustomToast(`识别到语气: ${tone}`);
+                                            }
+                                        }
+                                        
                                         console.log('最终文本:', finalText);
                                     }
                                     
@@ -47489,10 +47730,23 @@ document.getElementById('open-sticker-panel-btn').addEventListener('click', () =
                         
                         const chat = state.chats[state.activeChatId];
                         
+                        // 从文本中分离语气（用于显示和存储）
+                        let displayContent = text;
+                        let tone = null;
+                        
+                        // 匹配 (语气: xxx) 格式
+                        const toneMatch = text.match(/^\(语气: (.+?)\)\s*(.*)/);
+                        if (toneMatch) {
+                            tone = toneMatch[1];
+                            displayContent = toneMatch[2]; // 去掉语气标签的内容用于显示
+                        }
+
                         const msg = {
                             role: 'user',
                             type: 'voice_message',
-                            content: text,
+                            content: displayContent, // 消息内容只存纯文本
+                            tone: tone, // 语气单独存字段
+                            fullTextForAI: text, // 完整文本（带语气）给AI看
                             timestamp: Date.now()
                         };
                         
@@ -48892,26 +49146,188 @@ if (deleteBtn) {
         
         
         
-        document.getElementById('user-speak-btn').addEventListener('click', async () => {
-            if (!videoCallState.isActive) return;
+        // 视频通话中的语音识别相关变量
+        let callRecognition = null;
+        let callMediaRecorder = null;
+        let callAudioChunks = [];
+        let callRecognizedTexts = [];
+        let callLastInterimText = '';
+        let callIsRecording = false;
+
+        // 设置长按事件
+        setupLongPress(
+            document.getElementById('user-speak-btn'),
+            // 长按开始
+            async () => {
+                if (!videoCallState.isActive) return;
+                
+                const btn = document.getElementById('user-speak-btn');
+                btn.classList.add('recording');
+                
+                // UI反馈
+                const userAvatar = document.querySelector('.participant-avatar-wrapper[data-participant-id="user"] .participant-avatar');
+                if (userAvatar) userAvatar.classList.add('speaking');
+                
+                // 开始录音和识别
+                callIsRecording = true;
+                callAudioChunks = [];
+                callRecognizedTexts = [];
+                callLastInterimText = '';
+                
+                // 1. 尝试使用语音识别 API
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (SpeechRecognition) {
+                    try {
+                        callRecognition = new SpeechRecognition();
+                        callRecognition.lang = 'zh-CN';
+                        callRecognition.continuous = true;
+                        callRecognition.interimResults = true;
+                        
+                        callRecognition.onresult = (event) => {
+                            for (let i = event.resultIndex; i < event.results.length; i++) {
+                                const result = event.results[i];
+                                if (result.isFinal) {
+                                    callRecognizedTexts.push(result[0].transcript.trim());
+                                    callLastInterimText = '';
+                                } else {
+                                    callLastInterimText = result[0].transcript.trim();
+                                }
+                            }
+                        };
+                        
+                        callRecognition.start();
+                    } catch (e) {
+                        console.error('Call speech recognition start failed:', e);
+                    }
+                }
+                
+                // 2. 同时使用 MediaRecorder 录音 (备用方案，也用于后续可能需要发送音频)
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    callMediaRecorder = new MediaRecorder(stream);
+                    callMediaRecorder.ondataavailable = e => callAudioChunks.push(e.data);
+                    callMediaRecorder.start();
+                } catch (e) {
+                    console.error('Call media recorder failed:', e);
+                }
+            },
+            // 长按结束 (松开)
+            async () => {
+                if (!callIsRecording) return; // 防止未开始就结束
+                
+                callIsRecording = false;
+                const btn = document.getElementById('user-speak-btn');
+                btn.classList.remove('recording');
+                
+                const userAvatar = document.querySelector('.participant-avatar-wrapper[data-participant-id="user"] .participant-avatar');
+                if (userAvatar) userAvatar.classList.remove('speaking');
+                
+                // 停止识别和录音
+                if (callRecognition) {
+                    callRecognition.stop();
+                    callRecognition = null;
+                }
+                
+                if (callMediaRecorder && callMediaRecorder.state !== 'inactive') {
+                    callMediaRecorder.stop();
+                    // 停止流
+                    callMediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    
+                    // 等待一小会儿确保数据收集完成
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } else {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                // 获取最终文本
+                let finalText = '';
+                if (callRecognizedTexts.length > 0) {
+                    finalText = callRecognizedTexts.join(' ');
+                } else if (callLastInterimText) {
+                    finalText = callLastInterimText;
+                }
+                
+                if (finalText && finalText.trim()) {
+                    // 识别成功，直接发送
+                    triggerAiInCallAction(finalText.trim());
+                } else {
+                    // 识别失败，回退到手动输入
+                    // 如果有录音数据，也可以尝试发送给后端API转写（暂未实现），这里回退到弹窗
+                    const userInput = await showCustomPrompt('你说', '未能识别到语音，请手动输入...');
+                    if (userInput && userInput.trim()) {
+                        triggerAiInCallAction(userInput.trim());
+                    }
+                }
+                
+                // 清理
+                callMediaRecorder = null;
+                callAudioChunks = [];
+            },
+            // 单击 (回退到手动输入)
+            async () => {
+                 if (!videoCallState.isActive) return;
         
+                const userAvatar = document.querySelector('.participant-avatar-wrapper[data-participant-id="user"] .participant-avatar');
+                if (userAvatar) userAvatar.classList.add('speaking');
             
-            const userAvatar = document.querySelector('.participant-avatar-wrapper[data-participant-id="user"] .participant-avatar');
-            if (userAvatar) {
-                userAvatar.classList.add('speaking');
+                const userInput = await showCustomPrompt('你说', '请输入你想说的话...');
+                
+                if (userAvatar) userAvatar.classList.remove('speaking');
+            
+                if (userInput && userInput.trim()) {
+                    triggerAiInCallAction(userInput.trim());
+                }
             }
+        );
         
-            const userInput = await showCustomPrompt('你说', '请输入你想说的话...');
+        // 辅助函数：长按/点击区分逻辑
+        function setupLongPress(element, onLongPressStart, onLongPressEnd, onClick) {
+            let timer;
+            let isLongPress = false;
             
+            element.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // 防止默认点击
+                isLongPress = false;
+                timer = setTimeout(() => {
+                    isLongPress = true;
+                    if (onLongPressStart) onLongPressStart();
+                }, 500); // 500ms 视为长按
+            });
             
-            if (userAvatar) {
-                userAvatar.classList.remove('speaking');
-            }
-        
-            if (userInput && userInput.trim()) {
-                triggerAiInCallAction(userInput.trim());
-            }
-        });
+            element.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                clearTimeout(timer);
+                if (isLongPress) {
+                    if (onLongPressEnd) onLongPressEnd();
+                } else {
+                    if (onClick) onClick();
+                }
+            });
+            
+            // 兼容鼠标事件
+            element.addEventListener('mousedown', (e) => {
+                isLongPress = false;
+                timer = setTimeout(() => {
+                    isLongPress = true;
+                    if (onLongPressStart) onLongPressStart();
+                }, 500);
+            });
+            
+            element.addEventListener('mouseup', (e) => {
+                clearTimeout(timer);
+                if (isLongPress) {
+                    if (onLongPressEnd) onLongPressEnd();
+                } else {
+                    if (onClick) onClick();
+                }
+            });
+             element.addEventListener('mouseleave', (e) => {
+                clearTimeout(timer);
+                if (isLongPress) {
+                    if (onLongPressEnd) onLongPressEnd(); // 移出也算结束长按
+                }
+            });
+        }
           
         
         
@@ -51756,49 +52172,71 @@ ${userPersona.trim()}
         }
     }
     
-    // 生成用户余额
+    // 当前钱包视图状态
+    let currentWalletView = 'user';
+
+    // 生成用户余额 (及角色余额)
     async function generateAllBalances() {
         const generateBtn = document.getElementById('generate-wallet-balance-btn');
-        const originalHtml = generateBtn.innerHTML;
         
         // 显示加载提示
         let loadingAlert = null;
         if (typeof showCustomAlert === 'function') {
-            loadingAlert = showCustomAlert('生成中', '正在生成用户余额，请稍候...', 0); // 0表示不自动关闭
+            loadingAlert = showCustomAlert('生成中', '正在生成余额数据，请稍候...', 0);
         }
         
         try {
-            // 显示加载状态
             generateBtn.style.opacity = '0.5';
             generateBtn.style.pointerEvents = 'none';
             
             const walletData = getWalletData();
-            
-            // 获取选中的聊天ID
             const userSelect = document.getElementById('wallet-user-select');
             const selectedChatId = userSelect ? userSelect.value : '';
             
-            // 获取用户人设
+            // 获取人设信息
             let userPersona = '';
+            let characterPersona = '';
+            let characterName = '';
+            
             if (selectedChatId) {
                 const currentState = typeof state !== 'undefined' ? state : (typeof window !== 'undefined' && window.state ? window.state : null);
                 if (currentState && currentState.chats && currentState.chats[selectedChatId]) {
                     const chat = currentState.chats[selectedChatId];
                     userPersona = chat.settings?.myPersona || '';
-                    if (userPersona) {
-                        console.log('使用选中聊天的人设生成余额:', chat.name || '未命名聊天');
+                    characterPersona = chat.settings?.aiPersona || '';
+                    characterName = chat.name || '对方';
+                    if (userPersona || characterPersona) {
+                        console.log('使用选中聊天的人设生成余额:', chat.name);
                     }
                 }
             }
             
-            // 生成用户余额（每次点击都重新生成）
-            try {
-                walletData.userBalance = await generateBalanceViaAPI(null, null, userPersona);
-            } catch (error) {
-                console.error('生成用户余额失败:', error);
-                // 如果API调用失败，抛出错误而不是使用默认值，让用户知道API调用失败
-                throw new Error(`生成用户余额失败: ${error.message}`);
+            // 生成 Promise 列表
+            const promises = [];
+            
+            // 1. 生成用户余额
+            promises.push(generateBalanceViaAPI(null, null, userPersona).then(balance => {
+                walletData.userBalance = balance;
+                return balance;
+            }));
+            
+            // 2. 如果选中了角色，也生成角色余额
+            if (selectedChatId && characterName) {
+                 promises.push(generateBalanceViaAPI(characterName, characterPersona, null).then(balance => {
+                    if (!walletData.characters) walletData.characters = {};
+                    if (!walletData.characters[selectedChatId]) walletData.characters[selectedChatId] = {};
+                    
+                    walletData.characters[selectedChatId].balance = balance;
+                    // 初始化 transactions 如果不存在
+                    if (!walletData.characters[selectedChatId].transactions) {
+                        walletData.characters[selectedChatId].transactions = [];
+                    }
+                    return balance;
+                }));
             }
+            
+            // 等待所有生成完成
+            await Promise.all(promises);
             
             // 保存数据
             saveWalletData(walletData);
@@ -51806,28 +52244,16 @@ ${userPersona.trim()}
             // 重新渲染页面
             await renderWalletScreen();
             
-            // 关闭加载提示并显示成功提示
-            if (loadingAlert && typeof loadingAlert.close === 'function') {
-                loadingAlert.close();
-            }
-            if (typeof showCustomAlert === 'function') {
-                showCustomAlert('成功', '用户余额已生成！');
-            } else {
-                alert('用户余额已生成！');
-            }
+            if (loadingAlert && typeof loadingAlert.close === 'function') loadingAlert.close();
+            if (typeof showCustomAlert === 'function') showCustomAlert('成功', '余额已生成！');
+            else alert('余额已生成！');
+            
         } catch (error) {
             console.error('生成余额过程出错:', error);
-            // 关闭加载提示
-            if (loadingAlert && typeof loadingAlert.close === 'function') {
-                loadingAlert.close();
-            }
-            if (typeof showCustomAlert === 'function') {
-                showCustomAlert('错误', `生成余额失败: ${error.message}`);
-            } else {
-                alert(`生成余额失败: ${error.message}`);
-            }
+            if (loadingAlert && typeof loadingAlert.close === 'function') loadingAlert.close();
+            if (typeof showCustomAlert === 'function') showCustomAlert('错误', `生成余额失败: ${error.message}`);
+            else alert(`生成余额失败: ${error.message}`);
         } finally {
-            // 恢复按钮状态
             generateBtn.style.opacity = '1';
             generateBtn.style.pointerEvents = 'auto';
         }
@@ -51837,54 +52263,90 @@ ${userPersona.trim()}
     async function renderWalletScreen() {
         const walletData = getWalletData();
         
-        // 更新用户余额显示
-        document.getElementById('wallet-user-balance').textContent = `¥${walletData.userBalance.toFixed(2)}`;
+        // 获取UI元素
+        const userSelect = document.getElementById('wallet-user-select');
+        const balanceLabel = document.getElementById('wallet-balance-label');
+        const balanceAmount = document.getElementById('wallet-user-balance');
+        const switchBtn = document.getElementById('switch-wallet-view-btn');
         
         // 填充用户选择器
-        const userSelect = document.getElementById('wallet-user-select');
         if (userSelect) {
-            // 保存当前选中的值
             const currentValue = userSelect.value;
             userSelect.innerHTML = '<option value="">-- 选择聊天（使用该聊天中的人设生成余额）--</option>';
             
-            // 获取所有聊天（包括单聊和群聊）
             const chats = [];
             const currentState = typeof state !== 'undefined' ? state : (typeof window !== 'undefined' && window.state ? window.state : null);
             if (currentState && currentState.chats) {
                 const allChats = Object.values(currentState.chats);
-                
                 for (const chat of allChats) {
                     if (chat) {
                         const chatName = chat.name || chat.settings?.characterName || '未命名聊天';
                         const myPersona = chat.settings?.myPersona || '';
-                        chats.push({
-                            id: chat.id,
-                            name: chatName,
-                            myPersona: myPersona
-                        });
+                        chats.push({ id: chat.id, name: chatName, myPersona: myPersona });
                     }
                 }
             }
             
-            // 填充选择器
             for (const chat of chats) {
                 const option = document.createElement('option');
                 option.value = chat.id;
                 option.textContent = chat.name + (chat.myPersona ? ' (有人设)' : '');
-                if (option.value === currentValue) {
-                    option.selected = true;
-                }
+                if (option.value === currentValue) option.selected = true;
                 userSelect.appendChild(option);
             }
         }
         
+        const selectedChatId = userSelect ? userSelect.value : '';
+        
+        // 处理视图切换逻辑
+        if (!selectedChatId) {
+            currentWalletView = 'user'; // 未选角色强制回用户视图
+            if (switchBtn) switchBtn.style.display = 'none';
+        } else {
+            if (switchBtn) {
+                switchBtn.style.display = 'block';
+                switchBtn.textContent = currentWalletView === 'user' ? '切换到对方钱包' : '切换到我的钱包';
+            }
+        }
+        
+        // 准备显示数据
+        let displayBalance = 0;
+        let displayTransactions = [];
+        let displayName = '我的余额';
+        
+        if (currentWalletView === 'user') {
+            displayBalance = walletData.userBalance || 0;
+            displayTransactions = walletData.transactions || [];
+            displayName = '我的余额';
+        } else {
+            // Char View
+            const currentState = typeof state !== 'undefined' ? state : (typeof window !== 'undefined' && window.state ? window.state : null);
+            const chatName = currentState?.chats[selectedChatId]?.name || '对方';
+            displayName = `${chatName}的余额`;
+            
+            if (walletData.characters && walletData.characters[selectedChatId]) {
+                displayBalance = walletData.characters[selectedChatId].balance || 0;
+                displayTransactions = walletData.characters[selectedChatId].transactions || [];
+            }
+        }
+        
+        // 更新UI
+        if (balanceLabel) balanceLabel.textContent = displayName;
+        if (balanceAmount) balanceAmount.textContent = `¥${displayBalance.toFixed(2)}`;
+        
         // 渲染交易记录
+        renderTransactionsList(displayTransactions);
+    }
+
+    // 独立出来的渲染交易记录函数
+    function renderTransactionsList(transactions) {
         const transactionsContainer = document.getElementById('wallet-transactions-list');
+        if (!transactionsContainer) return;
+        
         transactionsContainer.innerHTML = '';
         
-        if (walletData.transactions && walletData.transactions.length > 0) {
-            // 按时间倒序排序
-            const sortedTransactions = [...walletData.transactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        if (transactions && transactions.length > 0) {
+            const sortedTransactions = [...transactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             
             for (const transaction of sortedTransactions) {
                 const transItem = document.createElement('div');
@@ -51910,23 +52372,46 @@ ${userPersona.trim()}
     // 添加交易记录（可在转账或购物时调用）
     function addWalletTransaction(transaction) {
         const walletData = getWalletData();
-        if (!walletData.transactions) {
-            walletData.transactions = [];
+        const userSelect = document.getElementById('wallet-user-select');
+        const selectedChatId = userSelect ? userSelect.value : '';
+
+        // 根据当前视图决定添加到谁的钱包
+        // 注意：如果是在Char视图，就添加到Char钱包；否则添加到User钱包
+        if (currentWalletView === 'char' && selectedChatId) {
+            if (!walletData.characters) walletData.characters = {};
+            if (!walletData.characters[selectedChatId]) walletData.characters[selectedChatId] = { balance: 0, transactions: [] };
+            if (!walletData.characters[selectedChatId].transactions) walletData.characters[selectedChatId].transactions = [];
+            
+            walletData.characters[selectedChatId].transactions.push({
+                ...transaction,
+                timestamp: transaction.timestamp || new Date().toISOString()
+            });
+            
+            const currentBalance = walletData.characters[selectedChatId].balance || 0;
+            if (transaction.type === 'income') {
+                walletData.characters[selectedChatId].balance = currentBalance + transaction.amount;
+            } else if (transaction.type === 'expense') {
+                walletData.characters[selectedChatId].balance = currentBalance - transaction.amount;
+            }
+        } else {
+            if (!walletData.transactions) {
+                walletData.transactions = [];
+            }
+            
+            walletData.transactions.push({
+                ...transaction,
+                timestamp: transaction.timestamp || new Date().toISOString()
+            });
+            
+            // 更新余额
+            if (transaction.type === 'income') {
+                walletData.userBalance += transaction.amount;
+            } else if (transaction.type === 'expense') {
+                walletData.userBalance -= transaction.amount;
+            }
         }
         
-        walletData.transactions.push({
-            ...transaction,
-            timestamp: transaction.timestamp || new Date().toISOString()
-        });
-        
-        // 更新余额
-        if (transaction.type === 'income') {
-            walletData.userBalance += transaction.amount;
-        } else if (transaction.type === 'expense') {
-            walletData.userBalance -= transaction.amount;
-        }
-        
-            saveWalletData(walletData);
+        saveWalletData(walletData);
     }
     
     
@@ -52081,6 +52566,23 @@ ${userPersona.trim()}
                 showAddTransactionModal('expense');
             });
         }
+        
+        // 新增：切换钱包视图按钮
+        const switchBtn = document.getElementById('switch-wallet-view-btn');
+        if (switchBtn) {
+            switchBtn.addEventListener('click', () => {
+                currentWalletView = currentWalletView === 'user' ? 'char' : 'user';
+                renderWalletScreen();
+            });
+        }
+        
+        // 新增：用户选择变更监听
+        const userSelect = document.getElementById('wallet-user-select');
+        if (userSelect) {
+            userSelect.addEventListener('change', () => {
+                renderWalletScreen();
+            });
+        }
     }, 100);
     
     // ===== 像素扭蛋机功能 =====
@@ -52200,6 +52702,24 @@ ${userPersona.trim()}
     // 更新UI
     function updateCabinUI() {
         const state = window.cabinGachaState;
+        
+        // 钱包数据初始化与同步
+        if (!state.wallets) {
+            state.wallets = {
+                'user': {
+                    balance: state.coins || 0,
+                    transactions: [
+                        { desc: "初始资金", amount: state.coins || 0, date: new Date().toISOString() }
+                    ]
+                }
+            };
+        }
+        // 双向同步：金币消耗主要通过 state.coins，所以这里将 state.coins 同步回钱包
+        // 注意：如果我们在钱包界面修改了余额，也应该同步回 state.coins
+        if (state.wallets['user']) {
+            state.wallets['user'].balance = state.coins;
+        }
+        
         const coinEl = document.getElementById('cabin-coin-count');
         if (coinEl) coinEl.textContent = state.coins;
         
@@ -52235,12 +52755,12 @@ ${userPersona.trim()}
     // 普通扭蛋
     function playNormalGacha() {
         const state = window.cabinGachaState;
-        if (state.coins < 1) {
-            alert('金币不足 (需1)');
+        if (state.coins < 10) {
+            alert('金币不足 (需10)');
             return;
         }
         
-        state.coins -= 1;
+        state.coins -= 10;
         saveCabinGachaData();
         updateCabinUI();
         
@@ -52251,12 +52771,18 @@ ${userPersona.trim()}
         }
         
         setTimeout(() => {
-            const pool = Object.keys(state.customItems).filter(id => 
-                state.customItems[id].inPool === true
-            );
+            const pool = Object.keys(state.customItems).filter(id => {
+                const item = state.customItems[id];
+                // 确保只抽当前扭蛋机类型的物品
+                if (window.currentGachaMachine === 'furniture') {
+                    return item.inPool === true && item.type !== 'clothes' && !item.isCharacter;
+                } else {
+                    return item.inPool === true && item.type === 'clothes';
+                }
+            });
             
             if (pool.length === 0) {
-                alert('扭蛋池为空!');
+                alert('当前扭蛋池为空! 请先使用AI生成物品。');
                 state.coins += 10;
                 saveCabinGachaData();
                 updateCabinUI();
@@ -52264,6 +52790,7 @@ ${userPersona.trim()}
                 return;
             }
             
+            // 简单的随机逻辑
             const randomItem = pool[Math.floor(Math.random() * pool.length)];
             const item = state.customItems[randomItem];
             
@@ -52293,6 +52820,228 @@ ${userPersona.trim()}
                 `;
             }
         }, 1000);
+    }
+    
+    // 十连抽
+    function playTenGacha() {
+        const state = window.cabinGachaState;
+        if (state.coins < 100) {
+            alert('金币不足 (需100)');
+            return;
+        }
+        
+        state.coins -= 100;
+        saveCabinGachaData();
+        updateCabinUI();
+        
+        const glassId = window.currentGachaMachine === 'furniture' ? 'furniture-capsules-visual' : 'clothes-capsules-visual';
+        const glass = document.getElementById(glassId);
+        if (glass) {
+            glass.innerHTML = '<div style="font-size:40px; animation:spin 0.5s infinite">🌀</div>';
+        }
+        
+        setTimeout(() => {
+            const pool = Object.keys(state.customItems).filter(id => {
+                const item = state.customItems[id];
+                if (window.currentGachaMachine === 'furniture') {
+                    return item.inPool === true && item.type !== 'clothes' && !item.isCharacter;
+                } else {
+                    return item.inPool === true && item.type === 'clothes';
+                }
+            });
+            
+            if (pool.length === 0) {
+                alert('当前扭蛋池为空! 请先使用AI生成物品。');
+                state.coins += 100;
+                saveCabinGachaData();
+                updateCabinUI();
+                if (glass) glass.innerHTML = '<div style="font-size:30px; margin-top:30px;">🎁</div>';
+                return;
+            }
+            
+            const results = [];
+            for (let i = 0; i < 10; i++) {
+                const randomItem = pool[Math.floor(Math.random() * pool.length)];
+                const item = state.customItems[randomItem];
+                results.push(item);
+                
+                // 添加到背包
+                state.inventory[randomItem] = (state.inventory[randomItem] || 0) + 1;
+                if (!state.catalog[randomItem]) {
+                    state.catalog[randomItem] = { seen: true, owned: true };
+                } else {
+                    state.catalog[randomItem].seen = true;
+                    state.catalog[randomItem].owned = true;
+                }
+            }
+            
+            state.lastGained = results[9].name;
+            saveCabinGachaData();
+            updateCabinUI();
+            
+            // 显示十连结果弹窗
+            showTenGachaResults(results);
+            
+            // 恢复扭蛋机显示
+            if (glass) {
+                glass.innerHTML = '<div style="font-size:30px; margin-top:30px;">🎁</div>';
+            }
+        }, 1000);
+    }
+
+    // 显示十连抽结果
+    function showTenGachaResults(items) {
+        // 创建弹窗
+        const modalId = 'ten-gacha-results-modal';
+        let modal = document.getElementById(modalId);
+        
+        if (!modal) {
+             const modalHTML = `
+                <div id="${modalId}" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); z-index: 10001; align-items: center; justify-content: center;">
+                    <div style="background-color: #fff; border-radius: 12px; padding: 20px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.5); text-align: center;">
+                        <h3 style="margin: 0 0 15px 0; color: #e06c9f;">🎉 十连抽结果 🎉</h3>
+                        <div id="ten-gacha-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;">
+                            <!-- 结果项 -->
+                        </div>
+                        <button class="pixel-btn" onclick="document.getElementById('${modalId}').style.display='none'" style="width: 100%;">收下</button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            modal = document.getElementById(modalId);
+        }
+        
+        const grid = document.getElementById('ten-gacha-grid');
+        grid.innerHTML = '';
+        
+        items.forEach((item, index) => {
+            const itemEl = document.createElement('div');
+            itemEl.style.cssText = `display: flex; flex-direction: column; align-items: center; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; animation-delay: ${index * 0.1}s; opacity: 0; transform: scale(0.5);`;
+            
+            const rarityColor = item.rarity === 'SSR' ? '#ffd700' : (item.rarity === 'SR' ? '#ff9ed2' : '#b0b0b0');
+            
+            itemEl.innerHTML = `
+                <div style="width: 50px; height: 50px; border: 2px solid ${rarityColor}; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; background: #fff;">
+                    ${item.svg || '🎁'}
+                </div>
+                <div style="font-size: 8px; color: #333; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.name}</div>
+            `;
+            grid.appendChild(itemEl);
+        });
+        
+        // 添加动画样式
+        if (!document.getElementById('popIn-animation-style')) {
+            const style = document.createElement('style');
+            style.id = 'popIn-animation-style';
+            style.textContent = `
+                @keyframes popIn {
+                    from { opacity: 0; transform: scale(0.5); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        modal.style.display = 'flex';
+    }
+
+    // 充值模态框
+    function openRechargeModal() {
+        const modalId = 'recharge-modal';
+        let modal = document.getElementById(modalId);
+        
+        if (!modal) {
+             const modalHTML = `
+                <div id="${modalId}" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 10002; align-items: center; justify-content: center;">
+                    <div style="background-color: #fff; border-radius: 12px; padding: 20px; width: 90%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 style="margin: 0; color: #333;">充值金币</h3>
+                            <button onclick="document.getElementById('${modalId}').style.display='none'" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
+                        </div>
+                        <div style="margin-bottom: 15px; font-size: 14px; color: #666;">
+                            请选择充值金额 (1元 = 1金币)
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+                            <button class="recharge-btn" onclick="processRecharge(6)">¥6 <br><span style="font-size: 10px;">6金币</span></button>
+                            <button class="recharge-btn" onclick="processRecharge(68)">¥68 <br><span style="font-size: 10px;">68金币</span></button>
+                            <button class="recharge-btn" onclick="processRecharge(128)">¥128 <br><span style="font-size: 10px;">128金币</span></button>
+                            <button class="recharge-btn" onclick="processRecharge(198)">¥198 <br><span style="font-size: 10px;">198金币</span></button>
+                            <button class="recharge-btn" onclick="processRecharge(348)">¥348 <br><span style="font-size: 10px;">348金币</span></button>
+                            <button class="recharge-btn" onclick="processRecharge(648)">¥648 <br><span style="font-size: 10px;">648金币</span></button>
+                        </div>
+                         <div style="font-size: 12px; color: #999; text-align: center;">
+                            注：充值将扣除您在钱包中的“我的余额”
+                        </div>
+                    </div>
+                </div>
+                <style>
+                    .recharge-btn {
+                        background: #f5f5f5;
+                        border: 2px solid #ddd;
+                        border-radius: 8px;
+                        padding: 10px;
+                        cursor: pointer;
+                        font-weight: bold;
+                        color: #333;
+                        transition: all 0.2s;
+                    }
+                    .recharge-btn:hover {
+                        border-color: #ff9800;
+                        background: #fff3e0;
+                        color: #e65100;
+                    }
+                    .recharge-btn:active {
+                        transform: scale(0.95);
+                    }
+                </style>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            modal = document.getElementById(modalId);
+        }
+        
+        modal.style.display = 'flex';
+    }
+    
+    // 处理充值
+    function processRecharge(amount) {
+        const walletData = getWalletData();
+        const userBalance = walletData.userBalance || 0;
+        
+        if (userBalance < amount) {
+            alert(`钱包余额不足！\n当前余额: ¥${userBalance.toFixed(2)}\n需要: ¥${amount.toFixed(2)}`);
+            return;
+        }
+        
+        if (confirm(`确认支付 ¥${amount} 充值 ${amount} 金币吗？`)) {
+            // 扣除钱包余额
+            walletData.userBalance -= amount;
+            
+            // 记录交易
+            if (!walletData.transactions) walletData.transactions = [];
+            walletData.transactions.push({
+                type: 'expense',
+                title: '小屋金币充值',
+                amount: amount,
+                timestamp: new Date().toISOString()
+            });
+            saveWalletData(walletData);
+            
+            // 增加金币
+            window.cabinGachaState.coins = (window.cabinGachaState.coins || 0) + amount;
+            saveCabinGachaData();
+            updateCabinUI();
+            
+            // 关闭充值弹窗
+            document.getElementById('recharge-modal').style.display = 'none';
+            
+            // 显示成功提示
+            alert(`充值成功！\n已获得 ${amount} 金币\n钱包余额剩余: ¥${walletData.userBalance.toFixed(2)}`);
+            
+            // 如果钱包页面打开，刷新钱包页面
+            if (document.getElementById('wallet-screen').style.display !== 'none') {
+                renderWalletScreen();
+            }
+        }
     }
     
     // 打开AI生成弹窗（简化版）
@@ -52490,12 +53239,15 @@ ${userPersona.trim()}
                 renderCabinBaseModel();
                 renderCabinCharacterList();
                 renderCabinClothesInventory();
+                renderCabinCharacterScreenHeader(); // Add header
             }, 100);
         } else if (screen === 'pet') {
             if (petScreen) petScreen.style.display = 'flex';
             if (navTabs[4]) navTabs[4].classList.add('active');
             setTimeout(() => {
-                renderCabinPetDisplay(window.cabinGachaState.currentPet);
+                const pet = getCurrentCabinPet();
+                renderCabinPetDisplay(pet);
+                renderCabinPetScreenHeader();
                 updateCabinPetCount();
             }, 100);
         } else {
@@ -52512,15 +53264,52 @@ ${userPersona.trim()}
     const CABIN_WALL_HEIGHT = 2;
     
     // 初始化房间状态
-    if (!window.cabinGachaState.placedItems) {
-        window.cabinGachaState.placedItems = [];
-        window.cabinGachaState.occupiedGrid = {};
-        window.cabinGachaState.wallColor = '#f8c3cd';
-        window.cabinGachaState.floorColor = '#f5e6e8';
-        window.cabinGachaState.wallStyle = 'solid';
-        window.cabinGachaState.floorStyle = 'solid';
+    if (!window.cabinGachaState.rooms) {
+        window.cabinGachaState.rooms = {
+            'default': {
+                placedItems: window.cabinGachaState.placedItems || [],
+                occupiedGrid: window.cabinGachaState.occupiedGrid || {},
+                wallColor: window.cabinGachaState.wallColor || '#f8c3cd',
+                floorColor: window.cabinGachaState.floorColor || '#f5e6e8',
+                wallStyle: window.cabinGachaState.wallStyle || 'solid',
+                floorStyle: window.cabinGachaState.floorStyle || 'solid',
+                characterPos: window.cabinGachaState.characterPos
+            }
+        };
     }
     
+    // 当前房间ID
+    if (!window.cabinGachaState.currentRoomId) {
+        window.cabinGachaState.currentRoomId = 'default';
+    }
+    
+    // 兼容旧数据：如果根节点还有数据，迁移到 default
+    if (window.cabinGachaState.placedItems && window.cabinGachaState.placedItems.length > 0 && 
+        window.cabinGachaState.rooms['default'].placedItems.length === 0) {
+        window.cabinGachaState.rooms['default'].placedItems = [...window.cabinGachaState.placedItems];
+        window.cabinGachaState.rooms['default'].occupiedGrid = {...window.cabinGachaState.occupiedGrid};
+        // 清空根节点数据以防混淆（可选）
+        delete window.cabinGachaState.placedItems;
+        delete window.cabinGachaState.occupiedGrid;
+    }
+
+    // 辅助函数：获取当前房间数据
+    function getCurrentRoom() {
+        const state = window.cabinGachaState;
+        const roomId = state.currentRoomId || 'default';
+        if (!state.rooms[roomId]) {
+            state.rooms[roomId] = {
+                placedItems: [],
+                occupiedGrid: {},
+                wallColor: '#f8c3cd',
+                floorColor: '#f5e6e8',
+                wallStyle: 'solid',
+                floorStyle: 'solid'
+            };
+        }
+        return state.rooms[roomId];
+    }
+
     // 当前选中的物品ID
     window.cabinSelectedItemId = null;
     window.cabinCurrentInventoryFilter = 'all';
@@ -52573,14 +53362,16 @@ ${userPersona.trim()}
     // 检查格子是否被占用
     function isCabinGridOccupied(gridX, gridY, itemType, itemWidth = 1, itemHeight = 1) {
         const state = window.cabinGachaState;
+        const currentRoom = getCurrentRoom();
+        
         for (let dx = 0; dx < itemWidth; dx++) {
             for (let dy = 0; dy < itemHeight; dy++) {
                 const cellX = gridX + dx;
                 const cellY = gridY + dy;
                 const cellKey = `${cellX},${cellY}`;
                 
-                if (state.occupiedGrid[cellKey]) {
-                    const occupyingItem = state.occupiedGrid[cellKey];
+                if (currentRoom.occupiedGrid[cellKey]) {
+                    const occupyingItem = currentRoom.occupiedGrid[cellKey];
                     if (itemType === 'floor' && occupyingItem.type === 'furniture') continue;
                     if (occupyingItem.type === 'floor' && itemType === 'furniture') continue;
                     if (itemType === 'decor' && occupyingItem.type === 'furniture') continue;
@@ -52594,9 +53385,11 @@ ${userPersona.trim()}
     // 更新占用格子
     function updateCabinOccupiedGrid() {
         const state = window.cabinGachaState;
-        state.occupiedGrid = {};
+        const currentRoom = getCurrentRoom();
         
-        state.placedItems.forEach(item => {
+        currentRoom.occupiedGrid = {};
+        
+        currentRoom.placedItems.forEach(item => {
             const itemData = state.customItems[item.itemId];
             if (!itemData) return;
             
@@ -52606,10 +53399,10 @@ ${userPersona.trim()}
                     const cellY = item.gridY + dy;
                     const cellKey = `${cellX},${cellY}`;
                     
-                    state.occupiedGrid[cellKey] = {
+                    currentRoom.occupiedGrid[cellKey] = {
                         id: item.itemId,
                         type: itemData.type,
-                        index: state.placedItems.indexOf(item)
+                        index: currentRoom.placedItems.indexOf(item)
                     };
                 }
             }
@@ -52625,55 +53418,177 @@ ${userPersona.trim()}
         
         const wallArea = document.getElementById('cabin-wall-area');
         const floorArea = document.getElementById('cabin-floor-area');
-        const grid = room.querySelector('.room-grid');
         
         // 清空房间（保留墙和地板）
-        const existingItems = room.querySelectorAll('.placed-furniture');
+        const existingItems = room.querySelectorAll('.placed-furniture, .placed-character');
         existingItems.forEach(el => el.remove());
+        
+        const currentRoom = getCurrentRoom();
         
         // 应用保存的颜色
         if (wallArea) {
-            wallArea.style.backgroundColor = window.cabinGachaState.wallColor || '#f8c3cd';
+            wallArea.style.backgroundColor = currentRoom.wallColor || '#f8c3cd';
             applyCabinWallStyle();
         }
         if (floorArea) {
-            floorArea.style.backgroundColor = window.cabinGachaState.floorColor || '#f5e6e8';
+            floorArea.style.backgroundColor = currentRoom.floorColor || '#f5e6e8';
             applyCabinFloorStyle();
         }
         
         // 渲染已放置的家具
         const state = window.cabinGachaState;
-        state.placedItems.forEach((pItem, index) => {
-            if (!state.customItems[pItem.itemId]) return;
-            const meta = state.customItems[pItem.itemId];
-            
-            const pixelPos = getCabinPixelPosition(pItem.gridX, pItem.gridY);
-            
-            const el = document.createElement('div');
-            el.className = 'placed-furniture';
-            el.style.position = 'absolute';
-            el.style.left = pixelPos.x + 'px';
-            el.style.top = pixelPos.y + 'px';
-            el.style.width = ((pItem.width || meta.width || 1) * CABIN_GRID_SIZE) + 'px';
-            el.style.height = ((pItem.height || meta.height || 1) * CABIN_GRID_SIZE) + 'px';
-            el.style.transform = `rotate(${pItem.rotation || 0}deg)`;
-            el.style.zIndex = '50'; // 确保高层级
-            el.style.cursor = 'move';
-            el.style.touchAction = 'none'; // 关键：禁用浏览器默认手势
-            el.setAttribute('data-index', index);
-            
-            el.innerHTML = `
-                <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
-                    ${meta.svg || '<div style="font-size:20px;">🎁</div>'}
-                </div>
-            `;
-            
-            // furniture drag enabled
-            // 直接绑定 touch 事件实现手机端拖拽
-            el.addEventListener('touchstart', handleFurnitureTouchStart, {passive: false});
-            
-            room.appendChild(el);
-        });
+        if (currentRoom.placedItems && currentRoom.placedItems.length > 0) {
+            currentRoom.placedItems.forEach((pItem, index) => {
+                if (!state.customItems[pItem.itemId]) return;
+                const meta = state.customItems[pItem.itemId];
+                
+                const pixelPos = getCabinPixelPosition(pItem.gridX, pItem.gridY);
+                
+                const el = document.createElement('div');
+                el.className = 'placed-furniture';
+                el.style.position = 'absolute';
+                el.style.left = pixelPos.x + 'px';
+                el.style.top = pixelPos.y + 'px';
+                el.style.width = ((pItem.width || meta.width || 1) * CABIN_GRID_SIZE) + 'px';
+                el.style.height = ((pItem.height || meta.height || 1) * CABIN_GRID_SIZE) + 'px';
+                el.style.transform = `rotate(${pItem.rotation || 0}deg)`;
+                el.style.zIndex = '50'; 
+                el.style.cursor = 'move';
+                el.style.touchAction = 'none';
+                el.setAttribute('data-index', index);
+                
+                el.innerHTML = `
+                    <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+                        ${meta.svg || '<div style="font-size:20px;">🎁</div>'}
+                    </div>
+                `;
+                
+                el.addEventListener('touchstart', handleFurnitureTouchStart, {passive: false});
+                
+                room.appendChild(el);
+            });
+        }
+        
+        // 渲染当前角色（访客/我）（如果存在）
+        // 默认位置：右侧 (x: 6, y: 5)
+        if (state.activeCharacterId && state.customItems[state.activeCharacterId]) {
+            const defaultVisitorPos = { x: 6, y: 5 };
+            // 如果从未设置过位置，初始化它
+            if (!currentRoom.characterPos) {
+                currentRoom.characterPos = defaultVisitorPos;
+            }
+            renderSingleCharacter(state.activeCharacterId, currentRoom.characterPos, 'active');
+        }
+        
+        // 渲染房主（如果存在且不是当前操作者）
+        // 默认位置：左侧 (x: 2, y: 5)
+        if (currentRoom.ownerAvatarId && currentRoom.ownerAvatarId !== state.activeCharacterId && state.customItems[currentRoom.ownerAvatarId]) {
+            const defaultOwnerPos = { x: 2, y: 5 };
+            // 如果从未设置过位置，初始化它
+            if (!currentRoom.ownerPos) {
+                currentRoom.ownerPos = defaultOwnerPos;
+            }
+            renderSingleCharacter(currentRoom.ownerAvatarId, currentRoom.ownerPos, 'owner');
+        }
+
+        renderCabinRoomHeader();
+    }
+    
+    function renderSingleCharacter(charId, pos, type) {
+        const state = window.cabinGachaState;
+        const charMeta = state.customItems[charId];
+        const room = document.getElementById('cabin-room-area');
+        
+        const pixelPos = getCabinPixelPosition(pos.x, pos.y);
+        
+        const charEl = document.createElement('div');
+        charEl.className = 'placed-character';
+        charEl.style.position = 'absolute';
+        charEl.style.left = pixelPos.x + 'px';
+        charEl.style.top = pixelPos.y + 'px';
+        charEl.style.width = (charMeta.width * CABIN_GRID_SIZE) + 'px';
+        charEl.style.height = (charMeta.height * CABIN_GRID_SIZE) + 'px';
+        charEl.style.zIndex = '60';
+        charEl.style.cursor = 'move';
+        charEl.style.touchAction = 'none';
+        
+        charEl.innerHTML = `
+            <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+                ${charMeta.svg}
+            </div>
+            ${type === 'owner' ? '<div style="position:absolute; top:-15px; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:10px; font-size:10px;">房主</div>' : ''}
+        `;
+        
+        charEl.addEventListener('touchstart', (e) => handleCharacterTouchStart(e, charId, type), {passive: false});
+        
+        room.appendChild(charEl);
+    }
+    
+    // === 小人拖拽逻辑 ===
+    let activeCharacterDrag = null;
+
+    function handleCharacterTouchStart(e, charId, type) {
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation();
+
+        const el = e.currentTarget;
+        const touch = e.touches[0];
+
+        activeCharacterDrag = {
+            el: el,
+            charId: charId,
+            type: type || 'active', // 'active' or 'owner'
+            startX: touch.clientX,
+            startY: touch.clientY,
+            initialLeft: parseFloat(el.style.left || 0),
+            initialTop: parseFloat(el.style.top || 0)
+        };
+
+        document.addEventListener('touchmove', handleCharacterTouchMove, {passive: false});
+        document.addEventListener('touchend', handleCharacterTouchEnd);
+        
+        el.style.opacity = '0.8';
+        el.style.zIndex = '1000';
+    }
+    
+    // handleCharacterTouchMove 保持不变
+    
+    function handleCharacterTouchEnd(e) {
+        if (!activeCharacterDrag) return;
+        
+        const { el, type } = activeCharacterDrag;
+        
+        document.removeEventListener('touchmove', handleCharacterTouchMove);
+        document.removeEventListener('touchend', handleCharacterTouchEnd);
+        
+        el.style.opacity = '1';
+        el.style.zIndex = '60';
+        
+        // 计算网格坐标
+        const currentLeft = parseFloat(el.style.left || 0);
+        const currentTop = parseFloat(el.style.top || 0);
+        const centerX = currentLeft + el.offsetWidth / 2;
+        const centerY = currentTop + el.offsetHeight / 2;
+        
+        let gridX = Math.floor(centerX / CABIN_GRID_SIZE);
+        let gridY = Math.floor(centerY / CABIN_GRID_SIZE);
+        
+        // 简单边界检查
+        gridX = Math.max(0, Math.min(CABIN_ROOM_WIDTH - 1, gridX));
+        gridY = Math.max(0, Math.min(CABIN_ROOM_HEIGHT - 1, gridY));
+        
+        // 保存位置
+        const currentRoom = getCurrentRoom();
+        if (type === 'owner') {
+             currentRoom.ownerPos = { x: gridX, y: gridY };
+        } else {
+             currentRoom.characterPos = { x: gridX, y: gridY };
+        }
+        
+        saveCabinGachaData();
+        renderCabinRoom(); // 吸附
+        
+        activeCharacterDrag = null;
     }
     
     // === 手机端家具拖拽逻辑 (Touch Events) ===
@@ -53156,6 +54071,9 @@ ${userPersona.trim()}
         Object.keys(state.inventory).forEach(id => {
             if (state.inventory[id] > 0 && state.customItems[id]) {
                 const item = state.customItems[id];
+                // 过滤掉像素小人（类型为 'character'）
+                if (item.type === 'character') return; 
+                
                 if (window.cabinCurrentInventoryFilter === 'all' || item.type === window.cabinCurrentInventoryFilter) {
                     allItems.push({id, count: state.inventory[id]});
                 }
@@ -53985,35 +54903,16 @@ ${userPersona.trim()}
         if (modal) modal.style.display = 'none';
     }
     
-    // 生成像素小人（从弹窗调用）
-    function generateCabinPixelCharacter() {
+    // 生成素体人模
+    async function generateBaseModel() {
         const config = getPrimaryApiConfig();
         if (!config.apiKey) {
             alert('请先在API设置中填写主API密钥！');
             return;
         }
-        if (!config.apiUrl) {
-            alert('请先在API设置中填写主API地址！');
-            return;
-        }
-        if (!config.model) {
-            alert('请先在API设置中选择主API模型！');
-            return;
-        }
-        
-        const input = document.getElementById('cabin-character-prompt-input');
-        const prompt = input?.value?.trim();
-        if (!prompt) {
-            alert('请输入生成提示词！');
-            return;
-        }
         
         closeCabinPixelCharacterModal();
-        generatePixelCharacter(prompt, config);
-    }
-    
-    // 生成像素小人
-    async function generatePixelCharacter(prompt, config) {
+        
         const state = window.cabinGachaState;
         if (state.coins < 1) {
             alert('金币不足 (需1)');
@@ -54032,15 +54931,156 @@ ${userPersona.trim()}
         if (loading) loading.style.display = 'block';
         
         try {
-            const systemPrompt = `你是专业的像素艺术设计师，擅长创作128×128像素尺寸的像素小人。
+            const systemPrompt = `你是像素人体结构专家。请生成一个标准的人体素体SVG，并明确区分各个身体部位。
+            
+核心要求：
+1. 画布尺寸：128x128像素
+2. 风格：像素艺术，清晰的轮廓
+3. 输出格式：SVG代码，必须包含以下带id的<g>组：
+   - id="head" (头部)
+   - id="body" (躯干)
+   - id="left_arm" (左手)
+   - id="right_arm" (右手)
+   - id="legs" (腿部)
+   
+请确保身体比例协调，适合作为服装设计的模特。只返回SVG代码。`;
+
+            const response = await fetch(`${config.apiUrl}/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${config.apiKey}`
+                },
+                body: JSON.stringify({
+                    model: config.model,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: "生成一个标准像素人体素体，区分身体部位" }
+                    ],
+                    temperature: 0.7
+                })
+            });
+            
+            const data = await response.json();
+            let svgContent = data.choices[0].message.content.trim();
+            
+            // 清理代码
+            if (svgContent.includes('```svg')) {
+                svgContent = svgContent.match(/```svg[\s\S]*?```/)[0].replace('```svg', '').replace('```', '').trim();
+            } else if (svgContent.includes('```xml')) {
+                svgContent = svgContent.match(/```xml[\s\S]*?```/)[0].replace('```xml', '').replace('```', '').trim();
+            }
+            
+            // 保存素体模型
+            const newId = 'base_model_' + Date.now();
+            state.customItems[newId] = {
+                name: "素体人模",
+                svg: svgContent,
+                rarity: 'SSR',
+                type: 'character', // 作为特殊角色
+                width: 3,
+                height: 4,
+                isBaseModel: true
+            };
+            
+            state.activeCharacterId = newId;
+            saveCabinGachaData();
+            updateCabinUI();
+            renderCabinRoom();
+            
+            alert("素体人模生成成功！已放置在房间中。");
+            
+        } catch (e) {
+            console.error(e);
+            alert("生成失败: " + e.message);
+        } finally {
+            if (glass) glass.style.display = 'block';
+            if (loading) loading.style.display = 'none';
+        }
+    }
+
+    // 生成像素小人（从弹窗调用）
+    function generateCabinPixelCharacter() {
+        const config = getPrimaryApiConfig();
+        if (!config.apiKey) {
+            alert('请先在API设置中填写主API密钥！');
+            return;
+        }
+        
+        const input = document.getElementById('cabin-character-prompt-input');
+        let prompt = input?.value?.trim();
+        let usePersona = false;
+        
+        // 如果输入为空，尝试获取当前角色的人设
+        if (!prompt) {
+            const persona = getCurrentCabinCharacterPersona();
+            if (persona) {
+                prompt = persona;
+                usePersona = true;
+            } else {
+                alert('请输入生成提示词！');
+                return;
+            }
+        }
+        
+        closeCabinPixelCharacterModal();
+        // 传入 usePersona 标志，或者直接传 prompt
+        generatePixelCharacter(prompt, config, usePersona);
+    }
+    
+    function getCurrentCabinCharacterPersona() {
+        const roomId = window.cabinGachaState.currentRoomId || 'default';
+        if (roomId === 'default') {
+             // 用户的 Persona? 通常没有明确的字段，可以用 "可爱的像素角色" 代替
+             return state.chats?.['user']?.settings?.aiPersona || "可爱的像素角色";
+        }
+        return state.chats[roomId] ? state.chats[roomId].settings.aiPersona : null;
+    }
+    
+    // 生成像素小人
+    async function generatePixelCharacter(prompt, config, usePersona = false) {
+        const state = window.cabinGachaState;
+        if (state.coins < 1) {
+            alert('金币不足 (需1)');
+            return;
+        }
+        
+        const currentRoomId = state.currentRoomId || 'default';
+        const charName = currentRoomId === 'default' ? '我' : (state.chats[currentRoomId]?.name || '未知');
+        
+        if (usePersona) {
+             if (!confirm(`将使用角色【${charName}】的人设作为提示词生成小人，是否继续？`)) return;
+        }
+        
+        state.coins -= 1;
+        saveCabinGachaData();
+        updateCabinUI();
+        
+        const glassId = 'furniture-capsules-visual';
+        const glass = document.getElementById(glassId);
+        const loading = document.getElementById('furniture-ai-loading');
+        
+        if (glass) glass.style.display = 'none';
+        if (loading) loading.style.display = 'block';
+        
+        try {
+            const systemPrompt = `你是专业的像素艺术设计师。请生成一个128×128像素的像素小人。
+必须输出4个SVG，分别对应 NORMAL (正常), HAPPY (开心), SAD (悲伤), ANGRY (生气) 四种表情。
+格式如下：
+===NORMAL===
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">...</svg>
+===HAPPY===
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">...</svg>
+===SAD===
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">...</svg>
+===ANGRY===
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">...</svg>
 
 核心要求：
-1. 画布尺寸：严格128×128像素（viewBox="0 0 128 128"）
-2. 像素精度：每个像素格必须是1×1像素
-3. 像素风格：使用真像素艺术风格，类似8-bit或16-bit游戏角色
-4. 角色设计：完整的人物形象，包括身体、四肢、面部特征等
-
-只返回SVG代码，不包含任何其他文本。`;
+1. 背景必须透明 (fill="transparent" 或不画背景)
+2. 保持角色特征一致，只改变面部表情或微小动作。
+3. 风格：类似8-bit或16-bit游戏角色。
+4. 只返回代码。`;
             
             const response = await fetch(`${config.apiUrl}/chat/completions`, {
                 method: 'POST',
@@ -54070,56 +55110,82 @@ ${userPersona.trim()}
             }
             
             const data = await response.json();
-            let svgContent = data.choices[0].message.content.trim();
+            const content = data.choices[0].message.content.trim();
             
-            // 清理SVG
-            if (svgContent.includes('```svg')) {
-                svgContent = svgContent.match(/```svg[\s\S]*?```/)[0].replace('```svg', '').replace('```', '').trim();
+            // Parse SVGs
+            const parts = content.split('===');
+            let svgNormal, svgHappy, svgSad, svgAngry;
+            
+            for (let i = 0; i < parts.length; i++) {
+                const part = parts[i].trim();
+                if (parts[i].includes('NORMAL')) svgNormal = parts[i+1]?.trim();
+                if (parts[i].includes('HAPPY')) svgHappy = parts[i+1]?.trim();
+                if (parts[i].includes('SAD')) svgSad = parts[i+1]?.trim();
+                if (parts[i].includes('ANGRY')) svgAngry = parts[i+1]?.trim();
             }
             
-            if (!svgContent.includes('xmlns="http://www.w3.org/2000/svg"')) {
-                svgContent = svgContent.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+            // Fallback
+            if (!svgNormal) { 
+                const match = content.match(/<svg[\s\S]*?<\/svg>/); 
+                if (match) svgNormal = match[0]; 
             }
-            if (!svgContent.includes('viewBox="0 0 128 128"')) {
-                svgContent = svgContent.replace(/viewBox="[^"]*"/g, 'viewBox="0 0 128 128"');
-            }
+            // Clean up SVG tags
+            const cleanSvg = (svg) => {
+                if (!svg) return svg;
+                if (svg.includes('```svg')) svg = svg.match(/```svg[\s\S]*?```/)[0].replace(/```svg|```/g, '').trim();
+                if (!svg.includes('xmlns')) svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+                if (!svg.includes('viewBox="0 0 128 128"')) svg = svg.replace(/viewBox="[^"]*"/g, 'viewBox="0 0 128 128"');
+                return svg;
+            };
             
+            svgNormal = cleanSvg(svgNormal);
+            svgHappy = cleanSvg(svgHappy) || svgNormal;
+            svgSad = cleanSvg(svgSad) || svgNormal;
+            svgAngry = cleanSvg(svgAngry) || svgNormal;
+            
+            if (!svgNormal) throw new Error('未能提取到有效的SVG代码');
+
             const newId = 'character_' + Date.now();
-            state.customItems[newId] = {
-                name: prompt.length > 20 ? prompt.substring(0, 20) + '...' : prompt,
-                svg: svgContent,
+            
+            // 创建角色对象
+            const newChar = {
+                id: newId,
+                name: usePersona ? (charName + '的形象') : (prompt.length > 10 ? prompt.substring(0, 10) : prompt),
+                svg: svgNormal, // Default display
+                svgNormal, svgHappy, svgSad, svgAngry,
                 rarity: 'SR',
                 inPool: false,
-                type: 'decor',
+                type: 'character_avatar', // 新类型
                 width: 3,
                 height: 4,
                 generationTime: Date.now(),
                 isCharacter: true
             };
             
-            state.inventory[newId] = (state.inventory[newId] || 0) + 1;
-            state.lastGained = state.customItems[newId].name;
+            state.customItems[newId] = newChar;
             
-            // 添加到角色列表
+            // 添加到全局列表
             if (!state.characters) state.characters = [];
-            state.characters.push({ id: newId, ...state.customItems[newId] });
+            state.characters.push(newChar);
             
-            if (!state.catalog[newId]) {
-                state.catalog[newId] = { seen: true, owned: true };
-            } else {
-                state.catalog[newId].seen = true;
-                state.catalog[newId].owned = true;
-            }
+            // 绑定到当前房间/角色
+            const currentRoom = getCurrentRoom();
+            currentRoom.ownerAvatarId = newId;
             
+            // 保存
             saveCabinGachaData();
             updateCabinUI();
             
-            // 如果当前在人物页面，更新显示
+            // 刷新显示
             if (document.getElementById('cabin-character-screen')?.style.display === 'flex') {
                 renderCabinCharacterList();
+                renderCabinCharacterScreenHeader(); // Refresh header if needed
+                // Update display area
+                const display = document.getElementById('cabin-character-display');
+                if (display) display.innerHTML = svgNormal;
             }
             
-            alert(`成功生成像素小人：${state.customItems[newId].name}！`);
+            alert(`成功生成像素小人并绑定给【${charName}】！`);
             
         } catch (error) {
             console.error('生成像素小人失败:', error);
@@ -54697,16 +55763,49 @@ ${userPersona.trim()}
         });
     }
 
-    // 选择宠物
+    // 获取当前房间的宠物
+    function getCurrentCabinPet() {
+        const state = window.cabinGachaState;
+        const currentRoom = getCurrentRoom(); // 获取当前房间数据对象
+        
+        // 1. 尝试从当前房间获取
+        if (currentRoom.currentPet) {
+            return currentRoom.currentPet;
+        }
+        
+        // 2. 兼容性：如果是默认房间且没有数据，尝试读取旧的全局变量并迁移
+        if (state.currentRoomId === 'default' && state.currentPet) {
+            currentRoom.currentPet = state.currentPet;
+            delete state.currentPet; // 清理旧数据
+            return currentRoom.currentPet;
+        }
+        
+        return null;
+    }
+
+    // 选择宠物（修改版：绑定到当前房间）
     function selectCabinPet(index) {
         const state = window.cabinGachaState;
+        const currentRoom = getCurrentRoom();
+        
         if (state.pets && state.pets[index]) {
-            state.currentPet = state.pets[index];
-            renderCabinPetDisplay(state.currentPet);
+            // 将宠物绑定到当前房间
+            currentRoom.currentPet = state.pets[index];
+            
+            renderCabinPetDisplay(currentRoom.currentPet);
             saveCabinGachaData();
             closeCabinPetListModal();
-            showToast('已选择宠物: ' + state.currentPet.name);
+            
+            const charName = getCabinCurrentOwnerName();
+            showToast(`已选择宠物: ${state.pets[index].name} (绑定至 ${charName})`);
         }
+    }
+    
+    // 获取当前房间主人名称
+    function getCabinCurrentOwnerName() {
+        const roomId = window.cabinGachaState.currentRoomId || 'default';
+        if (roomId === 'default') return state.qzoneSettings.nickname || '我';
+        return state.chats[roomId] ? state.chats[roomId].name : '未知';
     }
 
     // 生成宠物
@@ -54735,26 +55834,28 @@ ${userPersona.trim()}
                 throw new Error("请先在设置中配置 API 地址和密钥");
             }
 
-            const systemPrompt = `你是像素艺术专家。请生成一个128x128的像素宠物SVG。
-输出4个SVG，分别对应NORMAL, HAPPY, SAD, ANGRY四种表情。
-格式如下：
-===NORMAL===
-<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">...</svg>
-===HAPPY===
-<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">...</svg>
-===SAD===
-<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">...</svg>
-===ANGRY===
-<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">...</svg>
-确保这4个是同一个角色，只有表情不同。背景必须透明（fill="transparent"）。
-请只输出代码。`;
+            const systemPrompt = `你是像素艺术专家和宠物设计师。请生成一个128x128的像素宠物，并为其创作一段200-400字的设定。
+
+核心要求：
+1. 返回严格的 JSON 格式，不要包含 markdown 标记。
+2. JSON 结构如下：
+{
+  "svg_normal": "<svg...>...</svg>",
+  "svg_happy": "<svg...>...</svg>",
+  "svg_sad": "<svg...>...</svg>",
+  "svg_angry": "<svg...>...</svg>",
+  "bio": "这里是宠物的设定，包含性格、喜好、背景故事等，200-400字"
+}
+3. SVG要求：128x128像素，背景透明，风格统一。
+4. 设定要求：生动有趣，符合宠物的外观特征。`;
 
             const response = await fetch(`${apiUrl}/chat/completions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
                 body: JSON.stringify({
                     model: config.model,
-                    messages: [ { role: 'system', content: systemPrompt }, { role: 'user', content: `生成像素宠物：${promptText}` } ]
+                    messages: [ { role: 'system', content: systemPrompt }, { role: 'user', content: `生成像素宠物：${promptText}` } ],
+                    temperature: 0.7
                 })
             });
             
@@ -54767,23 +55868,45 @@ ${userPersona.trim()}
             const data = await response.json();
             const content = data.choices[0].message.content;
             
-            const parts = content.split('===');
-            let svgNormal, svgHappy, svgSad, svgAngry;
-            for (let i = 0; i < parts.length; i++) {
-                if (parts[i].includes('NORMAL')) svgNormal = parts[i+1]?.trim();
-                if (parts[i].includes('HAPPY')) svgHappy = parts[i+1]?.trim();
-                if (parts[i].includes('SAD')) svgSad = parts[i+1]?.trim();
-                if (parts[i].includes('ANGRY')) svgAngry = parts[i+1]?.trim();
+            // 解析 JSON
+            let petData = {};
+            try {
+                // 尝试直接解析
+                petData = JSON.parse(content);
+            } catch (e) {
+                // 尝试提取 markdown 中的 json
+                const match = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/{\s*"[\s\S]*"\s*}/);
+                if (match) {
+                    try {
+                        petData = JSON.parse(match[1] || match[0]);
+                    } catch (e2) {
+                        throw new Error("无法解析返回的 JSON 数据");
+                    }
+                } else {
+                     throw new Error("API 未返回有效的 JSON 格式");
+                }
             }
-            if (!svgNormal) { const match = content.match(/<svg[\s\S]*?<\/svg>/); if (match) svgNormal = match[0]; }
-            if (!svgHappy) svgHappy = svgNormal;
-            if (!svgSad) svgSad = svgNormal;
-            if (!svgAngry) svgAngry = svgNormal;
+
+            const cleanSvg = (svg) => {
+                if (!svg) return '';
+                if (!svg.includes('xmlns')) svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+                if (!svg.includes('viewBox="0 0 128 128"')) svg = svg.replace(/viewBox="[^"]*"/g, 'viewBox="0 0 128 128"');
+                return svg;
+            };
+
+            const svgNormal = cleanSvg(petData.svg_normal);
+            const svgHappy = cleanSvg(petData.svg_happy) || svgNormal;
+            const svgSad = cleanSvg(petData.svg_sad) || svgNormal;
+            const svgAngry = cleanSvg(petData.svg_angry) || svgNormal;
+            const bio = petData.bio || "这是一只神秘的宠物，没有留下任何记录。";
+
+            if (!svgNormal) throw new Error("未能生成有效的 SVG 图像");
 
             const pet = {
                 id: `pet_${Date.now()}`,
                 name: `宠物${state.pets.length + 1}`,
                 svg: svgNormal, svgNormal, svgHappy, svgSad, svgAngry,
+                bio: bio, // 保存设定
                 level: 1, mood: 80, energy: 100, hunger: 100,
                 experience: 0, experienceToNext: 100,
                 abilities: generateCabinPetAbilities(3),
@@ -54805,7 +55928,7 @@ ${userPersona.trim()}
     // 互动
     function interactWithCabinPet(action) {
         const state = window.cabinGachaState;
-        const pet = state.currentPet;
+        const pet = getCurrentCabinPet();
         if (!pet) { showToast("请先选择宠物！"); return; }
         
         // 检查精力
@@ -54875,7 +55998,7 @@ ${userPersona.trim()}
     }
 
     function openRenameCabinPetModal() {
-        const pet = window.cabinGachaState.currentPet;
+        const pet = getCurrentCabinPet();
         if (!pet) { showToast("请先选择宠物"); return; }
         
         // 使用自定义 Modal
@@ -54908,7 +56031,7 @@ ${userPersona.trim()}
     }
 
     function viewCabinPetDetails() {
-        const pet = window.cabinGachaState.currentPet;
+        const pet = getCurrentCabinPet();
         if(!pet) { showToast("请先选择宠物"); return; }
         
         const abilitiesText = (pet.abilities || []).map(a => `${a.name}: ${a.value}`).join(', ') || '暂无';
@@ -54917,7 +56040,7 @@ ${userPersona.trim()}
         modal.className = 'modal';
         modal.style.display = 'flex';
         modal.innerHTML = `
-            <div class="modal-content" style="max-width: 350px; background:#fff; padding:20px; border-radius:10px; border:4px solid #ff9ed2;">
+            <div class="modal-content" style="max-width: 350px; background:#fff; padding:20px; border-radius:10px; border:4px solid #ff9ed2; max-height: 85vh; overflow-y: auto;">
                 <div class="modal-title" style="color:#e06c9f; margin-bottom:15px; text-align:center;">🐾 宠物档案 🐾</div>
                 <div style="font-size:11px; line-height:1.6; color:#333;">
                     <div><strong>名称：</strong>${pet.name}</div>
@@ -54930,14 +56053,103 @@ ${userPersona.trim()}
                     <div style="margin-top:5px; padding-top:5px; border-top:1px dashed #ff9ed2;">
                         <strong>属性：</strong>${abilitiesText}
                     </div>
+                    <div style="margin-top:10px; padding:8px; background:#fff0f5; border-radius:5px; font-size:10px;">
+                        <strong>📜 设定：</strong><br>
+                        ${pet.bio || "这只宠物还没有详细设定..."}
+                    </div>
                     <div style="margin-top:5px; color:#999;">创建于: ${new Date(pet.createdAt).toLocaleDateString()}</div>
                 </div>
-                <div style="margin-top:15px; text-align:center;">
+                <div style="margin-top:15px; text-align:center; display:flex; flex-direction:column; gap:8px;">
+                    <button class="pixel-btn pink" id="btn-pet-diary">📅 查看它的一天</button>
                     <button class="pixel-btn" onclick="this.closest('.modal').remove()" style="background:#ccc;">关闭</button>
                 </div>
             </div>
         `;
         document.body.appendChild(modal);
+        
+        document.getElementById('btn-pet-diary').onclick = () => {
+             modal.remove();
+             generateCabinPetDiary(pet);
+        };
+    }
+    
+    // 生成宠物日记
+    async function generateCabinPetDiary(pet) {
+        const config = getPrimaryApiConfig();
+        if (!config.apiKey) {
+            alert('请先在API设置中配置主API！');
+            return;
+        }
+        
+        // 获取当前主人信息
+        const roomId = window.cabinGachaState.currentRoomId || 'default';
+        let ownerName = "主人";
+        let ownerPersona = "一个普通人";
+        
+        if (roomId === 'default') {
+             ownerName = state.qzoneSettings.nickname || '我';
+        } else if (state.chats[roomId]) {
+             ownerName = state.chats[roomId].name;
+             ownerPersona = state.chats[roomId].settings.aiPersona;
+        }
+        
+        showCustomAlert('正在观察...', '正在生成宠物的一天，请稍候...');
+        
+        try {
+            const systemPrompt = `你是一个充满想象力的宠物观察员。请根据宠物设定和主人信息，写一篇约300字的“宠物观察日记”。
+            
+宠物信息：
+- 名字：${pet.name}
+- 性格/设定：${pet.bio || '未知'}
+- 当前状态：心情${pet.mood}%, 精力${pet.energy}%
+
+主人信息：
+- 名字：${ownerName}
+- 人设：${ownerPersona}
+
+要求：
+1. 以第三人称或宠物的视角撰写。
+2. 描述它今天做了什么有趣的事情。
+3. 重点描写它与主人【${ownerName}】的互动。
+4. 风格可爱、温馨或搞怪（取决于宠物性格）。`;
+
+            const response = await fetch(`${config.apiUrl}/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${config.apiKey}`
+                },
+                body: JSON.stringify({
+                    model: config.model,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: "请生成日记。" }
+                    ],
+                    temperature: 0.8
+                })
+            });
+            
+            const data = await response.json();
+            const diary = data.choices[0].message.content;
+            
+            // 展示日记
+            const diaryModal = document.createElement('div');
+            diaryModal.className = 'modal';
+            diaryModal.style.display = 'flex';
+            diaryModal.innerHTML = `
+                <div class="modal-content" style="max-width: 400px; background:#fff; padding:20px; border-radius:10px; border:4px solid #aedeef; max-height: 80vh; overflow-y: auto;">
+                    <div class="modal-title" style="color:#000; margin-bottom:15px; text-align:center;">📅 ${pet.name}的一天</div>
+                    <div style="font-size:12px; line-height:1.8; color:#333; text-align:left; white-space: pre-wrap;">${diary}</div>
+                    <div style="margin-top:20px; text-align:center;">
+                        <button class="pixel-btn" onclick="this.closest('.modal').remove()" style="background:#aedeef;">关闭日记</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(diaryModal);
+            
+        } catch (e) {
+            alert('生成失败: ' + e.message);
+        }
     }
 
     function checkCabinPetLevelUp(pet) {
@@ -54993,6 +56205,630 @@ ${userPersona.trim()}
             }
         }, 10000);
     }, 1000);
+// === Cabin Character & AI Decoration ===
+
+// Render Room Header (Floating Owner Indicator)
+function renderCabinRoomHeader() {
+    const roomArea = document.getElementById('cabin-room-screen');
+    if (!roomArea) return;
+    
+    // Remove old sidebar if exists
+    const oldSidebar = document.getElementById('cabin-character-sidebar');
+    if (oldSidebar) oldSidebar.remove();
+
+    // Check if indicator exists
+    let indicator = document.getElementById('cabin-owner-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'cabin-owner-indicator';
+        indicator.onclick = openCabinRoomSelector;
+        roomArea.appendChild(indicator);
+    }
+    
+    // Get current owner info
+    const roomId = window.cabinGachaState.currentRoomId || 'default';
+    let avatar = state.qzoneSettings.avatar || 'https://i.postimg.cc/mDqzC9Dq/image.png';
+    let name = state.qzoneSettings.nickname || '我';
+    
+    if (roomId !== 'default' && state.chats[roomId]) {
+        avatar = state.chats[roomId].settings.aiAvatar;
+        name = state.chats[roomId].name;
+    }
+    
+    indicator.innerHTML = `
+        <img src="${avatar}">
+        <span>${name}的房间 ▾</span>
+    `;
+}
+
+// Open Selector Modal
+function openCabinRoomSelector() {
+    // Create Modal if not exists
+    let modal = document.getElementById('cabin-room-selector-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'cabin-room-selector-modal';
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.style.display = 'none';
+        };
+        document.body.appendChild(modal);
+    }
+    
+    // Prepare Data
+    const chars = [];
+    // 1. User
+    chars.push({
+        id: 'default',
+        name: state.qzoneSettings.nickname || '我',
+        avatar: state.qzoneSettings.avatar || 'https://i.postimg.cc/mDqzC9Dq/image.png'
+    });
+    // 2. Characters
+    if (state.chats) {
+        Object.values(state.chats).forEach(chat => {
+            if (!chat.isGroup) {
+                chars.push({
+                    id: chat.id,
+                    name: chat.name,
+                    avatar: chat.settings.aiAvatar
+                });
+            }
+        });
+    }
+    
+    // Render Content
+    const currentId = window.cabinGachaState.currentRoomId || 'default';
+    
+    modal.innerHTML = `
+        <div class="cabin-selector-content">
+            <div class="cabin-selector-header">
+                <span>选择房间</span>
+                <span onclick="document.getElementById('cabin-room-selector-modal').style.display='none'" style="cursor:pointer">✕</span>
+            </div>
+            <div class="cabin-selector-grid">
+                ${chars.map(c => `
+                    <div class="cabin-selector-item ${c.id === currentId ? 'active' : ''}" onclick="switchCabinRoom('${c.id}')">
+                        <img src="${c.avatar}">
+                        <span>${c.name}</span>
+                    </div>
+                `).join('')}
+            </div>
+            <div style="border-top: 1px solid #eee; margin: 10px 0;"></div>
+            <button class="cabin-ai-btn-large" onclick="autoDecorateCabin(); document.getElementById('cabin-room-selector-modal').style.display='none'">
+                <span style="font-size:18px">✨</span> 一键 AI 装修
+            </button>
+        </div>
+    `;
+    
+    modal.style.display = 'flex';
+}
+
+// Render Character Screen Header (Owner Indicator)
+function renderCabinCharacterScreenHeader() {
+    const charScreen = document.getElementById('cabin-character-screen');
+    if (!charScreen) return;
+    
+    // Check if indicator exists
+    let indicator = document.getElementById('cabin-char-owner-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'cabin-char-owner-indicator';
+        // Reuse styles
+        indicator.style.position = 'absolute';
+        indicator.style.top = '60px'; // Consistent with others
+        indicator.style.left = '15px';
+        indicator.style.background = 'rgba(255, 255, 255, 0.9)';
+        indicator.style.padding = '5px 12px 5px 5px';
+        indicator.style.borderRadius = '30px';
+        indicator.style.display = 'flex';
+        indicator.style.alignItems = 'center';
+        indicator.style.gap = '8px';
+        indicator.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+        indicator.style.cursor = 'pointer';
+        indicator.style.zIndex = '90';
+        indicator.style.fontSize = '14px';
+        indicator.style.fontWeight = 'bold';
+        indicator.style.color = '#555';
+        indicator.style.border = '2px solid #fff';
+        
+        indicator.onclick = openCabinRoomSelector; // Reuse selector
+        charScreen.insertBefore(indicator, charScreen.firstChild);
+    }
+    
+    // Get current owner info
+    const roomId = window.cabinGachaState.currentRoomId || 'default';
+    let avatar = state.qzoneSettings.avatar || 'https://i.postimg.cc/mDqzC9Dq/image.png';
+    let name = state.qzoneSettings.nickname || '我';
+    
+    if (roomId !== 'default' && state.chats[roomId]) {
+        avatar = state.chats[roomId].settings.aiAvatar;
+        name = state.chats[roomId].name;
+    }
+    
+    indicator.innerHTML = `
+        <img src="${avatar}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; border:1px solid #eee;">
+        <span>${name}的形象 ▾</span>
+    `;
+    
+    // Refresh the displayed character if one is bound
+    const currentRoom = getCurrentRoom();
+    const display = document.getElementById('cabin-character-display');
+    if (display && currentRoom.ownerAvatarId && window.cabinGachaState.customItems[currentRoom.ownerAvatarId]) {
+         display.innerHTML = window.cabinGachaState.customItems[currentRoom.ownerAvatarId].svg;
+    } else if (display) {
+         // Default empty or base
+         display.innerHTML = '<div style="font-size:10px; color:#999;">暂无形象</div>';
+    }
+}
+
+// Render Pet Screen Header (Owner Indicator)
+function renderCabinPetScreenHeader() {
+    const petScreen = document.getElementById('cabin-pet-screen');
+    if (!petScreen) return;
+    
+    // Check if indicator exists
+    let indicator = document.getElementById('cabin-pet-owner-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'cabin-pet-owner-indicator';
+        // 复用相同的样式类（如果可能）或者直接内联样式
+        indicator.style.position = 'absolute';
+        indicator.style.top = '60px'; // Move down to avoid header overlap
+        indicator.style.left = '15px';
+        indicator.style.background = 'rgba(255, 255, 255, 0.9)';
+        indicator.style.padding = '5px 12px 5px 5px';
+        indicator.style.borderRadius = '30px';
+        indicator.style.display = 'flex';
+        indicator.style.alignItems = 'center';
+        indicator.style.gap = '8px';
+        indicator.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+        indicator.style.cursor = 'pointer';
+        indicator.style.zIndex = '90';
+        indicator.style.fontSize = '14px';
+        indicator.style.fontWeight = 'bold';
+        indicator.style.color = '#555';
+        indicator.style.border = '2px solid #fff';
+        
+        indicator.onclick = openCabinRoomSelector; // 复用同一个选择器
+        petScreen.appendChild(indicator);
+    }
+    
+    // Get current owner info
+    const roomId = window.cabinGachaState.currentRoomId || 'default';
+    let avatar = state.qzoneSettings.avatar || 'https://i.postimg.cc/mDqzC9Dq/image.png';
+    let name = state.qzoneSettings.nickname || '我';
+    
+    if (roomId !== 'default' && state.chats[roomId]) {
+        avatar = state.chats[roomId].settings.aiAvatar;
+        name = state.chats[roomId].name;
+    }
+    
+    indicator.innerHTML = `
+        <img src="${avatar}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; border:1px solid #eee;">
+        <span>${name}的宠物 ▾</span>
+    `;
+}
+
+// Switch Room (Modified to update Pet Screen too)
+function switchCabinRoom(roomId) {
+    if (window.cabinGachaState.currentRoomId === roomId) {
+        document.getElementById('cabin-room-selector-modal').style.display = 'none';
+        return;
+    }
+    window.cabinGachaState.currentRoomId = roomId;
+    
+    // Update active character
+    if (roomId !== 'default') {
+        window.cabinGachaState.activeCharacterId = roomId;
+    } else {
+        window.cabinGachaState.activeCharacterId = null;
+    }
+    
+    // Refresh current visible screen
+    const cabinScreen = document.getElementById('cabin-screen');
+    const roomScreen = document.getElementById('cabin-room-screen');
+    const petScreen = document.getElementById('cabin-pet-screen');
+    const charScreen = document.getElementById('cabin-character-screen');
+    
+    if (roomScreen && roomScreen.style.display !== 'none') {
+        renderCabinRoom();
+        renderCabinRoomHeader(); 
+    } else if (petScreen && petScreen.style.display !== 'none') {
+        const pet = getCurrentCabinPet();
+        renderCabinPetDisplay(pet);
+        renderCabinPetScreenHeader();
+        updateCabinPetCount(); 
+    } else if (charScreen && charScreen.style.display !== 'none') {
+        renderCabinCharacterList();
+        renderCabinCharacterScreenHeader();
+    }
+    
+    document.getElementById('cabin-room-selector-modal').style.display = 'none';
+}
+
+// AI Auto Decorate
+async function autoDecorateCabin() {
+    const roomId = window.cabinGachaState.currentRoomId || 'default';
+    let persona = "用户本人";
+    let charName = "我";
+    
+    if (roomId !== 'default' && state.chats[roomId]) {
+        persona = state.chats[roomId].settings.aiPersona;
+        charName = state.chats[roomId].name;
+    }
+    
+    if (!confirm(`确定要让 AI 为【${charName}】自动装扮房间吗？这将清空当前房间布局。`)) return;
+    
+    const config = getPrimaryApiConfig();
+    if (!config.apiKey) {
+        alert('请先在小屋设置或API设置中配置主API！');
+        return;
+    }
+    
+    // Show loading
+    const loading = document.getElementById('furniture-ai-loading');
+    if (loading) loading.style.display = 'block';
+    
+    try {
+        // Prepare Inventory (Furniture only)
+        const inventory = [];
+        const catalog = window.cabinGachaState.catalog;
+        const customItems = window.cabinGachaState.customItems;
+        
+        Object.keys(catalog).forEach(itemId => {
+            if (catalog[itemId].owned && customItems[itemId] && customItems[itemId].type !== 'clothes') {
+                inventory.push({
+                    id: itemId,
+                    name: customItems[itemId].name,
+                    width: customItems[itemId].width || customItems[itemId].w || 1,
+                    height: customItems[itemId].height || customItems[itemId].h || 1
+                });
+            }
+        });
+        
+        if (inventory.length < 5) {
+            alert('家具太少了，去抽点家具再来吧！');
+            return;
+        }
+        
+        // Randomly sample inventory to avoid huge prompts
+        const availableItems = inventory.sort(() => 0.5 - Math.random()).slice(0, 50);
+        
+        const roomW = CABIN_ROOM_WIDTH || 11;
+        const roomH = CABIN_ROOM_HEIGHT || 10;
+        
+        const systemPrompt = `你是一个室内设计大师。请根据角色人设，从可用家具列表中挑选家具，布置一个 ${roomW}x${roomH} 的房间。
+        
+可用家具列表（JSON格式）:
+${JSON.stringify(availableItems.map(i => ({id: i.id, name: i.name, size: `${i.width}x${i.height}`})))}
+
+角色人设:
+${persona}
+
+要求：
+1. 返回JSON格式，包含字段 "items"。
+2. "items" 是一个数组，每个元素包含: "itemId" (来自列表), "x" (0-${roomW-1}), "y" (0-${roomH-1})。
+3. 家具不能重叠，不能超出边界。
+4. 尽可能符合人设风格。
+5. 至少放置5件家具。
+6. 不要解释，只返回JSON。`;
+
+        const response = await fetch(`${config.apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.apiKey}`
+            },
+            body: JSON.stringify({
+                model: config.model,
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: "请设计房间布局。" }
+                ],
+                temperature: 0.7
+            })
+        });
+        
+        const data = await response.json();
+        let content = '';
+        if (data.choices && data.choices[0] && data.choices[0].message) {
+             content = data.choices[0].message.content;
+        } else {
+             throw new Error('API返回格式异常');
+        }
+        
+        // Parse JSON
+        let layout = [];
+        try {
+            // Try to extract JSON block if wrapped in markdown
+            const match = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\[\s*{[\s\S]*}\s*\]/) || content.match(/{\s*"items"[\s\S]*}/);
+            if (match) {
+                 const jsonStr = match[1] || match[0];
+                 const parsed = JSON.parse(jsonStr);
+                 layout = Array.isArray(parsed) ? parsed : (parsed.items || []);
+            } else {
+                 layout = JSON.parse(content).items || [];
+            }
+        } catch (e) {
+            console.error('Parse Error:', e, content);
+            throw new Error('无法解析AI返回的布局数据');
+        }
+        
+        if (!layout || layout.length === 0) {
+             throw new Error('AI没有生成有效的布局');
+        }
+
+        // Validate and Apply
+        const currentRoom = getCurrentRoom();
+        currentRoom.placedItems = []; // Clear
+        currentRoom.occupiedGrid = {}; // Clear grid
+        
+        layout.forEach(item => {
+            const meta = customItems[item.itemId];
+            if (meta) {
+                 const w = meta.width || meta.w || 1;
+                 const h = meta.height || meta.h || 1;
+                 // Simple boundary check
+                 if (item.x >= 0 && item.y >= 0 && item.x + w <= roomW && item.y + h <= roomH) {
+                     // Check collision? For now, we trust AI or overwrite
+                     currentRoom.placedItems.push({
+                         itemId: item.itemId,
+                         gridX: item.x,
+                         gridY: item.y,
+                         rotation: 0
+                     });
+                     
+                     // Mark grid as occupied
+                     for(let i=0; i<w; i++) {
+                         for(let j=0; j<h; j++) {
+                             currentRoom.occupiedGrid[`${item.x+i},${item.y+j}`] = true;
+                         }
+                     }
+                 }
+            }
+        });
+        
+        saveCabinGachaData(); // Save
+        renderCabinRoom(); // Refresh
+        alert('房间装扮完成！');
+        
+    } catch (e) {
+        console.error(e);
+        alert('AI装扮失败: ' + e.message);
+    } finally {
+        if (loading) loading.style.display = 'none';
+    }
+}
+// === 钱包系统 ===
+
+let currentWalletCharId = 'user';
+
+function openCabinWalletModal() {
+    const state = window.cabinGachaState;
+    if (!state.wallets) updateCabinUI(); 
+    
+    currentWalletCharId = 'user'; 
+    
+    let modal = document.getElementById('cabin-wallet-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'cabin-wallet-modal';
+        modal.className = 'modal';
+        modal.style.display = 'none';
+        modal.innerHTML = `
+            <div class="modal-content" style="width: 90%; max-width: 400px; background: #fff; border-radius: 15px; padding: 20px; max-height: 85vh; display: flex; flex-direction: column;">
+                <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div style="font-weight: bold; font-size: 16px;">💰 钱包账户</div>
+                    <button class="pixel-btn" onclick="document.getElementById('cabin-wallet-modal').style.display='none'" style="padding: 5px 10px;">✕</button>
+                </div>
+                
+                <div id="wallet-account-selector" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid #eee;"></div>
+                
+                <div style="background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); padding: 20px; border-radius: 12px; color: white; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(253, 160, 133, 0.4);">
+                    <div style="font-size: 12px; opacity: 0.9;">当前余额</div>
+                    <div style="font-size: 32px; font-weight: bold; margin: 5px 0;">
+                        🟡 <span id="wallet-balance-display">0</span>
+                    </div>
+                    <div id="wallet-owner-name" style="font-size: 12px; opacity: 0.8;">账户: 我</div>
+                </div>
+                
+                <div style="font-weight: bold; margin-bottom: 10px; color: #555;">📋 交易流水</div>
+                <div id="wallet-transactions-list" style="flex: 1; overflow-y: auto; font-size: 12px; color: #666; min-height: 150px;">
+                    <div style="text-align: center; padding: 20px;">加载中...</div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    modal.style.display = 'flex';
+    renderWalletAccounts();
+    switchWalletAccount('user');
+}
+
+function renderWalletAccounts() {
+    const list = document.getElementById('wallet-account-selector');
+    if (!list) return;
+    
+    list.innerHTML = '';
+    
+    const userBtn = createWalletAccountBtn('user', state.qzoneSettings.nickname || '我', state.qzoneSettings.avatar || 'https://i.postimg.cc/mDqzC9Dq/image.png');
+    list.appendChild(userBtn);
+    
+    if (state.chats) {
+        Object.values(state.chats).forEach(chat => {
+            if (!chat.isGroup) {
+                const btn = createWalletAccountBtn(chat.id, chat.name, chat.settings.aiAvatar);
+                list.appendChild(btn);
+            }
+        });
+    }
+}
+
+function createWalletAccountBtn(id, name, avatar) {
+    const div = document.createElement('div');
+    div.className = 'wallet-account-item';
+    div.style.cssText = 'display: flex; flex-direction: column; align-items: center; min-width: 60px; cursor: pointer; opacity: 0.6; transition: all 0.2s; flex-shrink: 0;';
+    div.innerHTML = `
+        <img src="${avatar}" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid transparent; object-fit: cover;">
+        <span style="font-size: 10px; margin-top: 4px; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${name}</span>
+    `;
+    div.onclick = () => switchWalletAccount(id);
+    div.id = `wallet-btn-${id}`;
+    return div;
+}
+
+async function switchWalletAccount(id) {
+    currentWalletCharId = id;
+    
+    document.querySelectorAll('.wallet-account-item').forEach(el => {
+        el.style.opacity = '0.6';
+        el.querySelector('img').style.borderColor = 'transparent';
+    });
+    const activeBtn = document.getElementById(`wallet-btn-${id}`);
+    if (activeBtn) {
+        activeBtn.style.opacity = '1';
+        activeBtn.querySelector('img').style.borderColor = '#e06c9f';
+    }
+    
+    const state = window.cabinGachaState;
+    if (!state.wallets[id]) {
+        await generateWalletDataAPI(id);
+    }
+    
+    renderWalletData(id);
+}
+
+function renderWalletData(id) {
+    const state = window.cabinGachaState;
+    const wallet = state.wallets[id];
+    
+    const balanceEl = document.getElementById('wallet-balance-display');
+    const ownerEl = document.getElementById('wallet-owner-name');
+    
+    if (wallet) {
+        balanceEl.textContent = wallet.balance.toLocaleString();
+        
+        let name = "我";
+        if (id !== 'user' && state.chats[id]) name = state.chats[id].name;
+        ownerEl.textContent = `账户: ${name}`;
+        
+        const list = document.getElementById('wallet-transactions-list');
+        list.innerHTML = '';
+        
+        if (wallet.transactions && wallet.transactions.length > 0) {
+            const sorted = [...wallet.transactions].reverse(); 
+            
+            sorted.forEach(t => {
+                const item = document.createElement('div');
+                item.style.cssText = 'display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0;';
+                const isIncome = t.amount >= 0;
+                item.innerHTML = `
+                    <div>
+                        <div style="font-weight: bold;">${t.desc}</div>
+                        <div style="font-size: 10px; color: #999;">${new Date(t.date).toLocaleDateString()}</div>
+                    </div>
+                    <div style="font-weight: bold; color: ${isIncome ? '#4CAF50' : '#f44336'};">
+                        ${isIncome ? '+' : ''}${t.amount}
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        } else {
+            list.innerHTML = '<div style="text-align: center; padding: 20px; color: #ccc;">暂无流水记录</div>';
+        }
+    }
+}
+
+async function generateWalletDataAPI(charId) {
+    const state = window.cabinGachaState;
+    
+    const list = document.getElementById('wallet-transactions-list');
+    if (list) list.innerHTML = '<div style="text-align: center; padding: 20px;">正在从银行系统同步数据... (AI生成中)</div>';
+    
+    const config = getPrimaryApiConfig();
+    if (!config.apiKey) {
+        state.wallets[charId] = { balance: 0, transactions: [] };
+        renderWalletData(charId);
+        return;
+    }
+    
+    let persona = "";
+    let name = "";
+    if (charId === 'user') {
+        name = state.qzoneSettings.nickname || "我";
+        const activeChatId = state.activeChatId;
+        if (activeChatId && state.chats[activeChatId]) {
+            persona = state.chats[activeChatId].settings.myPersona || "普通用户";
+        } else {
+            persona = "普通用户";
+        }
+    } else {
+        const char = state.chats[charId];
+        name = char.name;
+        persona = char.settings.aiPersona;
+    }
+    
+    try {
+        const systemPrompt = `你是一个虚拟银行系统。请根据角色的人设，生成该角色的初始钱包数据。
+        
+角色：${name}
+人设：${persona}
+
+要求：
+1. 返回严格 JSON 格式。
+2. 包含 "balance" (整数，根据人设决定财富水平)。
+3. 包含 "transactions" (数组，5条最近的流水记录)。
+4. 每条流水包含 "desc" (描述)，"amount" (正数收入，负数支出)。
+5. 描述必须符合人设。
+
+示例 JSON:
+{
+  "balance": 5200,
+  "transactions": [
+    {"desc": "工资", "amount": 300},
+    {"desc": "购物", "amount": -1200}
+  ]
+}`;
+
+        const response = await fetch(`${config.apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
+            body: JSON.stringify({
+                model: config.model,
+                messages: [ { role: 'system', content: systemPrompt }, { role: 'user', content: "生成钱包数据" } ],
+                temperature: 0.7
+            })
+        });
+        
+        const data = await response.json();
+        const content = data.choices[0].message.content;
+        
+        let walletData = {};
+        try {
+            const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/{\s*"[\s\S]*"\s*}/);
+            walletData = JSON.parse(jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content);
+        } catch (e) {
+            walletData = { balance: 1000, transactions: [{desc: "系统开户赠送", amount: 1000}] };
+        }
+        
+        const now = Date.now();
+        if (walletData.transactions) {
+            walletData.transactions = walletData.transactions.map((t, i) => ({
+                ...t,
+                date: new Date(now - i * 86400000).toISOString()
+            }));
+        }
+        
+        state.wallets[charId] = walletData;
+        saveCabinGachaData();
+        renderWalletData(charId);
+        
+    } catch (e) {
+        console.error("Wallet Gen Error", e);
+        state.wallets[charId] = { balance: 0, transactions: [] };
+        renderWalletData(charId);
+    }
+}
      </script>   
         
 
