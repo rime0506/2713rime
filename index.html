@@ -9825,12 +9825,12 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
                     </div>
                     
                     <div style="width: 100%; min-height: 200px; background: rgba(255, 255, 255, 0.5); border: 3px solid #ff9ed2; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; overflow: hidden; position: relative;">
-                        <div id="cabin-pet-display" style="width: 200px; height: 200px; max-width: 100%; max-height: 100%; image-rendering: pixelated; display: flex; align-items: center; justify-content: center; position: relative;">
+                        <div id="cabin-pet-display" style="width: 200px; height: 200px; max-width: 100%; max-height: 100%; display: flex; align-items: center; justify-content: center; position: relative; z-index: 5;">
                             <!-- 占位符 -->
                             <div style="font-size: 10px; color: #aaa;">暂无宠物</div>
                         </div>
                         <!-- 状态信息 -->
-                        <div id="cabin-pet-status" style="position: absolute; top: 10px; right: 10px; background: rgba(255, 255, 255, 0.95); border: 2px solid #e06c9f; border-radius: 6px; padding: 8px; font-size: 9px; text-align: left; min-width: 100px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: none;">
+                        <div id="cabin-pet-status" style="position: absolute; top: 10px; right: 10px; background: rgba(255, 255, 255, 0.95); border: 2px solid #e06c9f; border-radius: 6px; padding: 8px; font-size: 9px; text-align: left; min-width: 100px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: none; z-index: 20;">
                             <div style="margin-bottom: 4px;"><strong>等级:</strong> <span id="cabin-pet-level">1</span></div>
                             <div style="margin-bottom: 4px;"><strong>心情:</strong> <span id="cabin-pet-mood">😊</span> <span id="cabin-pet-mood-value">80%</span></div>
                             <div style="margin-bottom: 4px;"><strong>精力:</strong> <span id="cabin-pet-energy">100%</span></div>
@@ -55930,7 +55930,8 @@ ${userPersona.trim()}
         }
         
         // 【核心修复】：处理 SVG 字符串，移除固定的宽高，改用 viewBox
-        let svgContent = pet.svg || pet.svgNormal;
+        // 使用svgNormal获得更好的显示效果（与列表一致）
+        let svgContent = pet.svgNormal || pet.svg;
         
         if (svgContent) {
             // 1. 移除硬编码的 width 和 height 属性
@@ -56309,7 +56310,11 @@ ${userPersona.trim()}
     function openCabinPetDiaryModal() {
         const pet = getCurrentCabinPet();
         if (!pet) {
-            showToast("请先选择宠物");
+            if (typeof showToast === 'function') {
+                showToast("请先选择宠物");
+            } else {
+                alert("请先选择宠物");
+            }
             return;
         }
         
@@ -56419,7 +56424,9 @@ ${userPersona.trim()}
                 await generateCabinPetDiary(pet);
                 // 重新渲染列表
                 renderDiaryListInModal();
-                showToast('生成完成！');
+                if (typeof showToast === 'function') {
+                    showToast('生成完成！');
+                }
             } catch (e) {
                 alert('生成失败: ' + e.message);
             } finally {
