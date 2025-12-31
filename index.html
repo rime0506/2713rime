@@ -9825,17 +9825,20 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
                     </div>
                     
                     <div style="width: 100%; min-height: 200px; background: rgba(255, 255, 255, 0.5); border: 3px solid #ff9ed2; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; overflow: hidden; position: relative;">
-                        <div id="cabin-pet-display" style="width: 200px; height: 200px; max-width: 100%; max-height: 100%; display: flex; align-items: center; justify-content: center; position: relative; z-index: 5;">
+                        <div id="cabin-pet-display" style="width: 200px; height: 200px; max-width: 100%; max-height: 100%; display: flex; align-items: center; justify-content: center; position: relative;">
                             <!-- 占位符 -->
                             <div style="font-size: 10px; color: #aaa;">暂无宠物</div>
                         </div>
-                        <!-- 状态信息 -->
-                        <div id="cabin-pet-status" style="position: absolute; top: 10px; right: 10px; background: rgba(255, 255, 255, 0.95); border: 2px solid #e06c9f; border-radius: 6px; padding: 8px; font-size: 9px; text-align: left; min-width: 100px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: none; z-index: 20;">
-                            <div style="margin-bottom: 4px;"><strong>等级:</strong> <span id="cabin-pet-level">1</span></div>
-                            <div style="margin-bottom: 4px;"><strong>心情:</strong> <span id="cabin-pet-mood">😊</span> <span id="cabin-pet-mood-value">80%</span></div>
-                            <div style="margin-bottom: 4px;"><strong>精力:</strong> <span id="cabin-pet-energy">100%</span></div>
-                            <div style="margin-bottom: 4px;"><strong>饥饿:</strong> <span id="cabin-pet-hunger">100%</span></div>
-                            <div style="margin-bottom: 4px;"><strong>经验:</strong> <span id="cabin-pet-exp">0/100</span></div>
+                    </div>
+                    
+                    <!-- 状态信息（移到预览框外面） -->
+                    <div id="cabin-pet-status" style="width: 100%; background: rgba(255, 255, 255, 0.95); border: 2px solid #e06c9f; border-radius: 6px; padding: 8px; font-size: 9px; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: none; margin-bottom: 10px;">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                            <div><strong>等级:</strong> <span id="cabin-pet-level">1</span></div>
+                            <div><strong>心情:</strong> <span id="cabin-pet-mood">😊</span> <span id="cabin-pet-mood-value">80%</span></div>
+                            <div><strong>精力:</strong> <span id="cabin-pet-energy">100%</span></div>
+                            <div><strong>饥饿:</strong> <span id="cabin-pet-hunger">100%</span></div>
+                            <div><strong>经验:</strong> <span id="cabin-pet-exp">0/100</span></div>
                             <div><strong>性格:</strong> <span id="cabin-pet-personality">-</span></div>
                         </div>
                     </div>
@@ -56060,8 +56063,9 @@ ${userPersona.trim()}
         const currentRoom = getCurrentRoom();
         
         if (state.pets && state.pets[index]) {
-            // 将宠物绑定到当前房间
-            currentRoom.currentPet = state.pets[index];
+            // 将宠物绑定到当前房间（使用索引引用，确保是同一个对象）
+            const selectedPet = state.pets[index];
+            currentRoom.currentPet = selectedPet;
             
             // 1. 保存数据
             saveCabinGachaData();
@@ -56069,11 +56073,13 @@ ${userPersona.trim()}
             // 2. 关闭弹窗
             closeCabinPetListModal();
             
-            // 3. 强制立即渲染
-            renderCabinPetDisplay(currentRoom.currentPet);
+            // 3. 强制立即渲染（使用刚选择的宠物）
+            renderCabinPetDisplay(selectedPet);
             
             const charName = getCabinCurrentOwnerName();
-            showToast(`已选择宠物: ${state.pets[index].name} (绑定至 ${charName})`);
+            if (typeof showToast === 'function') {
+                showToast(`已选择宠物: ${selectedPet.name} (绑定至 ${charName})`);
+            }
         }
     }
     
@@ -56190,11 +56196,15 @@ ${userPersona.trim()}
             };
             
             state.pets.push(pet);
-            state.currentPet = pet;
+            // 生成新宠物后，将其设置为当前房间的宠物
+            const currentRoom = getCurrentRoom();
+            currentRoom.currentPet = pet;
             saveCabinGachaData();
             renderCabinPetDisplay(pet);
             updateCabinPetCount();
-            showToast(`成功生成宠物: ${pet.name}`);
+            if (typeof showToast === 'function') {
+                showToast(`成功生成宠物: ${pet.name}`);
+            }
         } catch (e) {
             showToast("生成失败: " + e.message);
             petDisplay.innerHTML = originalContent;
