@@ -9065,6 +9065,8 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
             overflow: hidden;
             margin-bottom: 15px;
             flex-shrink: 0;
+            z-index: 10; /* 降低容器层级，避免遮挡其他浮层 */
+            transform: translateZ(0); /* 开启硬件加速，创建新的堆叠上下文 */
         }
         /* 墙面区域 - 上方2行 */
         .room-wall-area {
@@ -9076,10 +9078,11 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
             background-color: #f8c3cd;
             border-bottom: 4px solid #e06c9f;
             opacity: 0.8;
-            z-index: 1;
+            /* 移除 z-index，让它按 DOM 顺序排列（在家具之前） */
             box-shadow: 
                 0 10px 15px rgba(224, 108, 159, 0.3),
                 inset 0 -4px 8px rgba(0, 0, 0, 0.1);
+            pointer-events: none; /* 墙面不拦截点击 */
         }
         /* 地面区域 - 下方8行 */
         .room-floor-area {
@@ -9089,12 +9092,12 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
             width: 100%;
             height: 256px; /* 8行高度 (32px * 8) */
             background-color: #f5e6e8;
-            z-index: 2;
+            /* 移除 z-index，让它按 DOM 顺序排列（在家具之前） */
+            /* 移除 transform 透视效果，回归简单像素风格，避免层级混乱 */
             box-shadow: 
                 inset 0 4px 8px rgba(0, 0, 0, 0.1),
                 0 -5px 10px rgba(224, 108, 159, 0.2);
-            transform: perspective(500px) rotateX(5deg);
-            transform-origin: top center;
+            pointer-events: none; /* 地面不拦截点击 */
         }
         /* 格子网格 - 视觉辅助 */
         .room-grid {
@@ -9106,17 +9109,20 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
             background-size: 32px 32px;
             background-image: none;
             pointer-events: none;
-            z-index: 3;
+            z-index: 100; /* 确保网格在最上层作为参考，但不拦截点击 */
         }
         /* 已放置的家具 */
         .placed-furniture {
             position: absolute;
-            z-index: 10;
+            z-index: 50; /* 确保家具层级高于墙壁和地板 */
             cursor: move;
             touch-action: none;
-            transition: transform 0.1s ease;
-            transform-origin: center;
             image-rendering: pixelated;
+            pointer-events: auto !important; /* 强制开启点击事件 */
+        }
+        
+        .placed-furniture * {
+            pointer-events: none; /* 让内部元素不拦截点击 */
         }
         /* 宠物样式 */
         #cabin-pet-display { transition: transform 0.3s ease; }
@@ -52522,9 +52528,20 @@ ${userPersona.trim()}
     
     // 获取格子坐标
     function getCabinGridPosition(x, y) {
+        // 动态计算格子大小，支持缩放
+        const room = document.getElementById('cabin-room-area');
+        let gridSize = CABIN_GRID_SIZE;
+        if (room) {
+             const rect = room.getBoundingClientRect();
+             // 确保宽度有效且不为0
+             if (rect.width > 0) {
+                 gridSize = rect.width / CABIN_ROOM_WIDTH;
+             }
+        }
+        
         return {
-            gridX: Math.floor(x / CABIN_GRID_SIZE),
-            gridY: Math.floor(y / CABIN_GRID_SIZE)
+            gridX: Math.floor(x / gridSize),
+            gridY: Math.floor(y / gridSize)
         };
     }
     
@@ -52640,8 +52657,9 @@ ${userPersona.trim()}
             el.style.width = ((pItem.width || meta.width || 1) * CABIN_GRID_SIZE) + 'px';
             el.style.height = ((pItem.height || meta.height || 1) * CABIN_GRID_SIZE) + 'px';
             el.style.transform = `rotate(${pItem.rotation || 0}deg)`;
-            el.style.zIndex = '10';
+            el.style.zIndex = '50'; // 确保高层级
             el.style.cursor = 'move';
+            el.style.touchAction = 'none'; // 关键：禁用浏览器默认手势
             el.setAttribute('data-index', index);
             
             el.innerHTML = `
@@ -52650,23 +52668,137 @@ ${userPersona.trim()}
                 </div>
             `;
             
-            // 添加拖拽功能
-            el.addEventListener('mousedown', startCabinDragPlaced);
-            el.addEventListener('touchstart', startCabinDragPlaced);
+            // furniture drag enabled
+            // 直接绑定 touch 事件实现手机端拖拽
+            el.addEventListener('touchstart', handleFurnitureTouchStart, {passive: false});
             
             room.appendChild(el);
         });
     }
     
-    // 全局拖拽状态
+    // === 手机端家具拖拽逻辑 (Touch Events) ===
+    let activeFurnitureDrag = null;
+
+    function handleFurnitureTouchStart(e) {
+        // 阻止默认行为（滚动等）
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation(); // 防止冒泡触发其他逻辑
+
+        const el = e.currentTarget; // 当前被触摸的家具元素
+        const touch = e.touches[0];
+        const room = document.getElementById('cabin-room-area');
+        const roomRect = room.getBoundingClientRect();
+
+        // 记录初始状态
+        activeFurnitureDrag = {
+            el: el,
+            startX: touch.clientX,
+            startY: touch.clientY,
+            initialLeft: parseFloat(el.style.left || 0),
+            initialTop: parseFloat(el.style.top || 0),
+            roomRect: roomRect,
+            index: parseInt(el.getAttribute('data-index'))
+        };
+
+        // 绑定移动和结束事件
+        document.addEventListener('touchmove', handleFurnitureTouchMove, {passive: false});
+        document.addEventListener('touchend', handleFurnitureTouchEnd);
+        
+        // 可选：添加高亮效果
+        el.style.opacity = '0.8';
+        el.style.zIndex = '1000';
+    }
+
+    function handleFurnitureTouchMove(e) {
+        if (!activeFurnitureDrag) return;
+        
+        if (e.cancelable) e.preventDefault(); // 必须阻止滚动
+        
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - activeFurnitureDrag.startX;
+        const deltaY = touch.clientY - activeFurnitureDrag.startY;
+
+        // 实时更新位置 (自由拖拽效果)
+        const newLeft = activeFurnitureDrag.initialLeft + deltaX;
+        const newTop = activeFurnitureDrag.initialTop + deltaY;
+        
+        activeFurnitureDrag.el.style.left = newLeft + 'px';
+        activeFurnitureDrag.el.style.top = newTop + 'px';
+    }
+
+    function handleFurnitureTouchEnd(e) {
+        if (!activeFurnitureDrag) return;
+        
+        const { el, index, initialLeft, initialTop } = activeFurnitureDrag;
+        
+        // 解绑事件
+        document.removeEventListener('touchmove', handleFurnitureTouchMove);
+        document.removeEventListener('touchend', handleFurnitureTouchEnd);
+        
+        // 恢复样式
+        el.style.opacity = '1';
+        el.style.zIndex = '50';
+        
+        // 计算吸附网格
+        // 获取当前中心点位置相对于房间的坐标
+        const currentLeft = parseFloat(el.style.left || 0);
+        const currentTop = parseFloat(el.style.top || 0);
+        
+        // 计算中心点
+        const centerX = currentLeft + el.offsetWidth / 2;
+        const centerY = currentTop + el.offsetHeight / 2;
+        
+        // 转换为网格坐标
+        let gridX = Math.floor(centerX / CABIN_GRID_SIZE);
+        let gridY = Math.floor(centerY / CABIN_GRID_SIZE);
+        
+        // 获取家具数据以检查边界
+        const state = window.cabinGachaState;
+        const pItem = state.placedItems[index];
+        const itemMeta = state.customItems[pItem.itemId];
+        const w = (pItem.width || itemMeta.width || 1);
+        const h = (pItem.height || itemMeta.height || 1);
+        
+        // 修正 Grid 坐标为左上角
+        gridX -= Math.floor(w / 2);
+        gridY -= Math.floor(h / 2);
+        
+        // 尝试移动并吸附
+        // 这里复用已有的 moveCabinPlacedItem 逻辑来验证有效性并保存
+        // 注意：moveCabinPlacedItem 内部会处理边界检查和重叠检查
+        const success = moveCabinPlacedItem(index, gridX, gridY);
+        
+        if (success) {
+            updateCabinOccupiedGrid();
+            renderCabinRoom(); // 重新渲染以修正精确位置（吸附）
+            showCabinToast("移动成功");
+        } else {
+            // 失败回弹
+            el.style.left = initialLeft + 'px';
+            el.style.top = initialTop + 'px';
+            showCabinToast("位置无效");
+            renderCabinRoom(); // 确保状态一致
+        }
+        
+        activeFurnitureDrag = null;
+    }
+
+    // 全局拖拽状态 (旧逻辑保留，避免报错)
     window.cabinDraggingItem = null;
     
-    // 开始拖拽已放置的家具
+    // 开始拖拽已放置的家具 (鼠标逻辑保留)
     function startCabinDragPlaced(e) {
-        e.preventDefault();
+        if (!e) return;
+        
+        if (e.cancelable) e.preventDefault();
         e.stopPropagation();
         
-        const index = parseInt(e.target.closest('.placed-furniture').getAttribute('data-index'));
+        const event = e.type === 'touchstart' ? e.touches[0] : e;
+        
+        const target = e.target.closest('.placed-furniture');
+        if (!target) return;
+        
+        const index = parseInt(target.getAttribute('data-index'));
         if (isNaN(index)) return;
         
         const state = window.cabinGachaState;
@@ -52679,10 +52811,10 @@ ${userPersona.trim()}
         const dragIndicator = document.getElementById('cabin-drag-indicator');
         if (!dragIndicator) return;
         
-        // 设置拖拽指示器内容
-        const itemSize = Math.max((pItem.width || item.width || 1) * CABIN_GRID_SIZE, (pItem.height || item.height || 1) * CABIN_GRID_SIZE);
-        dragIndicator.style.width = itemSize + 'px';
-        dragIndicator.style.height = itemSize + 'px';
+        if (dragIndicator.parentNode !== document.body) {
+            document.body.appendChild(dragIndicator);
+        }
+        
         dragIndicator.innerHTML = `
             <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
                 ${item.svg || '<div style="font-size:20px;">🎁</div>'}
@@ -52693,25 +52825,49 @@ ${userPersona.trim()}
         `;
         dragIndicator.style.display = 'block';
         
-        // 保存拖拽状态
+        // 临时隐藏原物品
+        target.style.opacity = '0.5';
+        
         window.cabinDraggingItem = {
             type: 'placed',
             index: index,
             id: pItem.itemId,
-            startX: e.clientX || e.touches[0].clientX,
-            startY: e.clientY || e.touches[0].clientY,
             originalX: pItem.gridX,
-            originalY: pItem.gridY
+            originalY: pItem.gridY,
+            element: target // 引用DOM元素以便恢复
         };
         
-        updateCabinDragIndicator(e);
+        updateCabinDragIndicator(event);
         
+        document.addEventListener('mousemove', handleCabinDrag);
+        document.addEventListener('touchmove', handleCabinDrag, { passive: false });
+        document.addEventListener('mouseup', endCabinDrag);
+        document.addEventListener('touchend', endCabinDrag);
     }
     
     // 初始化拖拽事件（页面加载时调用一次）
     function initCabinDragEvents() {
         if (window.cabinDragInitialized) return;
         
+        // 修复：将拖拽指示器移动到 body
+        const dragIndicator = document.getElementById('cabin-drag-indicator');
+        if (dragIndicator && dragIndicator.parentNode !== document.body) {
+            document.body.appendChild(dragIndicator);
+        }
+        
+        // 全局监听，使用 passive: false 允许阻止默认行为（滚动）
+        // 仿照像素屋子逻辑：不仅监听 mouseup/touchend，也监听 move
+        // 注意：这里我们使用【代理模式】，而不是给每个 item 绑定
+        
+        // 绑定房间容器的点击/开始拖拽
+        const room = document.getElementById('cabin-room-area');
+        if (room) {
+            // 使用事件委托处理房间内的点击/开始拖拽
+            room.addEventListener('mousedown', startCabinDragPlacedDelegate);
+            room.addEventListener('touchstart', startCabinDragPlacedDelegate, { passive: false });
+        }
+        
+        // 全局移动和结束监听
         document.addEventListener('mousemove', handleCabinDrag);
         document.addEventListener('touchmove', handleCabinDrag, { passive: false });
         document.addEventListener('mouseup', endCabinDrag);
@@ -52719,44 +52875,30 @@ ${userPersona.trim()}
         
         window.cabinDragInitialized = true;
     }
-    
-    // 更新拖拽指示器位置
-    function updateCabinDragIndicator(e) {
-        if (!window.cabinDraggingItem) return;
+
+    // 事件委托处理函数
+    function startCabinDragPlacedDelegate(e) {
+        // 查找是否点击了家具
+        const target = e.target.closest('.placed-furniture');
+        if (!target) return;
         
-        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-        
-        if (!clientX || !clientY) return;
-        
-        const dragIndicator = document.getElementById('cabin-drag-indicator');
-        if (!dragIndicator) return;
-        
-        // 使用transform来定位，这样更准确
-        dragIndicator.style.left = clientX + 'px';
-        dragIndicator.style.top = clientY + 'px';
-        dragIndicator.style.transform = 'translate(-50%, -50%)';
+        // 调用原来的逻辑
+        startCabinDragPlaced(e);
     }
     
-    // 处理拖拽移动
-    function handleCabinDrag(e) {
-        if (!window.cabinDraggingItem) return;
+    // 更新拖拽指示器位置（核心逻辑：计算网格吸附）
+    function updateCabinDragIndicator(e) {
+        const clientX = e.clientX;
+        const clientY = e.clientY;
         
-        e.preventDefault();
-        updateCabinDragIndicator(e);
-        
-        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-        
-        if (!clientX || !clientY) return;
-        
+        const dragIndicator = document.getElementById('cabin-drag-indicator');
         const room = document.getElementById('cabin-room-area');
-        if (!room) return;
+        
+        if (!dragIndicator || !room) return;
         
         const rect = room.getBoundingClientRect();
-        const dragIndicator = document.getElementById('cabin-drag-indicator');
-        if (!dragIndicator) return;
         
+        // 检查是否在房间范围内
         const isInRoom = (
             clientX >= rect.left && 
             clientX <= rect.right && 
@@ -52764,50 +52906,106 @@ ${userPersona.trim()}
             clientY <= rect.bottom
         );
         
+        const state = window.cabinGachaState;
+        const itemData = state.customItems[window.cabinDraggingItem.id];
+        let itemWidth = 1, itemHeight = 1;
+        
+        if (itemData) {
+            if (window.cabinDraggingItem.type === 'placed') {
+                 const pItem = state.placedItems[window.cabinDraggingItem.index];
+                 itemWidth = pItem.width || itemData.width || 1;
+                 itemHeight = pItem.height || itemData.height || 1;
+            } else {
+                 itemWidth = itemData.width || 1;
+                 itemHeight = itemData.height || 1;
+            }
+        }
+
+        // 动态计算格子大小
+        let gridSize = CABIN_GRID_SIZE;
+        // 只有当房间宽度有效且被缩放时才重新计算
+        if (rect.width > 0 && Math.abs(rect.width - (CABIN_ROOM_WIDTH * CABIN_GRID_SIZE)) > 5) {
+             gridSize = rect.width / CABIN_ROOM_WIDTH;
+        }
+
+        // 设置指示器尺寸
+        const indicatorWidth = itemWidth * gridSize;
+        const indicatorHeight = itemHeight * gridSize;
+        dragIndicator.style.width = indicatorWidth + 'px';
+        dragIndicator.style.height = indicatorHeight + 'px';
+
         if (isInRoom) {
+            // 计算相对于房间左上角的坐标
             const relativeX = clientX - rect.left;
             const relativeY = clientY - rect.top;
-            const gridPos = getCabinGridPosition(relativeX, relativeY);
             
-            const state = window.cabinGachaState;
-            const itemData = state.customItems[window.cabinDraggingItem.id];
-            if (itemData) {
-                let itemWidth, itemHeight;
-                
-                if (window.cabinDraggingItem.type === 'placed') {
-                    const pItem = state.placedItems[window.cabinDraggingItem.index];
-                    itemWidth = pItem.width || itemData.width || 1;
-                    itemHeight = pItem.height || itemData.height || 1;
-                } else {
-                    itemWidth = itemData.width || 1;
-                    itemHeight = itemData.height || 1;
-                }
-                
-                gridPos.gridX = Math.max(0, Math.min(ROOM_WIDTH - itemWidth, gridPos.gridX - Math.floor(itemWidth/2)));
-                gridPos.gridY = Math.max(0, Math.min(ROOM_HEIGHT - itemHeight, gridPos.gridY - Math.floor(itemHeight/2)));
-                
-                // 检查是否可以放置
-                let isValid = false;
-                if (window.cabinDraggingItem.type === 'inventory') {
-                    isValid = isValidCabinPosition(gridPos.gridX, gridPos.gridY, itemData.type, itemWidth, itemHeight) &&
-                              !isCabinGridOccupied(gridPos.gridX, gridPos.gridY, itemData.type, itemWidth, itemHeight);
-                } else {
-                    isValid = !isCabinGridOccupied(gridPos.gridX, gridPos.gridY, itemData.type, itemWidth, itemHeight, window.cabinDraggingItem.index) &&
-                              isValidCabinPosition(gridPos.gridX, gridPos.gridY, itemData.type, itemWidth, itemHeight);
-                }
-                
-                if (isValid) {
-                    dragIndicator.style.borderColor = '#4CAF50';
-                    dragIndicator.style.boxShadow = '0 0 0 3px #4CAF50';
-                } else {
-                    dragIndicator.style.borderColor = '#f44336';
-                    dragIndicator.style.boxShadow = '0 0 0 3px #f44336';
-                }
+            // 计算格子坐标（以鼠标位置为中心）
+            // 我们希望鼠标指向物品的中心，所以要减去物品一半大小
+            const centeredX = relativeX - (indicatorWidth / 2);
+            const centeredY = relativeY - (indicatorHeight / 2);
+            
+            let gridX = Math.round(centeredX / gridSize);
+            let gridY = Math.round(centeredY / gridSize);
+            
+            // 边界限制
+            gridX = Math.max(0, Math.min(CABIN_ROOM_WIDTH - itemWidth, gridX));
+            gridY = Math.max(0, Math.min(CABIN_ROOM_HEIGHT - itemHeight, gridY));
+            
+            // 计算吸附后的屏幕坐标
+            const snapX = rect.left + gridX * gridSize;
+            const snapY = rect.top + gridY * gridSize;
+            
+            dragIndicator.style.left = snapX + 'px';
+            dragIndicator.style.top = snapY + 'px';
+            dragIndicator.style.transform = 'none'; // 取消居中偏移
+            
+            // 验证位置有效性
+            let isValid = false;
+            if (window.cabinDraggingItem.type === 'inventory') {
+                isValid = isValidCabinPosition(gridX, gridY, itemData.type, itemWidth, itemHeight) &&
+                          !isCabinGridOccupied(gridX, gridY, itemData.type, itemWidth, itemHeight);
+            } else {
+                isValid = !isCabinGridOccupied(gridX, gridY, itemData.type, itemWidth, itemHeight, window.cabinDraggingItem.index) &&
+                          isValidCabinPosition(gridX, gridY, itemData.type, itemWidth, itemHeight);
             }
+            
+            if (isValid) {
+                dragIndicator.style.borderColor = '#4CAF50';
+                dragIndicator.style.boxShadow = '0 0 0 2px #4CAF50';
+            } else {
+                dragIndicator.style.borderColor = '#f44336';
+                dragIndicator.style.boxShadow = '0 0 0 2px #f44336';
+            }
+            
+            // 保存当前的格子坐标，供放置使用
+            window.cabinDraggingItem.currentGridX = gridX;
+            window.cabinDraggingItem.currentGridY = gridY;
+            window.cabinDraggingItem.isValid = isValid;
+            
         } else {
+            // 房间外跟随鼠标
+            dragIndicator.style.left = clientX + 'px';
+            dragIndicator.style.top = clientY + 'px';
+            dragIndicator.style.transform = 'translate(-50%, -50%)'; // 居中跟随
             dragIndicator.style.borderColor = '#e06c9f';
             dragIndicator.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+            
+            window.cabinDraggingItem.isValid = false;
+            window.cabinDraggingItem.currentGridX = -1;
+            window.cabinDraggingItem.currentGridY = -1;
         }
+    }
+    
+    // 处理拖拽移动
+    function handleCabinDrag(e) {
+        if (!window.cabinDraggingItem) return;
+        
+        // 阻止默认滚动行为，这对移动端体验至关重要
+        if (e.cancelable) {
+            e.preventDefault();
+        }
+        
+        updateCabinDragIndicator(e);
     }
     
     // 结束拖拽
@@ -52815,103 +53013,78 @@ ${userPersona.trim()}
         if (!window.cabinDraggingItem) return;
         
         e.preventDefault();
-        const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
-        const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
         
-        const room = document.getElementById('cabin-room-area');
-        const dragIndicator = document.getElementById('cabin-drag-indicator');
+        // 优先使用 updateCabinDragIndicator 中计算好的吸附坐标
+        let gridX = window.cabinDraggingItem.currentGridX;
+        let gridY = window.cabinDraggingItem.currentGridY;
+        const isValid = window.cabinDraggingItem.isValid;
+        
+        // 如果没有预先计算的坐标（比如没经过 update），尝试重新计算
+        if (gridX === undefined || gridX === -1) {
+             const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
+             const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
+             // ... 如果需要的话可以补全逻辑，但通常 update 已经执行
+        }
+
         const state = window.cabinGachaState;
-        
         let success = false;
         
-        if (clientX && clientY && room) {
-            const rect = room.getBoundingClientRect();
-            
-            if (clientX >= rect.left && clientX <= rect.right && 
-                clientY >= rect.top && clientY <= rect.bottom) {
-                
-                const relativeX = clientX - rect.left;
-                const relativeY = clientY - rect.top;
-                const gridPos = getCabinGridPosition(relativeX, relativeY);
-                
-                const itemData = state.customItems[window.cabinDraggingItem.id];
-                if (itemData) {
-                    let itemWidth, itemHeight;
-                    
-                    if (window.cabinDraggingItem.type === 'placed') {
-                        const pItem = state.placedItems[window.cabinDraggingItem.index];
-                        itemWidth = pItem.width || itemData.width || 1;
-                        itemHeight = pItem.height || itemData.height || 1;
-                        
-                        gridPos.gridX = Math.max(0, Math.min(ROOM_WIDTH - itemWidth, gridPos.gridX - Math.floor(itemWidth/2)));
-                        gridPos.gridY = Math.max(0, Math.min(ROOM_HEIGHT - itemHeight, gridPos.gridY - Math.floor(itemHeight/2)));
-                        
-                        // 移动已放置的物品
-                        if (moveCabinPlacedItem(window.cabinDraggingItem.index, gridPos.gridX, gridPos.gridY)) {
-                            updateCabinOccupiedGrid();
-                            renderCabinRoom();
-                            showCabinToast("移动成功!");
-                            success = true;
-                        } else {
-                            // 移动失败时，将物品放回原处
-                            moveCabinPlacedItem(window.cabinDraggingItem.index, window.cabinDraggingItem.originalX, window.cabinDraggingItem.originalY);
-                            updateCabinOccupiedGrid();
-                            renderCabinRoom();
-                            showCabinToast("无法移动到此位置");
-                        }
+        if (isValid && gridX !== undefined && gridX !== -1) {
+            const itemData = state.customItems[window.cabinDraggingItem.id];
+            if (itemData) {
+                if (window.cabinDraggingItem.type === 'placed') {
+                    // 移动已放置的物品
+                    if (moveCabinPlacedItem(window.cabinDraggingItem.index, gridX, gridY)) {
+                        updateCabinOccupiedGrid();
+                        renderCabinRoom();
+                        showCabinToast("移动成功!");
+                        success = true;
                     } else {
-                        // 从背包放置新物品
-                        itemWidth = itemData.width || 1;
-                        itemHeight = itemData.height || 1;
-                        
-                        gridPos.gridX = Math.max(0, Math.min(ROOM_WIDTH - itemWidth, gridPos.gridX - Math.floor(itemWidth/2)));
-                        gridPos.gridY = Math.max(0, Math.min(ROOM_HEIGHT - itemHeight, gridPos.gridY - Math.floor(itemHeight/2)));
-                        
-                        if (state.inventory[window.cabinDraggingItem.id] > 0 && 
-                            isValidCabinPosition(gridPos.gridX, gridPos.gridY, itemData.type, itemWidth, itemHeight) &&
-                            !isCabinGridOccupied(gridPos.gridX, gridPos.gridY, itemData.type, itemWidth, itemHeight)) {
-                            
-                            state.placedItems.push({ 
-                                itemId: window.cabinDraggingItem.id, 
-                                gridX: gridPos.gridX, 
-                                gridY: gridPos.gridY,
-                                placedTime: Date.now()
-                            });
-                            state.inventory[window.cabinDraggingItem.id]--;
-                            window.cabinSelectedItemId = null;
-                            updateCabinOccupiedGrid();
-                            saveCabinGachaData();
-                            renderCabinRoom();
-                            renderCabinInventory();
-                            showCabinToast("放置成功!");
-                            success = true;
-                        } else {
-                            showCabinToast("无法放置在此位置");
-                        }
+                        // 移动失败时，将物品放回原处
+                        moveCabinPlacedItem(window.cabinDraggingItem.index, window.cabinDraggingItem.originalX, window.cabinDraggingItem.originalY);
+                        updateCabinOccupiedGrid();
+                        renderCabinRoom();
+                        showCabinToast("无法移动到此位置");
+                    }
+                } else {
+                    // 从背包放置新物品
+                    if (state.inventory[window.cabinDraggingItem.id] > 0) {
+                         state.placedItems.push({ 
+                            itemId: window.cabinDraggingItem.id, 
+                            gridX: gridX, 
+                            gridY: gridY,
+                            placedTime: Date.now()
+                        });
+                        state.inventory[window.cabinDraggingItem.id]--;
+                        window.cabinSelectedItemId = null;
+                        updateCabinOccupiedGrid();
+                        saveCabinGachaData();
+                        renderCabinRoom();
+                        renderCabinInventory();
+                        showCabinToast("放置成功!");
+                        success = true;
                     }
                 }
-            } else {
-                // 如果拖动到房间外，放回原处
-                if (window.cabinDraggingItem.type === 'placed') {
-                    moveCabinPlacedItem(window.cabinDraggingItem.index, window.cabinDraggingItem.originalX, window.cabinDraggingItem.originalY);
-                    updateCabinOccupiedGrid();
-                    renderCabinRoom();
-                }
-                showCabinToast("取消放置");
             }
+        } 
+        
+        if (!success) {
+            // 失败处理：回滚
+            if (window.cabinDraggingItem.type === 'placed') {
+                moveCabinPlacedItem(window.cabinDraggingItem.index, window.cabinDraggingItem.originalX, window.cabinDraggingItem.originalY);
+                updateCabinOccupiedGrid();
+                renderCabinRoom();
+            }
+            showCabinToast("取消放置");
         }
         
         // 清理
         window.cabinDraggingItem = null;
+        const dragIndicator = document.getElementById('cabin-drag-indicator');
         if (dragIndicator) {
             dragIndicator.style.display = 'none';
             dragIndicator.style.borderColor = '#e06c9f';
             dragIndicator.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-        }
-        
-        // 如果没有成功，确保UI更新
-        if (!success) {
-            renderCabinRoom();
         }
     }
     
@@ -53034,55 +53207,178 @@ ${userPersona.trim()}
         });
     }
     
-    // 开始拖拽背包物品
+    // === 背包物品拖拽逻辑 (重写：从背包拖入房间) ===
+    let bagDragState = null;
+
+    // 开始拖拽背包物品 (Touchstart)
     function startCabinDrag(e) {
-        e.stopPropagation();
+        // 仅处理 Touch 事件
+        if (e.type !== 'touchstart') return;
         
-        // 从元素获取itemId
         const targetEl = e.target.closest('[data-item-id]');
-        const itemId = targetEl?.getAttribute('data-item-id');
-        if (!itemId) return;
+        if (!targetEl) return;
+        const itemId = targetEl.getAttribute('data-item-id');
         
-        // 必须先选中才能拖拽 (原版逻辑)
+        // 自动选中
         if (window.cabinSelectedItemId !== itemId) {
-            return;
-        }
-        
-        // 确认开始拖拽，阻止默认行为
-        if (e.cancelable) {
-            e.preventDefault();
+            window.cabinSelectedItemId = itemId;
+            renderCabinInventory();
         }
         
         const state = window.cabinGachaState;
-        const item = state.customItems[itemId];
-        if (!item || state.inventory[itemId] <= 0) return;
-        
-        const dragIndicator = document.getElementById('cabin-drag-indicator');
-        if (!dragIndicator) return;
-        
-        // 设置拖拽指示器内容
-        const itemSize = Math.max((item.width || 1) * CABIN_GRID_SIZE, (item.height || 1) * CABIN_GRID_SIZE);
-        dragIndicator.style.width = itemSize + 'px';
-        dragIndicator.style.height = itemSize + 'px';
-        dragIndicator.innerHTML = `
-            <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
-                ${item.svg || '<div style="font-size:20px;">🎁</div>'}
-            </div>
-            <div style="position:absolute; bottom:2px; right:2px; background:${getTypeColor(item.type)}; color:white; font-size:8px; padding:1px 3px; border-radius:3px;">
-                ${getTypeShortName(item.type)}
-            </div>
-        `;
-        dragIndicator.style.display = 'block';
-        
-        // 保存拖拽状态
-        window.cabinDraggingItem = {
-            type: 'inventory',
-            id: itemId,
-            startX: e.clientX || e.touches[0].clientX,
-            startY: e.clientY || e.touches[0].clientY
+        if (!state.customItems[itemId] || state.inventory[itemId] <= 0) return;
+
+        // 初始化拖拽状态 (尚未进入房间)
+        bagDragState = {
+            itemId: itemId,
+            el: null, // 房间内的临时家具 DOM
+            itemData: state.customItems[itemId]
         };
         
-        updateCabinDragIndicator(e);
+        // 绑定全局 Touch 事件
+        document.addEventListener('touchmove', handleBagDragMove, { passive: false });
+        document.addEventListener('touchend', handleBagDragEnd);
+    }
+
+    // 处理拖拽移动
+    function handleBagDragMove(e) {
+        if (!bagDragState) return;
+        
+        // 必须阻止滚动，确保拖拽流畅
+        if (e.cancelable) e.preventDefault();
+        
+        const touch = e.touches[0];
+        const room = document.getElementById('cabin-room-area');
+        if (!room) return;
+        
+        const roomRect = room.getBoundingClientRect();
+        
+        // 判断手指是否在房间内
+        const isInRoom = (
+            touch.clientX >= roomRect.left &&
+            touch.clientX <= roomRect.right &&
+            touch.clientY >= roomRect.top &&
+            touch.clientY <= roomRect.bottom
+        );
+        
+        if (isInRoom) {
+            // 如果刚进入房间且未创建元素，则创建
+            if (!bagDragState.el) {
+                createTempFurnitureInRoom(room);
+            }
+            
+            // 移动临时家具
+            const el = bagDragState.el;
+            const w = el.offsetWidth;
+            const h = el.offsetHeight;
+            
+            // 计算相对于房间左上角的坐标 (居中跟随)
+            let relX = touch.clientX - roomRect.left - (w / 2);
+            let relY = touch.clientY - roomRect.top - (h / 2);
+            
+            el.style.left = relX + 'px';
+            el.style.top = relY + 'px';
+            
+            // 实时验证位置 (可选：添加红绿边框反馈)
+            validateTempPosition(relX, relY, w, h);
+            
+        } else {
+            // 手指移出房间：删除临时家具
+            if (bagDragState.el) {
+                bagDragState.el.remove();
+                bagDragState.el = null;
+            }
+        }
+    }
+
+    // 在房间内创建临时家具
+    function createTempFurnitureInRoom(room) {
+        const item = bagDragState.itemData;
+        const el = document.createElement('div');
+        
+        el.className = 'placed-furniture temp-drag';
+        // furniture drag enabled
+        
+        // 设置样式
+        el.style.position = 'absolute';
+        el.style.zIndex = '1000'; // 高层级
+        el.style.opacity = '0.8';
+        el.style.pointerEvents = 'none'; // 不阻挡事件
+        
+        const w = (item.width || 1) * CABIN_GRID_SIZE;
+        const h = (item.height || 1) * CABIN_GRID_SIZE;
+        el.style.width = w + 'px';
+        el.style.height = h + 'px';
+        
+        el.innerHTML = `
+            <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+                ${item.svg || '🎁'}
+            </div>
+        `;
+        
+        room.appendChild(el);
+        bagDragState.el = el;
+    }
+    
+    // 验证位置并给予视觉反馈
+    function validateTempPosition(x, y, w, h) {
+        const centerX = x + w / 2;
+        const centerY = y + h / 2;
+        
+        let gridX = Math.floor(centerX / CABIN_GRID_SIZE);
+        let gridY = Math.floor(centerY / CABIN_GRID_SIZE);
+        
+        // 修正为左上角 Grid
+        const itemW = bagDragState.itemData.width || 1;
+        const itemH = bagDragState.itemData.height || 1;
+        gridX -= Math.floor(itemW / 2);
+        gridY -= Math.floor(itemH / 2);
+        
+        const state = window.cabinGachaState;
+        
+        // 复用已有的验证逻辑
+        const isValid = isValidCabinPosition(gridX, gridY, bagDragState.itemData.type, itemW, itemH) &&
+                        !isCabinGridOccupied(gridX, gridY, bagDragState.itemData.type, itemW, itemH);
+                        
+        if (bagDragState.el) {
+            bagDragState.el.style.boxShadow = isValid ? '0 0 0 3px #4CAF50' : '0 0 0 3px #f44336';
+        }
+        
+        bagDragState.lastValidGrid = isValid ? { x: gridX, y: gridY } : null;
+    }
+
+    // 结束拖拽
+    function handleBagDragEnd(e) {
+        document.removeEventListener('touchmove', handleBagDragMove);
+        document.removeEventListener('touchend', handleBagDragEnd);
+        
+        if (bagDragState && bagDragState.el) {
+            // 如果有有效放置位置，则放置
+            if (bagDragState.lastValidGrid) {
+                const { x, y } = bagDragState.lastValidGrid;
+                const state = window.cabinGachaState;
+                
+                // 执行放置数据更新
+                state.placedItems.push({
+                    itemId: bagDragState.itemId,
+                    gridX: x,
+                    gridY: y,
+                    placedTime: Date.now()
+                });
+                state.inventory[bagDragState.itemId]--;
+                
+                updateCabinOccupiedGrid();
+                saveCabinGachaData();
+                renderCabinRoom();
+                renderCabinInventory();
+                showCabinToast("放置成功!");
+            }
+            
+            // 无论成功与否，移除临时元素
+            bagDragState.el.remove();
+        }
+        
+        bagDragState = null;
     }
     
     // 过滤背包
@@ -53423,9 +53719,9 @@ ${userPersona.trim()}
         const model = modelSelect?.value || '';
         
         // 处理URL，确保有/v1
-        let apiUrl = proxyUrl.trim();
+        let apiUrl = proxyUrl.trim().replace(/\/+$/, ''); // 去掉末尾斜杠
         if (apiUrl && !apiUrl.endsWith('/v1')) {
-            apiUrl = apiUrl.endsWith('/') ? apiUrl + 'v1' : apiUrl + '/v1';
+            apiUrl = apiUrl + '/v1';
         }
         
         return {
@@ -53578,7 +53874,11 @@ ${userPersona.trim()}
             });
             
             if (!response.ok) {
-                throw new Error(`API错误 ${response.status}`);
+                let errText = '';
+                try {
+                    errText = await response.text();
+                } catch (e) {}
+                throw new Error(`API错误 ${response.status}: ${errText.substring(0, 100)}`);
             }
             
             const data = await response.json();
@@ -53762,7 +54062,11 @@ ${userPersona.trim()}
             });
             
             if (!response.ok) {
-                throw new Error(`API错误 ${response.status}`);
+                let errText = '';
+                try {
+                    errText = await response.text();
+                } catch (e) {}
+                throw new Error(`API错误 ${response.status}: ${errText.substring(0, 100)}`);
             }
             
             const data = await response.json();
@@ -54423,6 +54727,14 @@ ${userPersona.trim()}
         
         try {
             const config = getPrimaryApiConfig();
+            // 修复 API 配置引用错误
+            const apiUrl = config.apiUrl;
+            const apiKey = config.apiKey;
+            
+            if (!apiUrl || !apiKey) {
+                throw new Error("请先在设置中配置 API 地址和密钥");
+            }
+
             const systemPrompt = `你是像素艺术专家。请生成一个128x128的像素宠物SVG。
 输出4个SVG，分别对应NORMAL, HAPPY, SAD, ANGRY四种表情。
 格式如下：
@@ -54437,14 +54749,21 @@ ${userPersona.trim()}
 确保这4个是同一个角色，只有表情不同。背景必须透明（fill="transparent"）。
 请只输出代码。`;
 
-            const response = await fetch(`${config.url}/chat/completions`, {
+            const response = await fetch(`${apiUrl}/chat/completions`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.key}` },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
                 body: JSON.stringify({
                     model: config.model,
                     messages: [ { role: 'system', content: systemPrompt }, { role: 'user', content: `生成像素宠物：${promptText}` } ]
                 })
             });
+            
+            if (!response.ok) {
+                let errText = '';
+                try { errText = await response.text(); } catch(e) {}
+                throw new Error(`API请求失败 ${response.status}: ${errText.substring(0, 100)}`);
+            }
+            
             const data = await response.json();
             const content = data.choices[0].message.content;
             
