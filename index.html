@@ -53384,19 +53384,58 @@ ${userPersona.trim()}
             const petDisplay = document.getElementById('cabin-pet-display');
             if (petDisplay) {
                 waitForElementVisible(petDisplay, () => {
-                    const pet = getCurrentCabinPet();
-                    renderCabinPetDisplay(pet);
-                    renderCabinPetScreenHeader();
-                    updateCabinPetCount();
-                    cabinPetInitialized = true;
+                    // 获取当前房间，检查是否有保存的宠物ID
+                    const currentRoom = getCurrentRoom();
+                    const state = window.cabinGachaState;
+                    
+                    // 如果有保存的ID，直接使用ID查找宠物（不经过getCurrentCabinPet的兼容逻辑）
+                    let petToRender = null;
+                    if (currentRoom.currentPetId && state.pets && state.pets.length > 0) {
+                        petToRender = state.pets.find(p => p.id === currentRoom.currentPetId);
+                    }
+                    
+                    // 如果没有找到，才使用getCurrentCabinPet（兼容旧数据）
+                    if (!petToRender) {
+                        petToRender = getCurrentCabinPet();
+                    }
+                    
+                    // 只在初始化时渲染，如果已经初始化过，不重新渲染（避免覆盖用户选择）
+                    if (!cabinPetInitialized) {
+                        renderCabinPetDisplay(petToRender);
+                        renderCabinPetScreenHeader();
+                        updateCabinPetCount();
+                        cabinPetInitialized = true;
+                    } else {
+                        // 已经初始化过，只更新计数，不重新渲染宠物（保持用户选择）
+                        updateCabinPetCount();
+                    }
                 });
             } else {
                 requestAnimationFrame(() => {
-                    const pet = getCurrentCabinPet();
-                    renderCabinPetDisplay(pet);
-                    renderCabinPetScreenHeader();
-                    updateCabinPetCount();
-                    cabinPetInitialized = true;
+                    // 获取当前房间，检查是否有保存的宠物ID
+                    const currentRoom = getCurrentRoom();
+                    const state = window.cabinGachaState;
+                    
+                    // 如果有保存的ID，直接使用ID查找宠物
+                    let petToRender = null;
+                    if (currentRoom.currentPetId && state.pets && state.pets.length > 0) {
+                        petToRender = state.pets.find(p => p.id === currentRoom.currentPetId);
+                    }
+                    
+                    // 如果没有找到，才使用getCurrentCabinPet
+                    if (!petToRender) {
+                        petToRender = getCurrentCabinPet();
+                    }
+                    
+                    // 只在初始化时渲染
+                    if (!cabinPetInitialized) {
+                        renderCabinPetDisplay(petToRender);
+                        renderCabinPetScreenHeader();
+                        updateCabinPetCount();
+                        cabinPetInitialized = true;
+                    } else {
+                        updateCabinPetCount();
+                    }
                 });
             }
         } else {
@@ -55855,6 +55894,26 @@ ${userPersona.trim()}
         window.cabinGachaState.petCounter = 0;
     }
     
+    // 创建showToast函数（如果不存在）
+    if (typeof showToast !== 'function') {
+        window.showToast = function(msg) {
+            // 尝试使用现有的toast元素
+            let toast = document.getElementById('toast');
+            if (!toast) {
+                // 如果没有toast元素，创建一个
+                toast = document.createElement('div');
+                toast.id = 'toast';
+                toast.style.cssText = 'position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 8px; z-index: 10000; font-size: 14px; display: none;';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 2000);
+        };
+    }
+    
     // 添加宠物预览框CSS样式（修复SVG显示问题）
     if (!document.getElementById('cabin-pet-display-style')) {
         const style = document.createElement('style');
@@ -56037,43 +56096,119 @@ ${userPersona.trim()}
         });
     }
 
-    // 获取当前房间的宠物
+    // 获取当前房间的宠物 (修复版：通过 ID 查找，严格模式，不自动切换)
     function getCurrentCabinPet() {
         const state = window.cabinGachaState;
-        const currentRoom = getCurrentRoom(); // 获取当前房间数据对象
+        const currentRoom = getCurrentRoom(); // 获取当前房间数据
         
-        // 1. 尝试从当前房间获取
-        if (currentRoom.currentPet) {
-            return currentRoom.currentPet;
+        // 1. 优先使用 ID 查找 (最稳健的方式)
+        if (currentRoom.currentPetId && state.pets && state.pets.length > 0) {
+            const foundPet = state.pets.find(p => p.id === currentRoom.currentPetId);
+            if (foundPet) {
+                // 找到匹配的宠物，返回它（这是用户明确选择的）
+                return foundPet;
+            }
+            // 如果ID存在但找不到对应的宠物，记录警告但不清除ID
+            // 可能是数据还没加载完，或者宠物被删除了
+            console.warn('宠物ID存在但找不到对应宠物:', currentRoom.currentPetId, 'pets数量:', state.pets.length);
+            // 不返回null，继续尝试其他方式，但保持ID不变
         }
         
-        // 2. 兼容性：如果是默认房间且没有数据，尝试读取旧的全局变量并迁移
-        if (state.currentRoomId === 'default' && state.currentPet) {
-            currentRoom.currentPet = state.currentPet;
-            delete state.currentPet; // 清理旧数据
-            return currentRoom.currentPet;
+        // 2. 兼容旧数据：如果是直接存的对象（只迁移一次，不自动选择）
+        if (currentRoom.currentPet && !currentRoom.currentPetId) {
+            // 尝试把旧数据升级为 ID
+            if (currentRoom.currentPet.id) {
+                currentRoom.currentPetId = currentRoom.currentPet.id;
+                delete currentRoom.currentPet; // 清理
+                saveCabinGachaData(); // 保存升级后的数据
+                // 再次查找以确保数据最新
+                const found = state.pets ? state.pets.find(p => p.id === currentRoom.currentPetId) : null;
+                if (found) return found;
+            } else if (state.pets && state.pets.length > 0) {
+                // 如果旧对象没有id，尝试在pets数组中查找相同的对象
+                const foundInPets = state.pets.find(p => p === currentRoom.currentPet);
+                if (foundInPets && foundInPets.id) {
+                    // 如果找到了并且有id，升级为ID模式
+                    currentRoom.currentPetId = foundInPets.id;
+                    delete currentRoom.currentPet;
+                    saveCabinGachaData();
+                    return foundInPets;
+                }
+            }
+            // 如果找不到，清除旧数据（但保留ID如果存在）
+            delete currentRoom.currentPet;
+            saveCabinGachaData();
         }
         
+        // 3. 兼容全局旧数据（只迁移一次，且只在没有currentPetId时）
+        if (state.currentPet && !currentRoom.currentPetId) {
+             // 迁移旧的全局选中
+             if(state.currentPet.id) {
+                 currentRoom.currentPetId = state.currentPet.id;
+                 delete state.currentPet;
+                 saveCabinGachaData();
+                 const found = state.pets ? state.pets.find(p => p.id === currentRoom.currentPetId) : null;
+                 if (found) return found;
+             } else if (state.pets && state.pets.length > 0) {
+                 // 如果没有id，尝试在pets数组中查找
+                 const foundInPets = state.pets.find(p => p === state.currentPet);
+                 if (foundInPets && foundInPets.id) {
+                     currentRoom.currentPetId = foundInPets.id;
+                     delete state.currentPet;
+                     saveCabinGachaData();
+                     return foundInPets;
+                 }
+             }
+             // 如果找不到，清除
+             delete state.currentPet;
+        }
+        
+        // 4. 如果都没有，返回null（不自动选择第一个宠物，保持用户的选择）
         return null;
     }
 
-    // 选择宠物 (修复版：立即刷新UI)
+    // 选择宠物 (修复版：存 ID 而不是存对象，确保选择后不会跳转)
     function selectCabinPet(index) {
         const state = window.cabinGachaState;
         const currentRoom = getCurrentRoom();
         
         if (state.pets && state.pets[index]) {
-            // 将宠物绑定到当前房间（使用索引引用，确保是同一个对象）
             const selectedPet = state.pets[index];
-            currentRoom.currentPet = selectedPet;
             
-            // 1. 保存数据
+            // 【核心修改】：确保宠物有ID，如果没有则生成一个稳定的ID
+            if (!selectedPet.id) {
+                // 如果宠物没有id，生成一个稳定的ID（基于创建时间或索引）
+                selectedPet.id = selectedPet.createdAt 
+                    ? `pet_${new Date(selectedPet.createdAt).getTime()}_${index}`
+                    : `pet_${Date.now()}_${index}`;
+                // 保存更新后的宠物数据
+                saveCabinGachaData();
+            }
+            
+            // 【核心修改】：只保存宠物的 ID，这是唯一标识
+            const savedPetId = selectedPet.id;
+            currentRoom.currentPetId = savedPetId;
+            
+            // 为了防止旧数据干扰，清理掉旧的直接对象存储
+            if (currentRoom.currentPet) delete currentRoom.currentPet;
+            if (state.currentPet) delete state.currentPet;
+            
+            // 立即保存，确保ID被持久化
             saveCabinGachaData();
             
-            // 2. 关闭弹窗
+            // 【验证】：立即验证ID是否被正确保存
+            const verifyRoom = getCurrentRoom();
+            if (verifyRoom.currentPetId !== savedPetId) {
+                console.error('宠物ID保存失败！', { saved: savedPetId, actual: verifyRoom.currentPetId });
+                // 强制重新保存
+                verifyRoom.currentPetId = savedPetId;
+                saveCabinGachaData();
+            }
+            
+            // 关闭弹窗
             closeCabinPetListModal();
             
-            // 3. 强制立即渲染（使用刚选择的宠物）
+            // 立即渲染选中的宠物（使用刚选择的宠物对象，确保显示正确）
             renderCabinPetDisplay(selectedPet);
             
             const charName = getCabinCurrentOwnerName();
@@ -56094,9 +56229,23 @@ ${userPersona.trim()}
     async function generateCabinPet() {
         const promptInput = document.getElementById('cabin-pet-prompt-input');
         const promptText = promptInput.value.trim();
-        if (!promptText) { showToast("请输入描述！"); return; }
+        if (!promptText) { 
+            if (typeof showToast === 'function') {
+                showToast("请输入描述！");
+            } else {
+                alert("请输入描述！");
+            }
+            return; 
+        }
         const state = window.cabinGachaState;
-        if (state.coins < 1) { showToast("金币不足！"); return; }
+        if (state.coins < 1) { 
+            if (typeof showToast === 'function') {
+                showToast("金币不足！");
+            } else {
+                alert("金币不足！");
+            }
+            return; 
+        }
         
         state.coins--;
         updateCabinUI();
@@ -56196,17 +56345,26 @@ ${userPersona.trim()}
             };
             
             state.pets.push(pet);
-            // 生成新宠物后，将其设置为当前房间的宠物
+            // 生成新宠物后，将其设置为当前房间的宠物（使用ID）
             const currentRoom = getCurrentRoom();
-            currentRoom.currentPet = pet;
+            currentRoom.currentPetId = pet.id;
+            // 清理旧的直接对象存储
+            if (currentRoom.currentPet) delete currentRoom.currentPet;
+            if (state.currentPet) delete state.currentPet;
             saveCabinGachaData();
             renderCabinPetDisplay(pet);
             updateCabinPetCount();
+            // 重置初始化标记，确保新生成的宠物能正确显示
+            cabinPetInitialized = false;
             if (typeof showToast === 'function') {
                 showToast(`成功生成宠物: ${pet.name}`);
             }
         } catch (e) {
-            showToast("生成失败: " + e.message);
+            if (typeof showToast === 'function') {
+                showToast("生成失败: " + e.message);
+            } else {
+                alert("生成失败: " + e.message);
+            }
             petDisplay.innerHTML = originalContent;
         }
     }
@@ -56215,11 +56373,20 @@ ${userPersona.trim()}
     function interactWithCabinPet(action) {
         const state = window.cabinGachaState;
         const pet = getCurrentCabinPet();
-        if (!pet) { showToast("请先选择宠物！"); return; }
+        if (!pet) { 
+            if (typeof showToast === 'function') {
+                showToast("请先选择宠物！");
+            } else {
+                alert("请先选择宠物！");
+            }
+            return; 
+        }
         
         // 检查精力
         if (pet.energy < 10 && ['play','train','draw'].includes(action)) {
-            showToast(`${pet.name}太累了，需要休息！`);
+            if (typeof showToast === 'function') {
+                showToast(`${pet.name}太累了，需要休息！`);
+            }
             return;
         }
 
@@ -56268,8 +56435,16 @@ ${userPersona.trim()}
         
         if (typeof checkCabinPetLevelUp === 'function') checkCabinPetLevelUp(pet);
         saveCabinGachaData();
-        renderCabinPetDisplay(pet);
-        showToast(msg);
+        // 确保渲染的是当前选择的宠物（通过ID查找，确保是同一个）
+        const currentPet = getCurrentCabinPet();
+        if (currentPet && currentPet.id === pet.id) {
+            renderCabinPetDisplay(currentPet);
+        } else {
+            renderCabinPetDisplay(pet);
+        }
+        if (typeof showToast === 'function') {
+            showToast(msg);
+        }
         
         if (typeof autoSwitchCabinPetEmotionByMood === 'function') {
             setTimeout(() => autoSwitchCabinPetEmotionByMood(pet), 2000);
@@ -56285,7 +56460,14 @@ ${userPersona.trim()}
 
     function openRenameCabinPetModal() {
         const pet = getCurrentCabinPet();
-        if (!pet) { showToast("请先选择宠物"); return; }
+        if (!pet) { 
+            if (typeof showToast === 'function') {
+                showToast("请先选择宠物");
+            } else {
+                alert("请先选择宠物");
+            }
+            return; 
+        }
         
         // 使用自定义 Modal
         const modal = document.createElement('div');
@@ -56310,7 +56492,9 @@ ${userPersona.trim()}
                 pet.name = newName;
                 saveCabinGachaData();
                 renderCabinPetDisplay(pet);
-                showToast("重命名成功");
+                if (typeof showToast === 'function') {
+                    showToast("重命名成功");
+                }
                 modal.remove();
             }
         };
@@ -56514,8 +56698,8 @@ ${userPersona.trim()}
         showToast('正在生成宠物的一天，请稍候...');
         
         try {
-            const systemPrompt = `你是一个充满想象力的宠物观察员。请根据宠物设定和主人信息，写一篇约300字的“宠物观察日记”。
-            
+            const systemPrompt = `你是一个充满想象力的宠物观察员。请根据宠物设定和主人信息，写一篇详细的"宠物一天观察日记"。
+
 宠物信息：
 - 名字：${pet.name}
 - 性格/设定：${pet.bio || '未知'}
@@ -56525,11 +56709,32 @@ ${userPersona.trim()}
 - 名字：${ownerName}
 - 人设：${ownerPersona}
 
-要求：
-1. 以第三人称或宠物的视角撰写。
-2. 描述它今天做了什么有趣的事情。
-3. 重点描写它与主人【${ownerName}】的互动。
-4. 风格可爱、温馨或搞怪（取决于宠物性格）。`;
+重要要求：
+1. 必须按照时间段来写，每两个小时为一个时间段，共12个时间段：
+   - 00:00-02:00（深夜时光）
+   - 02:00-04:00（凌晨时光）
+   - 04:00-06:00（黎明时光）
+   - 06:00-08:00（清晨时光）
+   - 08:00-10:00（上午时光）
+   - 10:00-12:00（午前时光）
+   - 12:00-14:00（正午时光）
+   - 14:00-16:00（午后时光）
+   - 16:00-18:00（傍晚时光）
+   - 18:00-20:00（黄昏时光）
+   - 20:00-22:00（夜晚时光）
+   - 22:00-24:00（深夜时光）
+
+2. 每个时间段都要详细描述宠物在做什么，不少于150-200字，整篇日记总字数不少于2000字。
+
+3. 文风要求：可爱、幽默、生动有趣，可以使用拟人化的描述，加入宠物的内心独白和有趣的小细节。
+
+4. 以第三人称或宠物的视角撰写，重点描写它与主人【${ownerName}】的互动。
+
+5. 根据宠物的性格特点，让每个时间段的活动都符合它的性格。
+
+6. 可以加入一些有趣的小插曲、搞笑的瞬间、温馨的互动等。
+
+请开始生成这篇详细的日记，确保每个时间段都有丰富的内容描述。`;
 
             const response = await fetch(`${config.apiUrl}/chat/completions`, {
                 method: 'POST',
