@@ -53495,6 +53495,8 @@ ${userPersona.trim()}
                 floorColor: window.cabinGachaState.floorColor || '#f5e6e8',
                 wallStyle: window.cabinGachaState.wallStyle || 'solid',
                 floorStyle: window.cabinGachaState.floorStyle || 'solid',
+                wallPatternColor: window.cabinGachaState.wallPatternColor || window.cabinGachaState.wallColor || '#f8c3cd',
+                floorPatternColor: window.cabinGachaState.floorPatternColor || window.cabinGachaState.floorColor || '#f5e6e8',
                 characterPos: window.cabinGachaState.characterPos
             }
         };
@@ -53526,7 +53528,9 @@ ${userPersona.trim()}
                 wallColor: '#f8c3cd',
                 floorColor: '#f5e6e8',
                 wallStyle: 'solid',
-                floorStyle: 'solid'
+                floorStyle: 'solid',
+                wallPatternColor: '#f8c3cd', // 花纹颜色
+                floorPatternColor: '#f5e6e8' // 花纹颜色
             };
         }
         return state.rooms[roomId];
@@ -53651,13 +53655,11 @@ ${userPersona.trim()}
         
         const currentRoom = getCurrentRoom();
         
-        // 应用保存的颜色
+        // 应用保存的颜色和样式
         if (wallArea) {
-            wallArea.style.backgroundColor = currentRoom.wallColor || '#f8c3cd';
             applyCabinWallStyle();
         }
         if (floorArea) {
-            floorArea.style.backgroundColor = currentRoom.floorColor || '#f5e6e8';
             applyCabinFloorStyle();
         }
         
@@ -53887,18 +53889,31 @@ ${userPersona.trim()}
         el.style.opacity = '1';
         el.style.zIndex = '50';
         
-        // 计算吸附网格
-        // 获取当前中心点位置相对于房间的坐标
+        // 获取当前位置（不使用磁吸，直接使用拖拽位置）
         const currentLeft = parseFloat(el.style.left || 0);
         const currentTop = parseFloat(el.style.top || 0);
         
-        // 计算中心点
-        const centerX = currentLeft + el.offsetWidth / 2;
-        const centerY = currentTop + el.offsetHeight / 2;
+        // 获取房间容器
+        const room = document.getElementById('cabin-room-area');
+        if (!room) {
+            activeFurnitureDrag = null;
+            return;
+        }
+        const roomRect = room.getBoundingClientRect();
         
-        // 转换为网格坐标
-        let gridX = Math.floor(centerX / CABIN_GRID_SIZE);
-        let gridY = Math.floor(centerY / CABIN_GRID_SIZE);
+        // 计算相对于房间左上角的坐标
+        const relativeX = currentLeft;
+        const relativeY = currentTop;
+        
+        // 动态计算格子大小
+        let gridSize = CABIN_GRID_SIZE;
+        if (roomRect.width > 0 && Math.abs(roomRect.width - (CABIN_ROOM_WIDTH * CABIN_GRID_SIZE)) > 5) {
+             gridSize = roomRect.width / CABIN_ROOM_WIDTH;
+        }
+        
+        // 转换为网格坐标（使用floor，不进行吸附对齐）
+        let gridX = Math.floor(relativeX / gridSize);
+        let gridY = Math.floor(relativeY / gridSize);
         
         // 获取家具数据以检查边界
         const state = window.cabinGachaState;
@@ -53908,18 +53923,17 @@ ${userPersona.trim()}
         const w = (pItem.width || itemMeta.width || 1);
         const h = (pItem.height || itemMeta.height || 1);
         
-        // 修正 Grid 坐标为左上角
-        gridX -= Math.floor(w / 2);
-        gridY -= Math.floor(h / 2);
+        // 边界检查（确保不超出房间范围）
+        gridX = Math.max(0, Math.min(CABIN_ROOM_WIDTH - w, gridX));
+        gridY = Math.max(0, Math.min(CABIN_ROOM_HEIGHT - h, gridY));
         
-        // 尝试移动并吸附
-        // 这里复用已有的 moveCabinPlacedItem 逻辑来验证有效性并保存
-        // 注意：moveCabinPlacedItem 内部会处理边界检查和重叠检查
+        // 尝试移动（不使用吸附，直接使用计算出的网格坐标）
+        // 注意：moveCabinPlacedItem 内部会处理重叠检查
         const success = moveCabinPlacedItem(index, gridX, gridY);
         
         if (success) {
             updateCabinOccupiedGrid();
-            renderCabinRoom(); // 重新渲染以修正精确位置（吸附）
+            renderCabinRoom(); // 重新渲染
             showCabinToast("移动成功");
         } else {
             // 失败回弹
@@ -54028,6 +54042,10 @@ ${userPersona.trim()}
 
     // 事件委托处理函数
     function startCabinDragPlacedDelegate(e) {
+        // 只在房间屏幕可见时才处理拖拽，避免影响其他屏幕
+        const cabinScreen = document.getElementById('cabin-screen');
+        if (!cabinScreen || !cabinScreen.classList.contains('active')) return;
+        
         // 查找是否点击了家具
         const target = e.target.closest('.placed-furniture');
         if (!target) return;
@@ -54090,19 +54108,20 @@ ${userPersona.trim()}
             const relativeX = clientX - rect.left;
             const relativeY = clientY - rect.top;
             
-            // 计算格子坐标（以鼠标位置为中心）
+            // 计算格子坐标（以鼠标位置为中心，不使用吸附）
             // 我们希望鼠标指向物品的中心，所以要减去物品一半大小
             const centeredX = relativeX - (indicatorWidth / 2);
             const centeredY = relativeY - (indicatorHeight / 2);
             
-            let gridX = Math.round(centeredX / gridSize);
-            let gridY = Math.round(centeredY / gridSize);
+            // 使用floor而不是round，避免强制对齐到网格中心
+            let gridX = Math.floor(centeredX / gridSize);
+            let gridY = Math.floor(centeredY / gridSize);
             
             // 边界限制
             gridX = Math.max(0, Math.min(CABIN_ROOM_WIDTH - itemWidth, gridX));
             gridY = Math.max(0, Math.min(CABIN_ROOM_HEIGHT - itemHeight, gridY));
             
-            // 计算吸附后的屏幕坐标
+            // 计算屏幕坐标（不使用吸附，直接使用计算出的网格坐标）
             const snapX = rect.left + gridX * gridSize;
             const snapY = rect.top + gridY * gridSize;
             
@@ -54151,6 +54170,10 @@ ${userPersona.trim()}
     function handleCabinDrag(e) {
         if (!window.cabinDraggingItem) return;
         
+        // 只在房间屏幕可见时才处理拖拽，避免影响其他屏幕
+        const cabinScreen = document.getElementById('cabin-screen');
+        if (!cabinScreen || !cabinScreen.classList.contains('active')) return;
+        
         // 阻止默认滚动行为，这对移动端体验至关重要
         if (e.cancelable) {
             e.preventDefault();
@@ -54163,7 +54186,16 @@ ${userPersona.trim()}
     function endCabinDrag(e) {
         if (!window.cabinDraggingItem) return;
         
-        e.preventDefault();
+        // 只在房间屏幕可见时才处理拖拽，避免影响其他屏幕
+        const cabinScreen = document.getElementById('cabin-screen');
+        if (!cabinScreen || !cabinScreen.classList.contains('active')) {
+            window.cabinDraggingItem = null; // 清理状态
+            return;
+        }
+        
+        if (e.cancelable) {
+            e.preventDefault();
+        }
         
         // 优先使用 updateCabinDragIndicator 中计算好的吸附坐标
         let gridX = window.cabinDraggingItem.currentGridX;
@@ -54575,10 +54607,18 @@ ${userPersona.trim()}
         if (title) title.textContent = type === 'wall' ? '🎨 修改墙面颜色' : '🎨 修改地板颜色';
         
         const state = window.cabinGachaState;
-        const currentColor = type === 'wall' ? (state.wallColor || '#f8c3cd') : (state.floorColor || '#f5e6e8');
+        const currentRoom = getCurrentRoom(); // 从当前房间读取颜色
+        const currentColor = type === 'wall' ? (currentRoom.wallColor || '#f8c3cd') : (currentRoom.floorColor || '#f5e6e8');
+        const currentPatternColor = type === 'wall' ? (currentRoom.wallPatternColor || currentColor) : (currentRoom.floorPatternColor || currentColor);
         
         if (colorInput) colorInput.value = currentColor;
         if (colorPicker) colorPicker.value = currentColor;
+        
+        // 初始化花纹颜色输入框
+        const patternColorInput = document.getElementById('cabin-pattern-color-input');
+        const patternColorPicker = document.getElementById('cabin-pattern-color-picker');
+        if (patternColorInput) patternColorInput.value = currentPatternColor;
+        if (patternColorPicker) patternColorPicker.value = currentPatternColor;
         
         // 同步颜色输入和选择器
         if (colorInput && colorPicker) {
@@ -54589,6 +54629,18 @@ ${userPersona.trim()}
             };
             colorPicker.oninput = () => {
                 colorInput.value = colorPicker.value;
+            };
+        }
+        
+        // 同步花纹颜色输入和选择器（使用上面已经获取的变量）
+        if (patternColorInput && patternColorPicker) {
+            patternColorInput.oninput = () => {
+                if (patternColorInput.value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                    patternColorPicker.value = patternColorInput.value;
+                }
+            };
+            patternColorPicker.oninput = () => {
+                patternColorInput.value = patternColorPicker.value;
             };
         }
         
@@ -54618,9 +54670,13 @@ ${userPersona.trim()}
         const defaultColor = window.cabinCurrentColorTarget === 'wall' ? '#f8c3cd' : '#f5e6e8';
         const colorInput = document.getElementById('cabin-color-input');
         const colorPicker = document.getElementById('cabin-color-picker');
+        const patternColorInput = document.getElementById('cabin-pattern-color-input');
+        const patternColorPicker = document.getElementById('cabin-pattern-color-picker');
         
         if (colorInput) colorInput.value = defaultColor;
         if (colorPicker) colorPicker.value = defaultColor;
+        if (patternColorInput) patternColorInput.value = defaultColor;
+        if (patternColorPicker) patternColorPicker.value = defaultColor;
         
         const solidOption = document.querySelector('input[name="cabin-style-option"][value="solid"]');
         if (solidOption) solidOption.checked = true;
@@ -54646,23 +54702,35 @@ ${userPersona.trim()}
         }
         
         const state = window.cabinGachaState;
+        const currentRoom = getCurrentRoom(); // 保存到当前房间
         const style = styleOption.value;
         
+        // 获取花纹颜色（如果样式不是纯色）
+        let patternColor = color; // 默认使用基础颜色
+        if (style !== 'solid' && patternColorInput) {
+            const patternColorValue = patternColorInput.value;
+            if (patternColorValue && patternColorValue.match(/^#[0-9A-Fa-f]{6}$/)) {
+                patternColor = patternColorValue;
+            }
+        }
+        
         if (window.cabinCurrentColorTarget === 'wall') {
-            state.wallColor = color;
-            state.wallStyle = style;
+            currentRoom.wallColor = color;
+            currentRoom.wallStyle = style;
+            currentRoom.wallPatternColor = patternColor;
             applyCabinWallStyle();
         } else {
-            state.floorColor = color;
-            state.floorStyle = style;
+            currentRoom.floorColor = color;
+            currentRoom.floorStyle = style;
+            currentRoom.floorPatternColor = patternColor;
             applyCabinFloorStyle();
         }
         
         // 更新按钮颜色
         const wallBtn = document.getElementById('cabin-wall-color-btn');
         const floorBtn = document.getElementById('cabin-floor-color-btn');
-        if (wallBtn) wallBtn.style.background = state.wallColor;
-        if (floorBtn) floorBtn.style.background = state.floorColor;
+        if (wallBtn) wallBtn.style.background = currentRoom.wallColor;
+        if (floorBtn) floorBtn.style.background = currentRoom.floorColor;
         
         saveCabinGachaData();
         closeCabinColorPicker();
@@ -54674,19 +54742,20 @@ ${userPersona.trim()}
         if (!wallArea) return;
         
         const state = window.cabinGachaState;
-        wallArea.style.backgroundColor = state.wallColor || '#f8c3cd';
+        const currentRoom = getCurrentRoom(); // 从当前房间读取颜色和样式
+        wallArea.style.backgroundColor = currentRoom.wallColor || '#f8c3cd';
         
-        if (state.wallStyle === 'solid') {
+        if (currentRoom.wallStyle === 'solid') {
             wallArea.style.backgroundImage = 'none';
-        } else if (state.wallStyle === 'pattern1') {
-            const patternColor = state.wallColor + '40';
+        } else if (currentRoom.wallStyle === 'pattern1') {
+            const patternColor = (currentRoom.wallPatternColor || currentRoom.wallColor) + '40';
             wallArea.style.backgroundImage = `
                 linear-gradient(90deg, ${patternColor} 1px, transparent 1px),
                 linear-gradient(${patternColor}30 1px, transparent 1px)
             `;
             wallArea.style.backgroundSize = '32px 32px';
-        } else if (state.wallStyle === 'pattern2') {
-            const patternColor = state.wallColor + '20';
+        } else if (currentRoom.wallStyle === 'pattern2') {
+            const patternColor = (currentRoom.wallPatternColor || currentRoom.wallColor) + '20';
             wallArea.style.backgroundImage = `
                 linear-gradient(90deg, ${patternColor} 10%, transparent 10%, transparent 90%, ${patternColor} 90%)
             `;
@@ -54700,19 +54769,20 @@ ${userPersona.trim()}
         if (!floorArea) return;
         
         const state = window.cabinGachaState;
-        floorArea.style.backgroundColor = state.floorColor || '#f5e6e8';
+        const currentRoom = getCurrentRoom(); // 从当前房间读取颜色和样式
+        floorArea.style.backgroundColor = currentRoom.floorColor || '#f5e6e8';
         
-        if (state.floorStyle === 'solid') {
+        if (currentRoom.floorStyle === 'solid') {
             floorArea.style.backgroundImage = 'none';
-        } else if (state.floorStyle === 'pattern1') {
-            const patternColor = state.floorColor + '33';
+        } else if (currentRoom.floorStyle === 'pattern1') {
+            const patternColor = (currentRoom.floorPatternColor || currentRoom.floorColor) + '33';
             floorArea.style.backgroundImage = `
                 linear-gradient(90deg, ${patternColor} 1px, transparent 1px),
                 linear-gradient(${patternColor} 1px, transparent 1px)
             `;
             floorArea.style.backgroundSize = '32px 32px';
-        } else if (state.floorStyle === 'pattern2') {
-            const patternColor = state.floorColor + '20';
+        } else if (currentRoom.floorStyle === 'pattern2') {
+            const patternColor = (currentRoom.floorPatternColor || currentRoom.floorColor) + '20';
             floorArea.style.backgroundImage = `
                 linear-gradient(45deg, ${patternColor} 25%, transparent 25%, transparent 75%, ${patternColor} 75%, ${patternColor}),
                 linear-gradient(135deg, ${patternColor} 25%, transparent 25%, transparent 75%, ${patternColor} 75%, ${patternColor})
@@ -55225,7 +55295,8 @@ ${userPersona.trim()}
             
             // 保存素体模型
             const newId = 'base_model_' + Date.now();
-            state.customItems[newId] = {
+            const baseModelItem = {
+                id: newId,
                 name: "素体人模",
                 svg: svgContent,
                 rarity: 'SSR',
@@ -55235,12 +55306,18 @@ ${userPersona.trim()}
                 isBaseModel: true
             };
             
+            state.customItems[newId] = baseModelItem;
+            
+            // 添加到人物背包列表（characters），不添加到房间背包（inventory）
+            if (!state.characters) state.characters = [];
+            state.characters.push(baseModelItem);
+            
             state.activeCharacterId = newId;
             saveCabinGachaData();
             updateCabinUI();
             renderCabinRoom();
             
-            alert("素体人模生成成功！已放置在房间中。");
+            alert("素体人模生成成功！已添加到人物背包列表。");
             
         } catch (e) {
             console.error(e);
@@ -55862,25 +55939,18 @@ ${userPersona.trim()}
             // 初始化拖拽事件（只调用一次）
             initCabinDragEvents();
             
-            // 初始化房间颜色
+            // 初始化房间颜色（从当前房间读取）
             const state = window.cabinGachaState;
-            if (state.wallColor) {
-                const wallArea = document.getElementById('cabin-wall-area');
-                if (wallArea) {
-                    wallArea.style.backgroundColor = state.wallColor;
-                    applyCabinWallStyle();
-                }
+            const currentRoom = getCurrentRoom();
+            if (currentRoom.wallColor) {
+                applyCabinWallStyle();
                 const wallBtn = document.getElementById('cabin-wall-color-btn');
-                if (wallBtn) wallBtn.style.background = state.wallColor;
+                if (wallBtn) wallBtn.style.background = currentRoom.wallColor;
             }
-            if (state.floorColor) {
-                const floorArea = document.getElementById('cabin-floor-area');
-                if (floorArea) {
-                    floorArea.style.backgroundColor = state.floorColor;
-                    applyCabinFloorStyle();
-                }
+            if (currentRoom.floorColor) {
+                applyCabinFloorStyle();
                 const floorBtn = document.getElementById('cabin-floor-color-btn');
-                if (floorBtn) floorBtn.style.background = state.floorColor;
+                if (floorBtn) floorBtn.style.background = currentRoom.floorColor;
             }
             
             // 初始化人物显示
