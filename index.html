@@ -9788,6 +9788,16 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
                 👾 选择像素小人
             </button>
         </div>
+        
+        <!-- 像素小人导出导入按钮 -->
+        <div style="display: flex; gap: 5px; width: 100%; margin-bottom: 10px; justify-content: flex-end;">
+            <button class="pixel-btn" onclick="exportCabinCharacters()" style="background: #e0e0e0; border-color: #ccc; font-size: 9px; padding: 4px 8px; color: #666;">
+                📤 导出像素小人
+            </button>
+            <button class="pixel-btn" onclick="importCabinCharacters()" style="background: #e0e0e0; border-color: #ccc; font-size: 9px; padding: 4px 8px; color: #666;">
+                📥 导入像素小人
+            </button>
+        </div>
 
         <!-- 服装背包区域 (只在选择人模时显示) -->
         <div id="cabin-clothes-section" style="width: 100%; margin-top: 5px; display: none;">
@@ -9998,6 +10008,19 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
             <p class="modal-info" style="font-size: 9px; color: #666; margin: 8px 0;">输入你想生成的像素小人风格，AI将创造1个128×128像素的像素小人！</p>
             
             <textarea id="cabin-character-prompt-input" class="prompt-input" placeholder="例如：可爱的蓝色猫咪像素小人、科幻风格机器人像素小人、复古骑士像素小人、粉色魔法少女像素小人..." style="width: 100%; padding: 10px; margin: 10px 0; border: 2px solid #e06c9f; font-family: inherit; font-size: 10px; border-radius: 4px; resize: vertical; min-height: 60px;"></textarea>
+            
+            <!-- 图片参考上传 -->
+            <div style="margin: 10px 0;">
+                <div style="font-size: 9px; color: #666; margin-bottom: 5px; text-align: left;">📷 参考图片（可选）：</div>
+                <input type="file" id="cabin-character-image-ref" accept="image/*" style="display: none;" onchange="handleCharacterImageUpload(event)">
+                <div style="display: flex; gap: 5px; align-items: center;">
+                    <button type="button" class="pixel-btn" onclick="document.getElementById('cabin-character-image-ref').click()" style="background: #e0e0e0; color: #666; font-size: 9px; padding: 5px 10px;">选择图片</button>
+                    <div id="cabin-character-image-preview" style="flex: 1; min-height: 40px; border: 1px dashed #ccc; border-radius: 4px; display: none; align-items: center; justify-content: center; overflow: hidden;">
+                        <img id="cabin-character-image-preview-img" style="max-width: 100%; max-height: 60px; object-fit: contain;">
+                        <button type="button" onclick="clearCharacterImageRef()" style="position: absolute; top: 2px; right: 2px; background: #ff3b30; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer;">✕</button>
+                    </div>
+                </div>
+            </div>
             
             <div class="modal-info" style="font-size: 9px; color: #666; margin: 8px 0;">消耗：🟡1 | 生成：1个128×128像素小人</div>
             
@@ -55398,7 +55421,7 @@ ${userPersona.trim()}
         }
     }
     
-    // 拍照功能（修复：包含墙纸和地板）
+    // 拍照功能（修复：包含墙纸和地板花纹）
     function takeCabinScreenshot() {
         // 获取整个房间区域（包含墙和地板）
         const roomArea = document.getElementById('cabin-room-area');
@@ -55412,27 +55435,58 @@ ${userPersona.trim()}
             return;
         }
         
-        // 使用 html2canvas 截取整个房间区域（包括墙和地板）
-        html2canvas(roomArea, {
-            backgroundColor: null,
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            logging: false,
-            // 确保包含所有子元素和样式
-            ignoreElements: (element) => {
-                // 排除回收站（如果可见）
-                return element.id === 'cabin-furniture-trash-zone' && element.classList.contains('visible');
-            }
-        }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = '房间截图_' + Date.now() + '.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        }).catch(err => {
-            console.error('截图失败:', err);
-            alert('截图失败，请重试');
-        });
+        // 在截图前，强制应用一次样式，确保所有CSS背景都被正确渲染
+        applyCabinWallStyle();
+        applyCabinFloorStyle();
+        
+        // 等待样式应用完成
+        setTimeout(() => {
+            // 使用 html2canvas 截取整个房间区域（包括墙和地板）
+            html2canvas(roomArea, {
+                backgroundColor: null,
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                logging: false,
+                // 重要：确保渲染所有CSS背景（包括渐变）
+                onclone: (clonedDoc) => {
+                    // 在克隆的文档中，确保墙和地板的样式也被正确应用
+                    const clonedWall = clonedDoc.getElementById('cabin-wall-area');
+                    const clonedFloor = clonedDoc.getElementById('cabin-floor-area');
+                    if (clonedWall) {
+                        const originalWall = document.getElementById('cabin-wall-area');
+                        if (originalWall) {
+                            clonedWall.style.backgroundColor = window.getComputedStyle(originalWall).backgroundColor;
+                            clonedWall.style.backgroundImage = window.getComputedStyle(originalWall).backgroundImage;
+                            clonedWall.style.backgroundSize = window.getComputedStyle(originalWall).backgroundSize;
+                            clonedWall.style.backgroundRepeat = window.getComputedStyle(originalWall).backgroundRepeat;
+                        }
+                    }
+                    if (clonedFloor) {
+                        const originalFloor = document.getElementById('cabin-floor-area');
+                        if (originalFloor) {
+                            clonedFloor.style.backgroundColor = window.getComputedStyle(originalFloor).backgroundColor;
+                            clonedFloor.style.backgroundImage = window.getComputedStyle(originalFloor).backgroundImage;
+                            clonedFloor.style.backgroundSize = window.getComputedStyle(originalFloor).backgroundSize;
+                            clonedFloor.style.backgroundRepeat = window.getComputedStyle(originalFloor).backgroundRepeat;
+                        }
+                    }
+                },
+                // 确保包含所有子元素和样式
+                ignoreElements: (element) => {
+                    // 排除回收站（如果可见）
+                    return element.id === 'cabin-furniture-trash-zone' && element.classList.contains('visible');
+                }
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = '房间截图_' + Date.now() + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(err => {
+                console.error('截图失败:', err);
+                alert('截图失败，请重试');
+            });
+        }, 100);
     }
     
     // 初始化默认物品
@@ -55962,6 +56016,50 @@ ${userPersona.trim()}
         modal.style.display = 'flex';
         const input = document.getElementById('cabin-character-prompt-input');
         if (input) input.value = '';
+        
+        // 清空图片参考
+        clearCharacterImageRef();
+    }
+    
+    // 处理图片上传
+    function handleCharacterImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        if (!file.type.startsWith('image/')) {
+            alert('请选择图片文件');
+            return;
+        }
+        
+        // 限制文件大小（例如5MB）
+        if (file.size > 5 * 1024 * 1024) {
+            alert('图片文件过大，请选择小于5MB的图片');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const preview = document.getElementById('cabin-character-image-preview');
+            const previewImg = document.getElementById('cabin-character-image-preview-img');
+            if (preview && previewImg) {
+                previewImg.src = e.target.result;
+                preview.style.display = 'flex';
+                preview.style.position = 'relative';
+                
+                // 保存图片数据供生成时使用
+                window.cabinCharacterImageRef = e.target.result;
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    // 清空图片参考
+    function clearCharacterImageRef() {
+        const input = document.getElementById('cabin-character-image-ref');
+        const preview = document.getElementById('cabin-character-image-preview');
+        if (input) input.value = '';
+        if (preview) preview.style.display = 'none';
+        window.cabinCharacterImageRef = null;
     }
     
     // 关闭像素小人生成弹窗
@@ -56218,8 +56316,11 @@ ${userPersona.trim()}
                 }
             }
             
+            // 获取图片参考（如果有）
+            const imageRef = window.cabinCharacterImageRef || null;
+            
             // 调用实际的生成函数（它内部会管理 loading 状态）
-            await generatePixelCharacter(prompt, config, usePersona);
+            await generatePixelCharacter(prompt, config, usePersona, imageRef);
         } catch (error) {
             console.error('生成像素小人出错:', error);
             alert('生成失败: ' + error.message);
@@ -56240,7 +56341,7 @@ ${userPersona.trim()}
     window.tempCabinGeneratedChar = null;
     
     // 生成像素小人（主函数）
-    async function generatePixelCharacter(prompt, config, usePersona = false) {
+    async function generatePixelCharacter(prompt, config, usePersona = false, imageRef = null) {
         const cabinState = window.cabinGachaState;
         
         // 前置检查
@@ -56320,10 +56421,34 @@ ${userPersona.trim()}
 5. 即使描述较短，也请发挥想象力补充细节，确保SVG完整。`;
             
             const createRequestBody = (forceSafety = false) => {
+                // 构建消息内容
+                const messageContent = [];
+                
+                // 如果有图片参考，添加图片
+                if (imageRef) {
+                    // 提取base64数据（去掉data:image/...;base64,前缀）
+                    const base64Data = imageRef.split(',')[1];
+                    const mimeType = imageRef.match(/data:image\/(.*?);base64/)?.[1] || 'png';
+                    
+                    messageContent.push({
+                        type: "text",
+                        text: combinedPrompt + "\n\n请参考上传的图片，生成风格相似的像素小人。"
+                    });
+                    
+                    messageContent.push({
+                        type: "image_url",
+                        image_url: {
+                            url: imageRef
+                        }
+                    });
+                } else {
+                    messageContent.push(combinedPrompt);
+                }
+                
                 const body = {
                     model: config.model,
                     messages: [
-                        { role: "user", content: combinedPrompt }
+                        { role: "user", content: messageContent }
                     ],
                     temperature: 0.7,
                     max_tokens: 8192,
