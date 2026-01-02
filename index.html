@@ -53289,12 +53289,109 @@ ${userPersona.trim()}
     window.currentCatalogTab = 'all';
     window.currentCatalogFilter = 'all';
     
-    // 打开图鉴弹窗
+    // === 数据导入导出 ===
+    function exportCabinData() {
+        const data = {
+            cabinGachaState: window.cabinGachaState,
+            walletData: getWalletData(),
+            version: '1.0',
+            timestamp: Date.now()
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pixel_cabin_backup_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showCabinToast('数据导出成功');
+    }
+    
+    function importCabinData() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    
+                    if (data.cabinGachaState) {
+                        window.cabinGachaState = data.cabinGachaState;
+                        saveCabinGachaData();
+                    }
+                    
+                    if (data.walletData) {
+                        saveWalletData(data.walletData);
+                    }
+                    
+                    // 重新加载界面
+                    updateCabinUI();
+                    if (document.getElementById('cabin-screen').style.display === 'flex') {
+                        // 如果当前在小屋，刷新小屋
+                        const currentTab = document.querySelector('#cabin-bottom-nav .nav-tab.active');
+                        if (currentTab) {
+                            const tabText = currentTab.querySelector('.nav-tab-text').textContent;
+                            if (tabText === '房间') renderCabinRoom();
+                            if (tabText === '人物') renderCabinBaseModel();
+                        }
+                    }
+                    
+                    alert('数据导入成功！页面将刷新以应用更改。');
+                    location.reload();
+                    
+                } catch (err) {
+                    console.error('导入失败', err);
+                    alert('导入失败：文件格式错误');
+                }
+            };
+            reader.readAsText(file);
+        };
+        
+        input.click();
+    }
+
+    // 打开图鉴弹窗 (Modify to add buttons)
     function openCatalogModal() {
         const modal = document.getElementById('catalog-modal');
         if (modal) {
             modal.style.display = 'flex';
-            // 根据当前扭蛋机类型更新图鉴
+            
+            // 检查是否已经添加了导出导入按钮，如果没有则添加
+            const footer = modal.querySelector('.modal-footer'); // 图鉴通常没有 footer，或者我们加在 header?
+            // 让我们加在 Modal 的右上角或者底部
+            
+            // 查找或创建底部操作栏
+            let actionsBar = document.getElementById('catalog-data-actions');
+            if (!actionsBar) {
+                // 如果没有找到合适的地方，我们插在内容区域的最下方
+                const content = modal.querySelector('.modal-content');
+                actionsBar = document.createElement('div');
+                actionsBar.id = 'catalog-data-actions';
+                actionsBar.style.padding = '10px 15px';
+                actionsBar.style.borderTop = '1px solid #eee';
+                actionsBar.style.display = 'flex';
+                actionsBar.style.justifyContent = 'space-between';
+                actionsBar.style.gap = '10px';
+                
+                actionsBar.innerHTML = `
+                    <button class="pixel-btn" onclick="exportCabinData()" style="flex: 1; background: #aedeef; border-color: #8ac0d6; font-size: 12px;">📤 导出数据</button>
+                    <button class="pixel-btn" onclick="importCabinData()" style="flex: 1; background: #ffdfba; border-color: #ffb7b2; font-size: 12px;">📥 导入数据</button>
+                `;
+                
+                content.appendChild(actionsBar);
+            }
+            
             renderCatalogItems();
         }
     }
@@ -53897,7 +53994,7 @@ ${userPersona.trim()}
         room.appendChild(charEl);
     }
     
-    // === 小人按钮移动逻辑 ===
+    // === 小人按钮移动逻辑 (添加碰撞检测) ===
     function moveCabinCharacter(direction) {
         const state = window.cabinGachaState;
         const room = document.getElementById('cabin-room-area');
@@ -53908,57 +54005,136 @@ ${userPersona.trim()}
         
         // 移动用户的小人（如果存在）
         if (state.activeCharacterId && currentRoom.characterPos) {
+            const charId = state.activeCharacterId;
+            const itemMeta = state.customItems[charId];
+            const width = itemMeta?.width || 3;
+            const height = itemMeta?.height || 4;
+            
             const newPos = { ...currentRoom.characterPos };
+            
             switch(direction) {
                 case 'up':
-                    newPos.y = Math.max(2, newPos.y - 1); // 不能移到墙上
+                    newPos.y = newPos.y - 1;
                     break;
                 case 'down':
-                    newPos.y = Math.min(CABIN_ROOM_HEIGHT - 5, newPos.y + 1); // 考虑小人高度
+                    newPos.y = newPos.y + 1;
                     break;
                 case 'left':
-                    newPos.x = Math.max(0, newPos.x - 1);
+                    newPos.x = newPos.x - 1;
                     break;
                 case 'right':
-                    newPos.x = Math.min(CABIN_ROOM_WIDTH - 3, newPos.x + 1); // 考虑小人宽度
+                    newPos.x = newPos.x + 1;
                     break;
             }
-            currentRoom.characterPos = newPos;
             
-            // 更新DOM中的位置
-            const charEl = room.querySelector('.placed-character[data-char-type="active"]');
-            if (charEl) {
-                const pixelPos = getCabinPixelPosition(newPos.x, newPos.y);
-                charEl.style.left = pixelPos.x + 'px';
-                charEl.style.top = pixelPos.y + 'px';
+            // 检查边界
+            if (newPos.x < 0) newPos.x = 0;
+            if (newPos.y < 0) newPos.y = 0;
+            if (newPos.x > CABIN_ROOM_WIDTH - width) newPos.x = CABIN_ROOM_WIDTH - width;
+            if (newPos.y > CABIN_ROOM_HEIGHT - height) newPos.y = CABIN_ROOM_HEIGHT - height;
+            
+            // 碰撞检查
+            // 只有当新位置和原位置不同时才需要检查（避免原地踏步也报错）
+            if (newPos.x !== currentRoom.characterPos.x || newPos.y !== currentRoom.characterPos.y) {
+                let hasCollision = false;
+                
+                // 遍历小人占用的所有格子
+                for (let dx = 0; dx < width; dx++) {
+                    for (let dy = 0; dy < height; dy++) {
+                        const cx = newPos.x + dx;
+                        const cy = newPos.y + dy;
+                        
+                        // 检查占用网格
+                        const cellKey = `${cx},${cy}`;
+                        if (currentRoom.occupiedGrid[cellKey]) {
+                            const occ = currentRoom.occupiedGrid[cellKey];
+                            // 排除自己 (虽然 moveCabinCharacter 并没有把自己写入 occupiedGrid，但为了稳健)
+                            if (occ.id === charId) continue;
+                            
+                            // 获取占用物品的类型
+                            const occItem = state.customItems[occ.id];
+                            // 如果是家具 (furniture)，则视为障碍物
+                            // 地板(floor)、墙壁(wall)、装饰(decor)通常可以行走/重叠
+                            if (occItem && occItem.type === 'furniture') {
+                                hasCollision = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (hasCollision) break;
+                }
+                
+                if (!hasCollision) {
+                    currentRoom.characterPos = newPos;
+                    
+                    // 更新DOM中的位置
+                    const charEl = room.querySelector('.placed-character[data-char-type="active"]');
+                    if (charEl) {
+                        const pixelPos = getCabinPixelPosition(newPos.x, newPos.y);
+                        charEl.style.left = pixelPos.x + 'px';
+                        charEl.style.top = pixelPos.y + 'px';
+                        // 确保层级正确（在家具之上）
+                        charEl.style.zIndex = Math.floor(pixelPos.y + height * CABIN_GRID_SIZE) + 10;
+                    }
+                } else {
+                    showCabinToast("这里走不通哦~");
+                }
             }
         }
         
         // 移动房主的小人（如果存在）
         if (currentRoom.ownerAvatarId && currentRoom.ownerPos) {
+             const charId = currentRoom.ownerAvatarId;
+             const itemMeta = state.customItems[charId];
+             const width = itemMeta?.width || 3;
+             const height = itemMeta?.height || 4;
+             
             const newPos = { ...currentRoom.ownerPos };
             switch(direction) {
-                case 'up':
-                    newPos.y = Math.max(2, newPos.y - 1);
-                    break;
-                case 'down':
-                    newPos.y = Math.min(CABIN_ROOM_HEIGHT - 5, newPos.y + 1);
-                    break;
-                case 'left':
-                    newPos.x = Math.max(0, newPos.x - 1);
-                    break;
-                case 'right':
-                    newPos.x = Math.min(CABIN_ROOM_WIDTH - 3, newPos.x + 1);
-                    break;
+                case 'up': newPos.y -= 1; break;
+                case 'down': newPos.y += 1; break;
+                case 'left': newPos.x -= 1; break;
+                case 'right': newPos.x += 1; break;
             }
-            currentRoom.ownerPos = newPos;
             
-            // 更新DOM中的位置
-            const ownerEl = room.querySelector('.placed-character[data-char-type="owner"]');
-            if (ownerEl) {
-                const pixelPos = getCabinPixelPosition(newPos.x, newPos.y);
-                ownerEl.style.left = pixelPos.x + 'px';
-                ownerEl.style.top = pixelPos.y + 'px';
+            // 边界检查
+            if (newPos.x < 0) newPos.x = 0;
+            if (newPos.y < 0) newPos.y = 0;
+            if (newPos.x > CABIN_ROOM_WIDTH - width) newPos.x = CABIN_ROOM_WIDTH - width;
+            if (newPos.y > CABIN_ROOM_HEIGHT - height) newPos.y = CABIN_ROOM_HEIGHT - height;
+
+            if (newPos.x !== currentRoom.ownerPos.x || newPos.y !== currentRoom.ownerPos.y) {
+                // 碰撞检查
+                let hasCollision = false;
+                for (let dx = 0; dx < width; dx++) {
+                    for (let dy = 0; dy < height; dy++) {
+                        const cx = newPos.x + dx;
+                        const cy = newPos.y + dy;
+                        const cellKey = `${cx},${cy}`;
+                        if (currentRoom.occupiedGrid[cellKey]) {
+                            const occ = currentRoom.occupiedGrid[cellKey];
+                            if (occ.id === charId) continue;
+
+                             const occItem = state.customItems[occ.id];
+                             if (occItem && occItem.type === 'furniture') {
+                                 hasCollision = true;
+                                 break;
+                             }
+                        }
+                    }
+                    if (hasCollision) break;
+                }
+
+                if (!hasCollision) {
+                    currentRoom.ownerPos = newPos;
+                    const ownerEl = room.querySelector('.placed-character[data-char-type="owner"]');
+                    if (ownerEl) {
+                        const pixelPos = getCabinPixelPosition(newPos.x, newPos.y);
+                        ownerEl.style.left = pixelPos.x + 'px';
+                        ownerEl.style.top = pixelPos.y + 'px';
+                        ownerEl.style.zIndex = Math.floor(pixelPos.y + height * CABIN_GRID_SIZE) + 10;
+                    }
+                }
             }
         }
         
@@ -54037,14 +54213,22 @@ ${userPersona.trim()}
     let activeFurnitureDrag = null;
 
     function handleFurnitureTouchStart(e) {
-        // 阻止默认行为（滚动等）
-        if (e.cancelable) e.preventDefault();
+        // 只在房间区域内才阻止默认行为，避免影响桌面滑动
+        const room = document.getElementById('cabin-room-area');
+        if (room) {
+            const roomRect = room.getBoundingClientRect();
+            const touch = e.touches[0];
+            // 如果触摸点在房间区域内，才阻止默认滚动
+            if (touch.clientX >= roomRect.left && touch.clientX <= roomRect.right &&
+                touch.clientY >= roomRect.top && touch.clientY <= roomRect.bottom) {
+                if (e.cancelable) e.preventDefault();
+            }
+        }
         e.stopPropagation(); // 防止冒泡触发其他逻辑
 
         const el = e.currentTarget; // 当前被触摸的家具元素
         const touch = e.touches[0];
-        const room = document.getElementById('cabin-room-area');
-        const roomRect = room.getBoundingClientRect();
+        const roomRect = room ? room.getBoundingClientRect() : { left: 0, top: 0, right: 0, bottom: 0 };
 
         // 记录初始状态
         activeFurnitureDrag = {
@@ -54057,19 +54241,72 @@ ${userPersona.trim()}
             index: parseInt(el.getAttribute('data-index'))
         };
 
-        // 绑定移动和结束事件
+        // 绑定移动和结束事件（只在房间内时阻止默认行为）
         document.addEventListener('touchmove', handleFurnitureTouchMove, {passive: false});
         document.addEventListener('touchend', handleFurnitureTouchEnd);
+        
+        // 显示回收站
+        const trash = document.getElementById('cabin-furniture-trash-zone');
+        if (trash) {
+            trash.classList.add('visible');
+        } else {
+            // 如果不存在，创建一个
+            createCabinTrashZone();
+            document.getElementById('cabin-furniture-trash-zone').classList.add('visible');
+        }
         
         // 可选：添加高亮效果
         el.style.opacity = '0.8';
         el.style.zIndex = '1000';
     }
+    
+    function createCabinTrashZone() {
+        if (document.getElementById('cabin-furniture-trash-zone')) return;
+        
+        const trash = document.createElement('div');
+        trash.id = 'cabin-furniture-trash-zone';
+        trash.innerHTML = '🗑️ 拖动到此处回收';
+        trash.style.position = 'absolute';
+        trash.style.bottom = '10px';
+        trash.style.left = '50%';
+        trash.style.transform = 'translateX(-50%) translateY(150%)'; // 默认隐藏
+        trash.style.width = '200px';
+        trash.style.height = '60px';
+        trash.style.background = 'rgba(255, 59, 48, 0.9)';
+        trash.style.color = 'white';
+        trash.style.borderRadius = '30px';
+        trash.style.display = 'flex';
+        trash.style.alignItems = 'center';
+        trash.style.justifyContent = 'center';
+        trash.style.fontWeight = 'bold';
+        trash.style.zIndex = '200';
+        trash.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        trash.style.boxShadow = '0 4px 15px rgba(255, 59, 48, 0.4)';
+        
+        // 添加到房间区域内 (cabin-room-screen)
+        const screen = document.getElementById('cabin-room-screen');
+        if(screen) screen.appendChild(trash);
+        
+        // CSS for visibility (add dynamically)
+        const style = document.createElement('style');
+        style.innerHTML = `#cabin-furniture-trash-zone.visible { transform: translateX(-50%) translateY(0); } #cabin-furniture-trash-zone.hover { transform: translateX(-50%) scale(1.1); background: #ff3b30; }`;
+        document.head.appendChild(style);
+    }
 
     function handleFurnitureTouchMove(e) {
         if (!activeFurnitureDrag) return;
         
-        if (e.cancelable) e.preventDefault(); // 必须阻止滚动
+        // 只在真正拖拽时才阻止默认行为，并且只在房间区域内
+        const room = document.getElementById('cabin-room-area');
+        if (room) {
+            const roomRect = room.getBoundingClientRect();
+            const touch = e.touches[0];
+            // 如果触摸点在房间区域内，才阻止默认滚动
+            if (touch.clientX >= roomRect.left && touch.clientX <= roomRect.right &&
+                touch.clientY >= roomRect.top && touch.clientY <= roomRect.bottom) {
+                if (e.cancelable) e.preventDefault();
+            }
+        }
         
         const touch = e.touches[0];
         const deltaX = touch.clientX - activeFurnitureDrag.startX;
@@ -54081,12 +54318,65 @@ ${userPersona.trim()}
         
         activeFurnitureDrag.el.style.left = newLeft + 'px';
         activeFurnitureDrag.el.style.top = newTop + 'px';
+        
+        // 检查是否在回收站上方
+        const trash = document.getElementById('cabin-furniture-trash-zone');
+        if (trash) {
+            const trashRect = trash.getBoundingClientRect();
+            if (touch.clientX >= trashRect.left && touch.clientX <= trashRect.right &&
+                touch.clientY >= trashRect.top && touch.clientY <= trashRect.bottom) {
+                trash.classList.add('hover');
+            } else {
+                trash.classList.remove('hover');
+            }
+        }
     }
 
     function handleFurnitureTouchEnd(e) {
         if (!activeFurnitureDrag) return;
         
         const { el, index, initialLeft, initialTop } = activeFurnitureDrag;
+        const touch = e.changedTouches[0]; // 使用 changedTouches 获取松手时的坐标
+        
+        // 隐藏回收站
+        const trash = document.getElementById('cabin-furniture-trash-zone');
+        if (trash) {
+            trash.classList.remove('visible');
+            trash.classList.remove('hover');
+            
+            // 检查是否放入回收站
+            const trashRect = trash.getBoundingClientRect();
+            if (touch.clientX >= trashRect.left && touch.clientX <= trashRect.right &&
+                touch.clientY >= trashRect.top && touch.clientY <= trashRect.bottom) {
+                
+                // 执行回收操作
+                const state = window.cabinGachaState;
+                const currentRoom = getCurrentRoom();
+                const pItem = currentRoom.placedItems[index];
+                
+                if (pItem) {
+                    // 1. 从房间移除
+                    currentRoom.placedItems.splice(index, 1);
+                    
+                    // 2. 加回库存
+                    if (!state.inventory[pItem.itemId]) state.inventory[pItem.itemId] = 0;
+                    state.inventory[pItem.itemId]++;
+                    
+                    // 3. 更新UI
+                    updateCabinOccupiedGrid();
+                    renderCabinRoom();
+                    renderCabinInventory();
+                    saveCabinGachaData();
+                    showCabinToast("已收回家具");
+                }
+                
+                // 清理并返回
+                document.removeEventListener('touchmove', handleFurnitureTouchMove);
+                document.removeEventListener('touchend', handleFurnitureTouchEnd);
+                activeFurnitureDrag = null;
+                return;
+            }
+        }
         
         // 解绑事件
         document.removeEventListener('touchmove', handleFurnitureTouchMove);
@@ -55108,24 +55398,36 @@ ${userPersona.trim()}
         }
     }
     
-    // 拍照功能
+    // 拍照功能（修复：包含墙纸和地板）
     function takeCabinScreenshot() {
-        const room = document.getElementById('cabin-room-area');
-        if (!room) return;
+        // 获取整个房间区域（包含墙和地板）
+        const roomArea = document.getElementById('cabin-room-area');
+        if (!roomArea) {
+            alert('找不到房间区域');
+            return;
+        }
         
         if (typeof html2canvas === 'undefined') {
             alert('拍照功能需要html2canvas库，请确保已加载');
             return;
         }
         
-        html2canvas(room, {
+        // 使用 html2canvas 截取整个房间区域（包括墙和地板）
+        html2canvas(roomArea, {
             backgroundColor: null,
             scale: 2,
-            useCORS: true
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            // 确保包含所有子元素和样式
+            ignoreElements: (element) => {
+                // 排除回收站（如果可见）
+                return element.id === 'cabin-furniture-trash-zone' && element.classList.contains('visible');
+            }
         }).then(canvas => {
             const link = document.createElement('a');
             link.download = '房间截图_' + Date.now() + '.png';
-            link.href = canvas.toDataURL();
+            link.href = canvas.toDataURL('image/png');
             link.click();
         }).catch(err => {
             console.error('截图失败:', err);
@@ -55981,6 +56283,13 @@ ${userPersona.trim()}
         try {
             const safePrompt = targetPrompt.length > 500 ? targetPrompt.substring(0, 500) + "..." : targetPrompt;
             
+            // 针对男性角色的 Prompt 优化
+            let extraInstruction = "";
+            if (targetPrompt.includes('男') || targetPrompt.includes('boy') || targetPrompt.includes('man') || charName.includes('男')) {
+                extraInstruction = `
+6. **男性发型修正**：请确保头发整洁，不要有凌乱的碎发。发型轮廓要清晰，避免出现像"漂浮像素"一样的杂点。如果是短发，请画出干净的边缘。`;
+            }
+
             const combinedPrompt = `你是专业的像素艺术设计师。请生成一个128×128像素的像素小人。
 主题与描述：${safePrompt}
 所属角色上下文：${charName}
@@ -55991,6 +56300,7 @@ ${userPersona.trim()}
 2. **完整全身**：必须包含完整的全身（头、身体、双手、双腿、双脚），严禁只画上半身。即使人设未提及，也要根据风格补全下半身。
 3. **构图饱满**：尽量减少周围的空白区域。如果是Q版风格，头部可以画大一些以增加细节。
 4. **代码优化**：必须优化SVG代码体积，尽量使用 <path> 或合并相同颜色的 <rect>，避免字符数过多导致截断。
+5. **干净线条**：边缘要清晰，不要有模糊的半透明像素。${extraInstruction}
 
 格式要求（严格遵守）：
 ===NORMAL===
@@ -56127,6 +56437,12 @@ ${userPersona.trim()}
             svgHappy = cleanSvg(svgHappy) || svgNormal;
             svgSad = cleanSvg(svgSad) || svgNormal;
             svgAngry = cleanSvg(svgAngry) || svgNormal;
+            
+            // 针对男性角色的额外处理（去除可能的乱发）
+            if (targetPrompt.includes('男') || targetPrompt.includes('boy') || targetPrompt.includes('man')) {
+                // 简单的清理逻辑：如果发现大面积的不规则路径，可以尝试简化，但这里我们主要依赖 Prompt
+                // 所以这里不进行复杂的 SVG 处理，而是依赖 Prompt 的优化
+            }
             
             if (!svgNormal || !svgNormal.includes('<svg')) {
                 throw new Error('未能提取到有效的SVG代码');
@@ -56294,13 +56610,11 @@ ${userPersona.trim()}
         }
         
         // 使用原始 Prompt + 修改意见重新生成
-        const originalPrompt = window.tempCabinGeneratedChar.originalPrompt;
-        const newPrompt = `${originalPrompt}。 修改要求：${modification}`;
+        // 如果 originalPrompt 为空，则使用 name 或一个通用描述
+        const basePrompt = window.tempCabinGeneratedChar.originalPrompt || window.tempCabinGeneratedChar.name || "像素风格的角色";
+        const newPrompt = `${basePrompt}。 修改要求：${modification}`;
         
         // 关闭预览弹窗（或者显示 loading），重新调用生成
-        // 这里我们可以直接调用 generatePixelCharacter，它会处理扣费和流程
-        // 但为了用户体验，我们稍微 hack 一下，直接复用流程
-        
         document.getElementById('cabin-pixel-char-preview-modal').style.display = 'none';
         
         // 显示生成 loading
@@ -56312,6 +56626,12 @@ ${userPersona.trim()}
         if(genModal) genModal.style.display = 'flex';
         
         const config = getPrimaryApiConfig();
+        
+        // 调用 generatePixelCharacter，它内部会处理 Gemini 的安全设置
+        // 传递 true 给 usePersona 参数的意图是表明这是一个有人设上下文的生成，
+        // 但这里我们已经在 newPrompt 里包含了所有信息，所以 generatePixelCharacter 需要能处理这种直接 Prompt
+        // 我们修改 generatePixelCharacter 让它接受一个直接的完整 Prompt
+        
         await generatePixelCharacter(newPrompt, config, false);
     }
     
@@ -56580,6 +56900,91 @@ ${userPersona.trim()}
         } else {
             alert('已删除');
         }
+    }
+
+    // === 人物数据导出导入 ===
+    function exportCabinCharacters() {
+        const state = window.cabinGachaState;
+        // 过滤出自定义的像素小人（排除素体和默认）
+        const characters = (state.characters || []).filter(c => c.isCharacter && !c.isBaseModel);
+        
+        const data = {
+            characters: characters,
+            type: 'pixel_characters_export',
+            version: '1.0',
+            timestamp: Date.now()
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pixel_characters_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showCabinToast(`已导出 ${characters.length} 个角色`);
+    }
+    
+    function importCabinCharacters() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    
+                    if (data.type !== 'pixel_characters_export' && !Array.isArray(data.characters)) {
+                        alert('文件格式不正确，不是角色导出文件');
+                        return;
+                    }
+                    
+                    const newChars = data.characters || data; // 兼容旧格式直接导出的数组
+                    if (!Array.isArray(newChars)) {
+                         alert('数据无效');
+                         return;
+                    }
+                    
+                    const state = window.cabinGachaState;
+                    let count = 0;
+                    
+                    newChars.forEach(char => {
+                        // 生成新ID以防冲突
+                        const newId = 'imported_' + char.id + '_' + Date.now() + Math.floor(Math.random()*1000);
+                        const newChar = { ...char, id: newId };
+                        
+                        // 添加到 customItems 和 characters
+                        state.customItems[newId] = newChar;
+                        if (!state.characters) state.characters = [];
+                        state.characters.push(newChar);
+                        count++;
+                    });
+                    
+                    saveCabinGachaData();
+                    updateCabinUI(); // 刷新界面
+                    
+                    // 如果在人物界面，刷新列表
+                    updateCabinCharacterScreenUI();
+                    
+                    alert(`成功导入 ${count} 个角色！`);
+                    
+                } catch (err) {
+                    console.error('导入失败', err);
+                    alert('导入失败：' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        };
+        
+        input.click();
     }
 
     // 打开选择人模弹窗
@@ -56853,6 +57258,91 @@ ${userPersona.trim()}
         characterItem.appendChild(name);
         
         return characterItem;
+    }
+    
+    // === 人物数据导出导入 ===
+    function exportCabinCharacters() {
+        const state = window.cabinGachaState;
+        // 过滤出自定义的像素小人（排除素体和默认）
+        const characters = (state.characters || []).filter(c => c.isCharacter && !c.isBaseModel);
+        
+        const data = {
+            characters: characters,
+            type: 'pixel_characters_export',
+            version: '1.0',
+            timestamp: Date.now()
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pixel_characters_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showCabinToast(`已导出 ${characters.length} 个角色`);
+    }
+    
+    function importCabinCharacters() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    
+                    if (data.type !== 'pixel_characters_export' && !Array.isArray(data.characters)) {
+                        alert('文件格式不正确，不是角色导出文件');
+                        return;
+                    }
+                    
+                    const newChars = data.characters || data; // 兼容旧格式直接导出的数组
+                    if (!Array.isArray(newChars)) {
+                         alert('数据无效');
+                         return;
+                    }
+                    
+                    const state = window.cabinGachaState;
+                    let count = 0;
+                    
+                    newChars.forEach(char => {
+                        // 生成新ID以防冲突
+                        const newId = 'imported_' + char.id + '_' + Date.now() + Math.floor(Math.random()*1000);
+                        const newChar = { ...char, id: newId };
+                        
+                        // 添加到 customItems 和 characters
+                        state.customItems[newId] = newChar;
+                        if (!state.characters) state.characters = [];
+                        state.characters.push(newChar);
+                        count++;
+                    });
+                    
+                    saveCabinGachaData();
+                    updateCabinUI(); // 刷新界面
+                    
+                    // 如果在人物界面，刷新列表
+                    updateCabinCharacterScreenUI();
+                    
+                    alert(`成功导入 ${count} 个角色！`);
+                    
+                } catch (err) {
+                    console.error('导入失败', err);
+                    alert('导入失败：' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        };
+        
+        input.click();
     }
     
     // 打开像素小人分配弹窗
