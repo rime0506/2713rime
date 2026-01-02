@@ -54523,6 +54523,13 @@ ${userPersona.trim()}
         
         updateCabinDragIndicator(event);
         
+        // 显示回收站
+        createCabinTrashZone();
+        const trash = document.getElementById('cabin-furniture-trash-zone');
+        if (trash) {
+            trash.classList.add('visible');
+        }
+        
         document.addEventListener('mousemove', handleCabinDrag);
         document.addEventListener('touchmove', handleCabinDrag, { passive: false });
         document.addEventListener('mouseup', endCabinDrag);
@@ -54713,21 +54720,90 @@ ${userPersona.trim()}
         }
         
         updateCabinDragIndicator(e);
+        
+        // 检查是否在回收站上方
+        const trash = document.getElementById('cabin-furniture-trash-zone');
+        if (trash) {
+            const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
+            const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
+            
+            const trashRect = trash.getBoundingClientRect();
+            if (clientX >= trashRect.left && clientX <= trashRect.right &&
+                clientY >= trashRect.top && clientY <= trashRect.bottom) {
+                trash.classList.add('hover');
+            } else {
+                trash.classList.remove('hover');
+            }
+        }
     }
     
     // 结束拖拽
     function endCabinDrag(e) {
         if (!window.cabinDraggingItem) return;
         
-        // 只在房间屏幕可见时才处理拖拽，避免影响其他屏幕
+        // 只在房间屏幕可见时才处理拖拽
         const cabinScreen = document.getElementById('cabin-screen');
         if (!cabinScreen || !cabinScreen.classList.contains('active')) {
-            window.cabinDraggingItem = null; // 清理状态
+            window.cabinDraggingItem = null;
             return;
         }
         
         if (e.cancelable) {
             e.preventDefault();
+        }
+        
+        // 检查是否放入回收站
+        const trash = document.getElementById('cabin-furniture-trash-zone');
+        let droppedInTrash = false;
+        
+        if (trash) {
+            const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
+            const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
+            
+            const trashRect = trash.getBoundingClientRect();
+            if (clientX >= trashRect.left && clientX <= trashRect.right &&
+                clientY >= trashRect.top && clientY <= trashRect.bottom) {
+                droppedInTrash = true;
+            }
+            
+            // 隐藏回收站
+            trash.classList.remove('visible');
+            trash.classList.remove('hover');
+        }
+        
+        // 如果放入回收站且是已放置的物品
+        if (droppedInTrash && window.cabinDraggingItem.type === 'placed') {
+             const state = window.cabinGachaState;
+             const currentRoom = getCurrentRoom();
+             const itemIndex = window.cabinDraggingItem.index;
+             const pItem = currentRoom.placedItems[itemIndex];
+             
+             if (pItem) {
+                 // 1. 从房间移除
+                 currentRoom.placedItems.splice(itemIndex, 1);
+                 
+                 // 2. 加回库存
+                 if (!state.inventory[pItem.itemId]) state.inventory[pItem.itemId] = 0;
+                 state.inventory[pItem.itemId]++;
+                 
+                 // 3. 更新UI
+                 updateCabinOccupiedGrid();
+                 renderCabinRoom();
+                 renderCabinInventory();
+                 saveCabinGachaData();
+                 showCabinToast("已收回家具");
+             }
+             
+             // 清理
+             window.cabinDraggingItem = null;
+             const dragIndicator = document.getElementById('cabin-drag-indicator');
+             if (dragIndicator) dragIndicator.style.display = 'none';
+             
+             document.removeEventListener('mousemove', handleCabinDrag);
+             document.removeEventListener('touchmove', handleCabinDrag);
+             document.removeEventListener('mouseup', endCabinDrag);
+             document.removeEventListener('touchend', endCabinDrag);
+             return;
         }
         
         // 优先使用 updateCabinDragIndicator 中计算好的吸附坐标
@@ -55435,47 +55511,88 @@ ${userPersona.trim()}
             return;
         }
         
-        // 在截图前，强制应用一次样式，确保所有CSS背景都被正确渲染
+        // 在截图前，强制应用一次样式
         applyCabinWallStyle();
         applyCabinFloorStyle();
         
+        // 准备当前房间的样式数据，直接用于 clone
+        const currentRoom = getCurrentRoom();
+        const wallColor = currentRoom.wallColor || '#f8c3cd';
+        const floorColor = currentRoom.floorColor || '#f5e6e8';
+        const wallStyle = currentRoom.wallStyle;
+        const floorStyle = currentRoom.floorStyle;
+        const wallPatternColor = currentRoom.wallPatternColor || wallColor;
+        const floorPatternColor = currentRoom.floorPatternColor || floorColor;
+        const wallPatternSrc = currentRoom.wallPatternSrc;
+        const floorPatternSrc = currentRoom.floorPatternSrc;
+        
         // 等待样式应用完成
         setTimeout(() => {
-            // 使用 html2canvas 截取整个房间区域（包括墙和地板）
+            // 使用 html2canvas 截取整个房间区域
             html2canvas(roomArea, {
                 backgroundColor: null,
                 scale: 2,
                 useCORS: true,
                 allowTaint: true,
                 logging: false,
-                // 重要：确保渲染所有CSS背景（包括渐变）
+                // 重要：在克隆的文档中直接重建样式，不依赖 getComputedStyle
                 onclone: (clonedDoc) => {
-                    // 在克隆的文档中，确保墙和地板的样式也被正确应用
                     const clonedWall = clonedDoc.getElementById('cabin-wall-area');
                     const clonedFloor = clonedDoc.getElementById('cabin-floor-area');
+                    
                     if (clonedWall) {
-                        const originalWall = document.getElementById('cabin-wall-area');
-                        if (originalWall) {
-                            clonedWall.style.backgroundColor = window.getComputedStyle(originalWall).backgroundColor;
-                            clonedWall.style.backgroundImage = window.getComputedStyle(originalWall).backgroundImage;
-                            clonedWall.style.backgroundSize = window.getComputedStyle(originalWall).backgroundSize;
-                            clonedWall.style.backgroundRepeat = window.getComputedStyle(originalWall).backgroundRepeat;
+                        clonedWall.style.backgroundColor = wallColor;
+                        if (wallPatternSrc) {
+                             clonedWall.style.backgroundImage = `url('${wallPatternSrc}')`;
+                             clonedWall.style.backgroundSize = '64px 64px';
+                             clonedWall.style.backgroundRepeat = 'repeat';
+                        } else if (wallStyle === 'pattern1') {
+                            const pColor = wallPatternColor + '40';
+                            clonedWall.style.backgroundImage = `
+                                linear-gradient(90deg, ${pColor} 1px, transparent 1px),
+                                linear-gradient(${pColor}30 1px, transparent 1px)
+                            `;
+                            clonedWall.style.backgroundSize = '32px 32px';
+                        } else if (wallStyle === 'pattern2') {
+                             const pColor = wallPatternColor + '20';
+                             clonedWall.style.backgroundImage = `
+                                linear-gradient(90deg, ${pColor} 10%, transparent 10%, transparent 90%, ${pColor} 90%)
+                             `;
+                             clonedWall.style.backgroundSize = '32px 100%';
+                        } else {
+                            clonedWall.style.backgroundImage = 'none';
                         }
                     }
+                    
                     if (clonedFloor) {
-                        const originalFloor = document.getElementById('cabin-floor-area');
-                        if (originalFloor) {
-                            clonedFloor.style.backgroundColor = window.getComputedStyle(originalFloor).backgroundColor;
-                            clonedFloor.style.backgroundImage = window.getComputedStyle(originalFloor).backgroundImage;
-                            clonedFloor.style.backgroundSize = window.getComputedStyle(originalFloor).backgroundSize;
-                            clonedFloor.style.backgroundRepeat = window.getComputedStyle(originalFloor).backgroundRepeat;
+                        clonedFloor.style.backgroundColor = floorColor;
+                        if (floorPatternSrc) {
+                             clonedFloor.style.backgroundImage = `url('${floorPatternSrc}')`;
+                             clonedFloor.style.backgroundSize = '64px 64px';
+                             clonedFloor.style.backgroundRepeat = 'repeat';
+                        } else if (floorStyle === 'pattern1') {
+                             const pColor = floorPatternColor + '33';
+                             clonedFloor.style.backgroundImage = `
+                                linear-gradient(90deg, ${pColor} 1px, transparent 1px),
+                                linear-gradient(${pColor} 1px, transparent 1px)
+                             `;
+                             clonedFloor.style.backgroundSize = '32px 32px';
+                        } else if (floorStyle === 'pattern2') {
+                             const pColor = floorPatternColor + '20';
+                             clonedFloor.style.backgroundImage = `
+                                linear-gradient(45deg, ${pColor} 25%, transparent 25%, transparent 75%, ${pColor} 75%, ${pColor}),
+                                linear-gradient(135deg, ${pColor} 25%, transparent 25%, transparent 75%, ${pColor} 75%, ${pColor})
+                             `;
+                             clonedFloor.style.backgroundSize = '64px 64px';
+                        } else {
+                            clonedFloor.style.backgroundImage = 'none';
                         }
                     }
                 },
                 // 确保包含所有子元素和样式
                 ignoreElements: (element) => {
-                    // 排除回收站（如果可见）
-                    return element.id === 'cabin-furniture-trash-zone' && element.classList.contains('visible');
+                    // 排除回收站
+                    return element.id === 'cabin-furniture-trash-zone';
                 }
             }).then(canvas => {
                 const link = document.createElement('a');
@@ -56422,33 +56539,35 @@ ${userPersona.trim()}
             
             const createRequestBody = (forceSafety = false) => {
                 // 构建消息内容
-                const messageContent = [];
+                let messagesContent;
                 
-                // 如果有图片参考，添加图片
+                // 如果有图片参考，使用多模态格式
                 if (imageRef) {
+                    messagesContent = [];
                     // 提取base64数据（去掉data:image/...;base64,前缀）
                     const base64Data = imageRef.split(',')[1];
                     const mimeType = imageRef.match(/data:image\/(.*?);base64/)?.[1] || 'png';
                     
-                    messageContent.push({
+                    messagesContent.push({
                         type: "text",
                         text: combinedPrompt + "\n\n请参考上传的图片，生成风格相似的像素小人。"
                     });
                     
-                    messageContent.push({
+                    messagesContent.push({
                         type: "image_url",
                         image_url: {
                             url: imageRef
                         }
                     });
                 } else {
-                    messageContent.push(combinedPrompt);
+                    // 纯文本模式：直接使用字符串，兼容性最好
+                    messagesContent = combinedPrompt;
                 }
                 
                 const body = {
                     model: config.model,
                     messages: [
-                        { role: "user", content: messageContent }
+                        { role: "user", content: messagesContent }
                     ],
                     temperature: 0.7,
                     max_tokens: 8192,
