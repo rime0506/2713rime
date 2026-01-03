@@ -53790,6 +53790,66 @@ ${userPersona.trim()}
         }
         return state.rooms[roomId];
     }
+    
+    // Toast 提示函数
+    function showCabinToast(msg) {
+        let toast = document.getElementById('cabin-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'cabin-toast';
+            toast.className = 'cabin-toast';
+            document.body.appendChild(toast);
+            
+            // 添加样式
+            const style = document.createElement('style');
+            style.innerHTML = `
+                .cabin-toast {
+                    position: fixed;
+                    bottom: 80px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background-color: rgba(224, 108, 159, 0.9);
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    z-index: 10000;
+                    display: none;
+                    font-size: 12px;
+                    max-width: 80%;
+                    text-align: center;
+                    box-shadow: 0 4px 10px rgba(224, 108, 159, 0.3);
+                    border: 2px solid white;
+                }
+                .cabin-toast.show {
+                    display: block;
+                    animation: cabinFadeInOut 3s forwards;
+                }
+                @keyframes cabinFadeInOut {
+                    0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+                    10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                    90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                    100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        toast.textContent = msg;
+        toast.classList.remove('show');
+        // Trigger reflow
+        void toast.offsetWidth;
+        toast.classList.add('show');
+        
+        // 自动移除
+        if (window.cabinToastTimeout) clearTimeout(window.cabinToastTimeout);
+        window.cabinToastTimeout = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+    
+    // 兼容旧名称，确保全局可用
+    window.showToast = showCabinToast;
+    window.showCabinToast = showCabinToast;
 
     // 当前选中的物品ID
     window.cabinSelectedItemId = null;
@@ -53949,7 +54009,9 @@ ${userPersona.trim()}
                     </div>
                 `;
                 
-                el.addEventListener('touchstart', handleFurnitureTouchStart, {passive: false});
+                // 恢复直接绑定，确保拖拽事件能被触发
+                el.addEventListener('mousedown', startCabinDragPlaced);
+                el.addEventListener('touchstart', startCabinDragPlaced, {passive: false});
                 
                 room.appendChild(el);
             });
@@ -54469,29 +54531,37 @@ ${userPersona.trim()}
     // 全局拖拽状态 (旧逻辑保留，避免报错)
     window.cabinDraggingItem = null;
     
-    // 开始拖拽已放置的家具 (鼠标逻辑保留)
+    // 开始拖拽已放置的家具 (通用逻辑)
     function startCabinDragPlaced(e) {
-        if (!e) return;
+        // 如果是点击事件委托过来的，可能需要阻止默认行为
+        // 但对于直接绑定，这里不需要 e.preventDefault()，否则可能影响点击（虽然这里是 furniture）
+        // 关键：touchstart 需要 passive: false 并在 move 中 preventDefault 才能阻止滚动
         
-        if (e.cancelable) e.preventDefault();
-        e.stopPropagation();
+        // 兼容 touch 事件
+        const event = (e.type === 'touchstart') ? e.touches[0] : e;
         
-        const event = e.type === 'touchstart' ? e.touches[0] : e;
-        
+        // 获取目标元素 (处理事件委托和直接绑定两种情况)
         const target = e.target.closest('.placed-furniture');
         if (!target) return;
+        
+        // 如果是多点触控，不处理
+        if (e.touches && e.touches.length > 1) return;
+        
+        // 阻止事件冒泡，防止触发房间背景的拖拽或其他逻辑
+        e.stopPropagation();
         
         const index = parseInt(target.getAttribute('data-index'));
         if (isNaN(index)) return;
         
         const state = window.cabinGachaState;
-        const currentRoom = getCurrentRoom(); // 获取当前房间数据
-        const pItem = currentRoom.placedItems[index]; // 使用当前房间的 placedItems
+        const currentRoom = getCurrentRoom();
+        const pItem = currentRoom.placedItems[index];
         if (!pItem) return;
         
         const item = state.customItems[pItem.itemId];
         if (!item) return;
         
+        // 准备拖拽指示器
         const dragIndicator = document.getElementById('cabin-drag-indicator');
         if (!dragIndicator) return;
         
@@ -54509,18 +54579,20 @@ ${userPersona.trim()}
         `;
         dragIndicator.style.display = 'block';
         
-        // 临时隐藏原物品（完全隐藏，避免显示两个）
+        // 临时隐藏原物品
         target.style.opacity = '0';
         
+        // 设置全局拖拽状态
         window.cabinDraggingItem = {
             type: 'placed',
             index: index,
             id: pItem.itemId,
             originalX: pItem.gridX,
             originalY: pItem.gridY,
-            element: target // 引用DOM元素以便恢复
+            element: target
         };
         
+        // 立即更新指示器位置
         updateCabinDragIndicator(event);
         
         // 显示回收站
@@ -54530,6 +54602,7 @@ ${userPersona.trim()}
             trash.classList.add('visible');
         }
         
+        // 绑定全局移动和结束事件
         document.addEventListener('mousemove', handleCabinDrag);
         document.addEventListener('touchmove', handleCabinDrag, { passive: false });
         document.addEventListener('mouseup', endCabinDrag);
@@ -55511,9 +55584,16 @@ ${userPersona.trim()}
             return;
         }
         
+        // 提示用户
+        showCabinToast("正在生成照片...");
+        
         // 在截图前，强制应用一次样式
-        applyCabinWallStyle();
-        applyCabinFloorStyle();
+        try {
+            applyCabinWallStyle();
+            applyCabinFloorStyle();
+        } catch(e) {
+            console.error("Apply style error", e);
+        }
         
         // 准备当前房间的样式数据，直接用于 clone
         const currentRoom = getCurrentRoom();
@@ -55528,82 +55608,97 @@ ${userPersona.trim()}
         
         // 等待样式应用完成
         setTimeout(() => {
-            // 使用 html2canvas 截取整个房间区域
-            html2canvas(roomArea, {
-                backgroundColor: null,
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-                logging: false,
-                // 重要：在克隆的文档中直接重建样式，不依赖 getComputedStyle
-                onclone: (clonedDoc) => {
-                    const clonedWall = clonedDoc.getElementById('cabin-wall-area');
-                    const clonedFloor = clonedDoc.getElementById('cabin-floor-area');
-                    
-                    if (clonedWall) {
-                        clonedWall.style.backgroundColor = wallColor;
-                        if (wallPatternSrc) {
-                             clonedWall.style.backgroundImage = `url('${wallPatternSrc}')`;
-                             clonedWall.style.backgroundSize = '64px 64px';
-                             clonedWall.style.backgroundRepeat = 'repeat';
-                        } else if (wallStyle === 'pattern1') {
-                            const pColor = wallPatternColor + '40';
-                            clonedWall.style.backgroundImage = `
-                                linear-gradient(90deg, ${pColor} 1px, transparent 1px),
-                                linear-gradient(${pColor}30 1px, transparent 1px)
-                            `;
-                            clonedWall.style.backgroundSize = '32px 32px';
-                        } else if (wallStyle === 'pattern2') {
-                             const pColor = wallPatternColor + '20';
-                             clonedWall.style.backgroundImage = `
-                                linear-gradient(90deg, ${pColor} 10%, transparent 10%, transparent 90%, ${pColor} 90%)
-                             `;
-                             clonedWall.style.backgroundSize = '32px 100%';
-                        } else {
-                            clonedWall.style.backgroundImage = 'none';
+            try {
+                // 使用 html2canvas 截取整个房间区域
+                html2canvas(roomArea, {
+                    backgroundColor: null,
+                    scale: 2, // 如果崩溃可以尝试改为 1.5 或 1
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: false,
+                    // 重要：在克隆的文档中直接重建样式，不依赖 getComputedStyle
+                    onclone: (clonedDoc) => {
+                        try {
+                            const clonedWall = clonedDoc.getElementById('cabin-wall-area');
+                            const clonedFloor = clonedDoc.getElementById('cabin-floor-area');
+                            
+                            if (clonedWall) {
+                                clonedWall.style.backgroundColor = wallColor;
+                                if (wallPatternSrc) {
+                                     clonedWall.style.backgroundImage = `url('${wallPatternSrc}')`;
+                                     clonedWall.style.backgroundSize = '64px 64px';
+                                     clonedWall.style.backgroundRepeat = 'repeat';
+                                } else if (wallStyle === 'pattern1') {
+                                    const pColor = wallPatternColor + '40';
+                                    clonedWall.style.backgroundImage = `
+                                        linear-gradient(90deg, ${pColor} 1px, transparent 1px),
+                                        linear-gradient(${pColor}30 1px, transparent 1px)
+                                    `;
+                                    clonedWall.style.backgroundSize = '32px 32px';
+                                } else if (wallStyle === 'pattern2') {
+                                     const pColor = wallPatternColor + '20';
+                                     clonedWall.style.backgroundImage = `
+                                        linear-gradient(90deg, ${pColor} 10%, transparent 10%, transparent 90%, ${pColor} 90%)
+                                     `;
+                                     clonedWall.style.backgroundSize = '32px 100%';
+                                } else {
+                                    clonedWall.style.backgroundImage = 'none';
+                                }
+                            }
+                            
+                            if (clonedFloor) {
+                                clonedFloor.style.backgroundColor = floorColor;
+                                if (floorPatternSrc) {
+                                     clonedFloor.style.backgroundImage = `url('${floorPatternSrc}')`;
+                                     clonedFloor.style.backgroundSize = '64px 64px';
+                                     clonedFloor.style.backgroundRepeat = 'repeat';
+                                } else if (floorStyle === 'pattern1') {
+                                     const pColor = floorPatternColor + '33';
+                                     clonedFloor.style.backgroundImage = `
+                                        linear-gradient(90deg, ${pColor} 1px, transparent 1px),
+                                        linear-gradient(${pColor} 1px, transparent 1px)
+                                     `;
+                                     clonedFloor.style.backgroundSize = '32px 32px';
+                                } else if (floorStyle === 'pattern2') {
+                                     const pColor = floorPatternColor + '20';
+                                     clonedFloor.style.backgroundImage = `
+                                        linear-gradient(45deg, ${pColor} 25%, transparent 25%, transparent 75%, ${pColor} 75%, ${pColor}),
+                                        linear-gradient(135deg, ${pColor} 25%, transparent 25%, transparent 75%, ${pColor} 75%, ${pColor})
+                                     `;
+                                     clonedFloor.style.backgroundSize = '64px 64px';
+                                } else {
+                                    clonedFloor.style.backgroundImage = 'none';
+                                }
+                            }
+                        } catch(cloneErr) {
+                            console.error("onclone error:", cloneErr);
                         }
+                    },
+                    // 确保包含所有子元素和样式
+                    ignoreElements: (element) => {
+                        // 排除回收站
+                        return element.id === 'cabin-furniture-trash-zone';
                     }
-                    
-                    if (clonedFloor) {
-                        clonedFloor.style.backgroundColor = floorColor;
-                        if (floorPatternSrc) {
-                             clonedFloor.style.backgroundImage = `url('${floorPatternSrc}')`;
-                             clonedFloor.style.backgroundSize = '64px 64px';
-                             clonedFloor.style.backgroundRepeat = 'repeat';
-                        } else if (floorStyle === 'pattern1') {
-                             const pColor = floorPatternColor + '33';
-                             clonedFloor.style.backgroundImage = `
-                                linear-gradient(90deg, ${pColor} 1px, transparent 1px),
-                                linear-gradient(${pColor} 1px, transparent 1px)
-                             `;
-                             clonedFloor.style.backgroundSize = '32px 32px';
-                        } else if (floorStyle === 'pattern2') {
-                             const pColor = floorPatternColor + '20';
-                             clonedFloor.style.backgroundImage = `
-                                linear-gradient(45deg, ${pColor} 25%, transparent 25%, transparent 75%, ${pColor} 75%, ${pColor}),
-                                linear-gradient(135deg, ${pColor} 25%, transparent 25%, transparent 75%, ${pColor} 75%, ${pColor})
-                             `;
-                             clonedFloor.style.backgroundSize = '64px 64px';
-                        } else {
-                            clonedFloor.style.backgroundImage = 'none';
-                        }
+                }).then(canvas => {
+                    try {
+                        const link = document.createElement('a');
+                        link.download = '房间截图_' + Date.now() + '.png';
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                        showCabinToast("照片已保存!");
+                    } catch(saveErr) {
+                        console.error("Save error:", saveErr);
+                        alert("保存图片失败，请重试");
                     }
-                },
-                // 确保包含所有子元素和样式
-                ignoreElements: (element) => {
-                    // 排除回收站
-                    return element.id === 'cabin-furniture-trash-zone';
-                }
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = '房间截图_' + Date.now() + '.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            }).catch(err => {
-                console.error('截图失败:', err);
-                alert('截图失败，请重试');
-            });
-        }, 100);
+                }).catch(err => {
+                    console.error('截图失败:', err);
+                    alert('截图生成失败: ' + err.message);
+                });
+            } catch(outerErr) {
+                console.error("Outer screenshot error:", outerErr);
+                alert("启动截图失败");
+            }
+        }, 300); // 增加延时确保渲染
     }
     
     // 初始化默认物品
@@ -56541,12 +56636,10 @@ ${userPersona.trim()}
                 // 构建消息内容
                 let messagesContent;
                 
-                // 如果有图片参考，使用多模态格式
+                // 如果没有图片参考，使用多模态格式 (纯文本)
                 if (imageRef) {
                     messagesContent = [];
-                    // 提取base64数据（去掉data:image/...;base64,前缀）
-                    const base64Data = imageRef.split(',')[1];
-                    const mimeType = imageRef.match(/data:image\/(.*?);base64/)?.[1] || 'png';
+                    // 提取base64数据
                     
                     messagesContent.push({
                         type: "text",
