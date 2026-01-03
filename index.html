@@ -53853,8 +53853,11 @@ ${userPersona.trim()}
         
         if (itemType === 'wall') {
             if (gridY >= CABIN_WALL_HEIGHT) return false;
-        } else if (itemType === 'furniture' || itemType === 'floor') {
+        } else if (itemType === 'floor') {
             if (gridY < CABIN_WALL_HEIGHT) return false;
+        } else if (itemType === 'furniture') {
+            // 家具可以靠墙放 (允许放在墙根，即 gridY 可以 < CABIN_WALL_HEIGHT，只要不越界)
+            // 这里不做 gridY < CABIN_WALL_HEIGHT 的限制，让它可以覆盖部分墙面
         }
         
         return true;
@@ -55694,57 +55697,9 @@ ${userPersona.trim()}
                 logging: false,
                 // 重要：在克隆的文档中直接重建样式，不依赖 getComputedStyle
                 onclone: (clonedDoc) => {
-                    const clonedWall = clonedDoc.getElementById('cabin-wall-area');
-                    const clonedFloor = clonedDoc.getElementById('cabin-floor-area');
-                    
-                    if (clonedWall) {
-                        clonedWall.style.backgroundColor = wallColor;
-                        if (wallPatternSrc) {
-                             clonedWall.style.backgroundImage = `url('${wallPatternSrc}')`;
-                             clonedWall.style.backgroundSize = '64px 64px';
-                             clonedWall.style.backgroundRepeat = 'repeat';
-                        } else if (wallStyle === 'pattern1') {
-                            const pColor = wallPatternColor + '40';
-                            clonedWall.style.backgroundImage = `
-                                linear-gradient(90deg, ${pColor} 1px, transparent 1px),
-                                linear-gradient(${pColor}30 1px, transparent 1px)
-                            `;
-                            clonedWall.style.backgroundSize = '32px 32px';
-                        } else if (wallStyle === 'pattern2') {
-                             const pColor = wallPatternColor + '20';
-                             clonedWall.style.backgroundImage = `
-                                linear-gradient(90deg, ${pColor} 10%, transparent 10%, transparent 90%, ${pColor} 90%)
-                             `;
-                             clonedWall.style.backgroundSize = '32px 100%';
-                        } else {
-                            clonedWall.style.backgroundImage = 'none';
-                        }
-                    }
-                    
-                    if (clonedFloor) {
-                        clonedFloor.style.backgroundColor = floorColor;
-                        if (floorPatternSrc) {
-                             clonedFloor.style.backgroundImage = `url('${floorPatternSrc}')`;
-                             clonedFloor.style.backgroundSize = '64px 64px';
-                             clonedFloor.style.backgroundRepeat = 'repeat';
-                        } else if (floorStyle === 'pattern1') {
-                             const pColor = floorPatternColor + '33';
-                             clonedFloor.style.backgroundImage = `
-                                linear-gradient(90deg, ${pColor} 1px, transparent 1px),
-                                linear-gradient(${pColor} 1px, transparent 1px)
-                             `;
-                             clonedFloor.style.backgroundSize = '32px 32px';
-                        } else if (floorStyle === 'pattern2') {
-                             const pColor = floorPatternColor + '20';
-                             clonedFloor.style.backgroundImage = `
-                                linear-gradient(45deg, ${pColor} 25%, transparent 25%, transparent 75%, ${pColor} 75%, ${pColor}),
-                                linear-gradient(135deg, ${pColor} 25%, transparent 25%, transparent 75%, ${pColor} 75%, ${pColor})
-                             `;
-                             clonedFloor.style.backgroundSize = '64px 64px';
-                        } else {
-                            clonedFloor.style.backgroundImage = 'none';
-                        }
-                    }
+                    // 移除不再需要的样式重建逻辑，直接使用 html2canvas 捕获的 DOM 样式
+                    // 因为我们在截图前已经调用了 applyCabinWallStyle 和 applyCabinFloorStyle
+                    // 之前的逻辑会因为变量获取问题错误地清除背景图
                 },
                 // 确保包含所有子元素和样式
                 ignoreElements: (element) => {
@@ -58770,6 +58725,12 @@ SVG要求：128x128像素，背景透明，风格统一。
         if (pet.isExploring) {
             const now = Date.now();
             if (now < pet.explorationEndTime) {
+                // 如果点击的是探险按钮，则进入加速逻辑
+                if (action === 'explore') {
+                    handleCabinPetExploration(pet);
+                    return;
+                }
+                
                 const remaining = Math.ceil((pet.explorationEndTime - now) / 1000);
                 showToast(`${pet.name} 正在探险中，还有 ${remaining} 秒回来！`);
                 return;
@@ -58914,82 +58875,143 @@ SVG要求：128x128像素，背景透明，风格统一。
     function handleCabinPetExploration(pet) {
         const now = Date.now();
         
+        // 探险状态机逻辑
+        // 状态1：探险中 (exploring)
         if (pet.isExploring) {
-            // 结算探险
+            // 检查是否完成
             if (now >= pet.explorationEndTime) {
-                pet.isExploring = false;
-                pet.explorationEndTime = 0;
-                
-                // 奖励结算
-                const coinsFound = Math.floor(Math.random() * 50) + 10;
-                const xpGained = Math.floor(Math.random() * 30) + 20;
-                
-                window.cabinGachaState.coins += coinsFound;
-                pet.experience = (pet.experience || 0) + xpGained;
-                
-                // 随机获得家具概率 (20%)
-                let itemReward = null;
-                if (Math.random() < 0.2) {
-                    // 简单的随机家具逻辑
-                    const pool = Object.keys(window.cabinGachaState.customItems);
-                    if (pool.length > 0) {
-                        const rewardId = pool[Math.floor(Math.random() * pool.length)];
-                        window.cabinGachaState.inventory[rewardId] = (window.cabinGachaState.inventory[rewardId] || 0) + 1;
-                        itemReward = window.cabinGachaState.customItems[rewardId].name;
-                    }
-                }
-                
-                let resultMsg = `探险归来！获得 ${coinsFound} 金币，${xpGained} 经验。`;
-                if (itemReward) resultMsg += ` 居然带回了 [${itemReward}]！`;
-                
-                alert(resultMsg); // 或者用模态框展示
-                
-                checkCabinPetLevelUp(pet);
-                saveCabinGachaData();
-                updateCabinUI();
-                renderCabinPetDisplay(pet);
-                
-                // 生成探险日记 (默认150字)
-                generateCabinPetInteractionStory(pet, "宠物独自出去探险回来了，带回了一些战利品。", 150, true);
+                // 状态3：探险完成 (done) - 结算
+                completeCabinPetExploration(pet);
             } else {
+                // 状态2：探险进行中 (exploring) - 显示加速选项
                 const remaining = Math.ceil((pet.explorationEndTime - now) / 1000);
-                // 转换为分钟
                 const remainingMin = Math.ceil(remaining / 60);
                 
-                if (confirm(`还在探险中... 剩余 ${remainingMin} 分钟。\n是否消耗 10 金币立即完成探险？`)) {
-                    if (window.cabinGachaState.coins >= 10) {
-                        window.cabinGachaState.coins -= 10;
-                        pet.explorationEndTime = now - 1000; // Set to past to ensure completion
-                        saveCabinGachaData();
-                        showToast("⚡ 已消耗 10 金币加速探险！");
-                        
-                        // Recursively call to settle immediately
-                        handleCabinPetExploration(pet);
-                    } else {
-                        showToast("金币不足，无法加速！");
-                    }
-                }
+                // 每次点击更新 UI (虽然 showToast 只是提示，但这里是再次点击互动的入口)
+                // 这里我们弹出一个专门的加速弹窗，而不仅仅是 confirm
+                showExplorationSpeedUpModal(pet, remainingMin);
             }
         } else {
-            // 开始探险
-            const durationMinutes = 30; // 修改为30分钟
-            pet.isExploring = true;
-            pet.explorationEndTime = now + (durationMinutes * 60 * 1000);
-            pet.energy = Math.max(0, (pet.energy || 100) - 30);
-            
-            // 探险动画逻辑
-            handleExplorationAnimation(pet, durationMinutes);
+            // 状态0：空闲 (idle) - 开始探险
+            startCabinPetExploration(pet);
         }
+    }
+
+    // 开始探险
+    function startCabinPetExploration(pet) {
+        const now = Date.now();
+        const durationMinutes = 30; // 30分钟
+        
+        // 更新状态
+        pet.isExploring = true;
+        pet.explorationEndTime = now + (durationMinutes * 60 * 1000);
+        pet.energy = Math.max(0, (pet.energy || 100) - 30);
+        
+        // 触发动画生成与渲染
+        handleExplorationAnimation(pet, durationMinutes);
+        
+        saveCabinGachaData();
+        renderCabinPetDisplay(pet); // 确保 UI 刷新显示新状态
+        showToast(`${pet.name}背上小包袱出发去探险了！(${durationMinutes}分钟后回来)`);
+    }
+
+    // 完成探险
+    function completeCabinPetExploration(pet) {
+        pet.isExploring = false;
+        pet.explorationEndTime = 0;
+        
+        // 恢复正常 SVG (如果之前是探险动画)
+        if (pet.svgExploration) {
+            pet.svg = pet.svgNormal; // 恢复原样，或者保留探险装扮一小会儿？这里先恢复
+        }
+
+        // 奖励结算
+        const coinsFound = Math.floor(Math.random() * 50) + 10;
+        const xpGained = Math.floor(Math.random() * 30) + 20;
+        
+        window.cabinGachaState.coins += coinsFound;
+        pet.experience = (pet.experience || 0) + xpGained;
+        
+        // 随机获得家具概率 (20%)
+        let itemReward = null;
+        if (Math.random() < 0.2) {
+            const pool = Object.keys(window.cabinGachaState.customItems);
+            if (pool.length > 0) {
+                const rewardId = pool[Math.floor(Math.random() * pool.length)];
+                window.cabinGachaState.inventory[rewardId] = (window.cabinGachaState.inventory[rewardId] || 0) + 1;
+                itemReward = window.cabinGachaState.customItems[rewardId].name;
+            }
+        }
+        
+        let resultMsg = `探险归来！获得 ${coinsFound} 金币，${xpGained} 经验。`;
+        if (itemReward) resultMsg += ` 居然带回了 [${itemReward}]！`;
+        
+        alert(resultMsg); 
+        
+        checkCabinPetLevelUp(pet);
+        saveCabinGachaData();
+        updateCabinUI();
+        renderCabinPetDisplay(pet);
+        
+        // 生成探险日记
+        generateCabinPetInteractionStory(pet, "宠物独自出去探险回来了，带回了一些战利品。", 150, true);
+    }
+
+    // 显示加速弹窗
+    function showExplorationSpeedUpModal(pet, remainingMin) {
+        const modalId = 'cabin-speedup-modal-' + Date.now();
+        const modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'modal';
+        modal.style.display = 'flex';
+        modal.style.zIndex = '3100'; // 比剧情弹窗更高
+        
+        modal.innerHTML = `
+            <div class="modal-content" style="background: #fff; width: 85%; max-width: 300px; padding: 20px; border: 4px solid #aedeef; border-radius: 10px; text-align: center;">
+                <div class="modal-title" style="font-size: 14px; color: #e06c9f; margin-bottom: 15px;">⚡ 加速探险</div>
+                <div style="font-size: 12px; color: #666; margin-bottom: 20px;">
+                    ${pet.name} 还在探险中...<br>剩余时间：${remainingMin} 分钟
+                </div>
+                <div style="font-size: 11px; color: #e06c9f; margin-bottom: 20px; font-weight: bold;">
+                    消耗 🟡10 金币立即完成？
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button class="pixel-btn" onclick="document.getElementById('${modalId}').remove()" style="background:#ccc; flex:1;">再等等</button>
+                    <button class="pixel-btn pink" id="${modalId}-confirm" style="flex:1;">立即加速</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        document.getElementById(`${modalId}-confirm`).onclick = () => {
+            if (window.cabinGachaState.coins >= 10) {
+                window.cabinGachaState.coins -= 10;
+                showToast("⚡ 加速成功！");
+                document.getElementById(modalId).remove();
+                
+                // 立即完成
+                completeCabinPetExploration(pet);
+            } else {
+                showToast("金币不足，无法加速！");
+            }
+        };
     }
     
     // 处理探险动画生成与显示
     async function handleExplorationAnimation(pet, durationMinutes) {
-         // 检查是否有缓存的探险动画 SVG
-        if (!pet.svgExploration) {
-            showToast("正在生成探险动画...");
-            // 调用 AI 生成探险动画
-            // 这里我们复用生成宠物的逻辑，但是 prompt 不同
-             const config = getPrimaryApiConfig();
+        // 先尝试显示缓存的动画（如果有）
+        if (pet.svgExploration) {
+            pet.svg = pet.svgExploration;
+            renderCabinPetDisplay(pet); // 关键：立即渲染缓存的动画
+        } else {
+            // 没有缓存，显示占位符并开始生成
+            pet.svg = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:30px;flex-direction:column;"><div>🗺️🏃</div><div style="font-size:10px;margin-top:5px;">绘制探险装中...</div></div>';
+            renderCabinPetDisplay(pet); // 渲染占位符
+            
+            showToast("正在生成专属探险动画...");
+            
+            const config = getPrimaryApiConfig();
              if (config.apiKey) {
                  try {
                      const prompt = `为${pet.name}生成一个正在探险的像素动画帧。
@@ -58997,11 +59019,11 @@ SVG要求：128x128像素，背景透明，风格统一。
                      ${pet.svgNormal}
                      
                      要求：
-                     1. 基于原外观，增加背包、地图、望远镜等探险装备。
-                     2. 动作：正在行走或寻找东西。
-                     3. 返回 SVG 代码。`;
+                     1. 必须基于原外观修改，保持角色一致。
+                     2. 增加探险装备：如背着双肩包、手持地图或望远镜、戴着探险帽。
+                     3. 动作：正在行走的姿势。
+                     4. 只返回 SVG 代码，不要其他文本。`;
                      
-                     // 简化的生成调用，实际应复用 generatePixelCharacter 的部分逻辑或单独封装
                       const response = await fetch(`${config.apiUrl}/chat/completions`, {
                         method: 'POST',
                         headers: {
@@ -59023,26 +59045,26 @@ SVG要求：128x128像素，背景透明，风格统一。
                          let svgContent = data.choices[0].message.content.trim();
                          // 清理 markdown
                          svgContent = svgContent.replace(/```xml/g, '').replace(/```/g, '').trim();
+                         
+                         // 更新数据
                          pet.svgExploration = svgContent;
-                         pet.svg = svgContent; 
-                    } else {
-                        // 降级显示
-                         pet.svg = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:30px;">🗺️🏃</div>';
-                    }
+                         // 只有当宠物还在探险时，才更新当前显示
+                         if (pet.isExploring) {
+                             pet.svg = svgContent;
+                             
+                             // 强制延迟一点渲染，确保数据已保存
+                             setTimeout(() => {
+                                 renderCabinPetDisplay(pet); 
+                             }, 50);
+                         }
+                         saveCabinGachaData();
+                    } 
                  } catch(e) {
                       console.error("生成探险动画失败", e);
-                      pet.svg = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:30px;">🗺️🏃</div>';
+                      // 失败时不覆盖 pet.svg，保持占位符或原样
                  }
-             } else {
-                  pet.svg = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:30px;">🗺️🏃</div>';
              }
-        } else {
-            pet.svg = pet.svgExploration;
         }
-        
-        saveCabinGachaData();
-        renderCabinPetDisplay(pet);
-        showToast(`${pet.name}背上小包袱出发去探险了！(${durationMinutes}分钟后回来)`);
     }
 
     // 生成互动小剧场
@@ -59127,7 +59149,7 @@ SVG要求：128x128像素，背景透明，风格统一。
         }
     }
     
-    // 显示剧情弹窗
+    // 显示剧情弹窗（修复版）
     function showCabinStoryModal(content, isLoading = false) {
         const modalId = 'cabin-story-modal-' + Date.now();
         const modal = document.createElement('div');
@@ -59136,13 +59158,40 @@ SVG要求：128x128像素，背景透明，风格统一。
         modal.style.display = 'flex';
         modal.style.zIndex = '3000'; // 确保在最上层
         
+        let displayContent = content;
+        if (!isLoading && content) {
+             // 简单的格式化，确保换行显示
+             displayContent = content.replace(/\n/g, '<br>');
+        }
+
         let innerHTML = `
-            <div class="modal-content" style="background: #fff; width: 85%; max-width: 350px; padding: 20px; border: 4px solid #ff9ed2; border-radius: 10px; text-align: center; max-height: 80vh; overflow-y: auto; position: relative;">
-                <div class="modal-title" style="font-size: 14px; color: #e06c9f; margin-bottom: 15px;">📖 互动小剧场</div>
-                <div id="${modalId}-content" style="font-size: 12px; color: #333; line-height: 1.6; text-align: left; white-space: pre-wrap; margin-bottom: 20px;">
-                    ${isLoading ? '<div style="text-align:center; color: #e06c9f;">⏳ ' + content + '</div>' : content}
+            <div class="modal-content" style="background: #fff; width: 85%; max-width: 350px; padding: 20px; border: 4px solid #ff9ed2; border-radius: 10px; text-align: center; max-height: 80vh; display: flex; flex-direction: column; position: relative; box-sizing: border-box;">
+                <div class="modal-title" style="font-size: 14px; color: #e06c9f; margin-bottom: 15px; flex-shrink: 0; font-weight: bold;">📖 互动小剧场</div>
+                
+                <div id="${modalId}-content" style="
+                    font-size: 13px; 
+                    color: #333; 
+                    line-height: 1.6; 
+                    text-align: left; 
+                    white-space: pre-wrap; 
+                    word-wrap: break-word; 
+                    word-break: break-all;
+                    margin-bottom: 20px; 
+                    min-height: 100px;
+                    max-height: 50vh;
+                    overflow-y: auto; 
+                    padding: 10px;
+                    border: 1px dashed #ffd1e8;
+                    border-radius: 5px;
+                    background: #fff9fc;
+                    width: 100%;
+                    box-sizing: border-box;
+                    display: block;
+                ">
+                    ${isLoading ? '<div style="text-align:center; color: #e06c9f; padding: 20px;">⏳ ' + content + '</div>' : displayContent}
                 </div>
-                <button class="pixel-btn pink" onclick="document.getElementById('${modalId}').remove()" style="width: 100%;">关闭</button>
+                
+                <button class="pixel-btn pink" onclick="document.getElementById('${modalId}').remove()" style="width: 100%; flex-shrink: 0; margin: 0;">关闭</button>
             </div>
         `;
         
@@ -59150,12 +59199,32 @@ SVG要求：128x128像素，背景透明，风格统一。
         document.body.appendChild(modal);
         return modalId;
     }
-    
-    // 更新剧情弹窗内容
+
+    // 更新剧情弹窗内容（修复版 + 防注入）
     function updateCabinStoryModal(modalId, content) {
+        console.log("updateCabinStoryModal called. Content length:", content ? content.length : 0);
         const contentEl = document.getElementById(`${modalId}-content`);
-        if (contentEl) {
-            contentEl.innerHTML = content;
+        if (contentEl && content) {
+            // 1. 先进行 HTML 转义，防止 AI 生成的内容包含 < > 等字符被浏览器解析为标签而隐藏
+            let safeContent = content
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+            
+            // 2. 再将换行符转换为 <br>
+            safeContent = safeContent.replace(/\n/g, '<br>');
+            
+            // 3. 写入内容
+            contentEl.innerHTML = safeContent;
+            
+            // 4. 滚动到顶部
+            contentEl.scrollTop = 0;
+            
+            console.log("Modal content updated successfully.");
+        } else {
+            console.error("Failed to update modal. Element not found or content empty.", modalId, content);
         }
     }
 
