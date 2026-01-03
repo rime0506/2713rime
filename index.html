@@ -54127,7 +54127,7 @@ ${userPersona.trim()}
         room.appendChild(charEl);
     }
     
-    // === 小人按钮移动逻辑 (添加碰撞检测) ===
+    // === 小人按钮移动逻辑 (移除碰撞检测，支持小数坐标) ===
     
     function moveCabinUserCharacter(direction) {
         const state = window.cabinGachaState;
@@ -54141,55 +54141,48 @@ ${userPersona.trim()}
             const itemMeta = state.customItems[charId];
             const width = itemMeta?.width || 3;
             const height = itemMeta?.height || 4;
+            
+            // 复制当前位置
             const newPos = { ...currentRoom.characterPos };
             
+            // 移动步长，这里设为 0.5 可以移动得更精细，设为 1 移动得快
+            const step = 0.5;
+
             switch(direction) {
-                case 'up': newPos.y -= 1; break;
-                case 'down': newPos.y += 1; break;
-                case 'left': newPos.x -= 1; break;
-                case 'right': newPos.x += 1; break;
+                case 'up': newPos.y -= step; break;
+                case 'down': newPos.y += step; break;
+                case 'left': newPos.x -= step; break;
+                case 'right': newPos.x += step; break;
             }
             
-            // 边界检查
+            // 边界检查 (防止走出房间)
             if (newPos.x < 0) newPos.x = 0;
             if (newPos.y < 0) newPos.y = 0;
             if (newPos.x > CABIN_ROOM_WIDTH - width) newPos.x = CABIN_ROOM_WIDTH - width;
             if (newPos.y > CABIN_ROOM_HEIGHT - height) newPos.y = CABIN_ROOM_HEIGHT - height;
             
-            if (newPos.x !== currentRoom.characterPos.x || newPos.y !== currentRoom.characterPos.y) {
-                let hasCollision = false;
-                for (let dx = 0; dx < width; dx++) {
-                    for (let dy = 0; dy < height; dy++) {
-                        const cx = newPos.x + dx;
-                        const cy = newPos.y + dy;
-                        const cellKey = `${cx},${cy}`;
-                        if (currentRoom.occupiedGrid[cellKey]) {
-                            const occ = currentRoom.occupiedGrid[cellKey];
-                            if (occ.id === charId) continue;
-                            const occItem = state.customItems[occ.id];
-                            if (occItem && occItem.type === 'furniture') {
-                                hasCollision = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (hasCollision) break;
+            // --- 核心修改：删除了这里原本的碰撞检测循环 (hasCollision) ---
+            // 直接更新位置，无视障碍物
+            
+            currentRoom.characterPos = newPos;
+            const charEl = room.querySelector('.placed-character[data-char-type="active"]');
+            
+            if (charEl) {
+                // 计算像素位置 (支持小数)
+                const roomRect = room.getBoundingClientRect();
+                let gridSize = CABIN_GRID_SIZE;
+                if (roomRect.width > 0 && Math.abs(roomRect.width - (CABIN_ROOM_WIDTH * CABIN_GRID_SIZE)) > 5) {
+                        gridSize = roomRect.width / CABIN_ROOM_WIDTH;
                 }
-                
-                if (!hasCollision) {
-                    currentRoom.characterPos = newPos;
-                    const charEl = room.querySelector('.placed-character[data-char-type="active"]');
-                    if (charEl) {
-                        const pixelPos = getCabinPixelPosition(newPos.x, newPos.y);
-                        charEl.style.left = pixelPos.x + 'px';
-                        charEl.style.top = pixelPos.y + 'px';
-                        charEl.style.zIndex = Math.floor(pixelPos.y + height * CABIN_GRID_SIZE) + 10;
-                    }
-                    saveCabinGachaData();
-                } else {
-                    showCabinToast("这里走不通哦~");
-                }
+
+                const pixelX = newPos.x * gridSize + gridSize / 2;
+                const pixelY = newPos.y * gridSize + gridSize / 2;
+
+                charEl.style.left = pixelX + 'px';
+                charEl.style.top = pixelY + 'px';
+                charEl.style.zIndex = Math.floor(pixelY + height * gridSize) + 60;
             }
+            saveCabinGachaData();
         }
     }
 
@@ -54201,58 +54194,46 @@ ${userPersona.trim()}
         
         // 移动房主的小人
         if (currentRoom.ownerAvatarId && currentRoom.ownerPos) {
-             const charId = currentRoom.ownerAvatarId;
-             const itemMeta = state.customItems[charId];
-             const width = itemMeta?.width || 3;
-             const height = itemMeta?.height || 4;
-            const newPos = { ...currentRoom.ownerPos };
+            const charId = currentRoom.ownerAvatarId;
+            const itemMeta = state.customItems[charId];
+            const width = itemMeta?.width || 3;
+            const height = itemMeta?.height || 4;
             
+            const newPos = { ...currentRoom.ownerPos };
+            const step = 0.5; // 步长
+
             switch(direction) {
-                case 'up': newPos.y -= 1; break;
-                case 'down': newPos.y += 1; break;
-                case 'left': newPos.x -= 1; break;
-                case 'right': newPos.x += 1; break;
+                case 'up': newPos.y -= step; break;
+                case 'down': newPos.y += step; break;
+                case 'left': newPos.x -= step; break;
+                case 'right': newPos.x += step; break;
             }
             
+            // 边界检查
             if (newPos.x < 0) newPos.x = 0;
             if (newPos.y < 0) newPos.y = 0;
             if (newPos.x > CABIN_ROOM_WIDTH - width) newPos.x = CABIN_ROOM_WIDTH - width;
             if (newPos.y > CABIN_ROOM_HEIGHT - height) newPos.y = CABIN_ROOM_HEIGHT - height;
             
-             if (newPos.x !== currentRoom.ownerPos.x || newPos.y !== currentRoom.ownerPos.y) {
-                 let hasCollision = false;
-                 for (let dx = 0; dx < width; dx++) {
-                    for (let dy = 0; dy < height; dy++) {
-                        const cx = newPos.x + dx;
-                        const cy = newPos.y + dy;
-                        const cellKey = `${cx},${cy}`;
-                        if (currentRoom.occupiedGrid[cellKey]) {
-                            const occ = currentRoom.occupiedGrid[cellKey];
-                             if (occ.id === charId) continue;
-                            const occItem = state.customItems[occ.id];
-                            if (occItem && occItem.type === 'furniture') {
-                                hasCollision = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (hasCollision) break;
-                 }
-                 
-                 if(!hasCollision) {
-                     currentRoom.ownerPos = newPos;
-                     const charEl = room.querySelector('.placed-character[data-char-type="owner"]');
-                    if (charEl) {
-                        const pixelPos = getCabinPixelPosition(newPos.x, newPos.y);
-                        charEl.style.left = pixelPos.x + 'px';
-                        charEl.style.top = pixelPos.y + 'px';
-                        charEl.style.zIndex = Math.floor(pixelPos.y + height * CABIN_GRID_SIZE) + 10;
-                    }
-                     saveCabinGachaData();
-                 } else {
-                     showCabinToast("那里有东西挡着~");
-                 }
-             }
+            // --- 核心修改：删除碰撞检测，直接移动 ---
+            
+            currentRoom.ownerPos = newPos;
+            const charEl = room.querySelector('.placed-character[data-char-type="owner"]');
+            if (charEl) {
+                const roomRect = room.getBoundingClientRect();
+                let gridSize = CABIN_GRID_SIZE;
+                if (roomRect.width > 0 && Math.abs(roomRect.width - (CABIN_ROOM_WIDTH * CABIN_GRID_SIZE)) > 5) {
+                        gridSize = roomRect.width / CABIN_ROOM_WIDTH;
+                }
+
+                const pixelX = newPos.x * gridSize + gridSize / 2;
+                const pixelY = newPos.y * gridSize + gridSize / 2;
+
+                charEl.style.left = pixelX + 'px';
+                charEl.style.top = pixelY + 'px';
+                charEl.style.zIndex = Math.floor(pixelY + height * gridSize) + 60;
+            }
+            saveCabinGachaData();
         }
     }
 
