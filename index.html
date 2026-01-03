@@ -53852,7 +53852,8 @@ ${userPersona.trim()}
         }
         
         if (itemType === 'wall') {
-            if (gridY >= CABIN_WALL_HEIGHT) return false;
+            // 墙饰可以放在房间的任意位置（不受格子限制，只要不越界）
+            // 移除 gridY < CABIN_WALL_HEIGHT 的限制，允许自由放置
         } else if (itemType === 'floor') {
             if (gridY < CABIN_WALL_HEIGHT) return false;
         } else if (itemType === 'furniture') {
@@ -53876,9 +53877,16 @@ ${userPersona.trim()}
                 
                 if (currentRoom.occupiedGrid[cellKey]) {
                     const occupyingItem = currentRoom.occupiedGrid[cellKey];
+                    // 地板可以与家具共存
                     if (itemType === 'floor' && occupyingItem.type === 'furniture') continue;
                     if (occupyingItem.type === 'floor' && itemType === 'furniture') continue;
+                    // 摆件可以放在家具上
                     if (itemType === 'decor' && occupyingItem.type === 'furniture') continue;
+                    // 家具可以重叠（允许家具完全重叠放置，不检查占用）
+                    if (itemType === 'furniture' && occupyingItem.type === 'furniture') continue;
+                    // 墙饰可以重叠（允许墙饰重叠放置）
+                    if (itemType === 'wall' && occupyingItem.type === 'wall') continue;
+                    // 其他情况都算冲突
                     return true;
                 }
             }
@@ -56021,14 +56029,17 @@ ${userPersona.trim()}
 2. 有丰富的像素级细节（小格子、小点阵）
 3. 包含抖动、抗锯齿等像素艺术技巧
 4. 每个SVG至少有20-30个元素（小矩形/圆形）
-5. 返回JSON数组，格式如下：
+5. **尺寸要求**：家具应该足够大，建议 width 和 height 至少为 2-3 格（对应 64-96 像素），这样才与人物大小匹配。小物件（如摆件）可以是 1x1，但主要家具（床、桌子、柜子等）应该是 2x2 或更大。
+6. 返回JSON数组，格式如下：
 [
   {
     "name": "家具名称",
     "svg": "<svg viewBox=\\"0 0 64 64\\" xmlns=\\"http://www.w3.org/2000/svg\\">...</svg>",
     "rarity": "R",
     "type": "furniture", // furniture/decor/wall/floor
-    "category": "bed" // 具体分类，如 bed, table, chair, cabinet, lamp, rug, wallpaper, flooring 等
+    "category": "bed", // 具体分类，如 bed, table, chair, cabinet, lamp, rug, wallpaper, flooring 等
+    "width": 2, // 家具宽度（格子数），建议 2-3
+    "height": 2 // 家具高度（格子数），建议 2-3
   }
 ]
 
@@ -56178,6 +56189,23 @@ ${userPersona.trim()}
                         });
                     }
                     
+                    // 根据家具类型和分类智能设置默认尺寸
+                    let defaultWidth = 2;
+                    let defaultHeight = 2;
+                    if (item.category === 'bed') {
+                        defaultWidth = 3;
+                        defaultHeight = 2;
+                    } else if (item.category === 'table' || item.category === 'cabinet') {
+                        defaultWidth = 2;
+                        defaultHeight = 2;
+                    } else if (item.category === 'chair') {
+                        defaultWidth = 1;
+                        defaultHeight = 1;
+                    } else if (item.category === 'lamp' || item.category === 'decor') {
+                        defaultWidth = 1;
+                        defaultHeight = 1;
+                    }
+                    
                     state.customItems[newId] = {
                         name: item.name || `AI家具${index + 1}`,
                         svg: svgContent,
@@ -56185,8 +56213,8 @@ ${userPersona.trim()}
                         inPool: true,
                         type: finalType,
                         category: item.category, // 保存详细分类
-                        width: 2,
-                        height: 2,
+                        width: item.width || defaultWidth, // 使用AI返回的width，否则用默认值
+                        height: item.height || defaultHeight, // 使用AI返回的height，否则用默认值
                         generationTime: Date.now()
                     };
                 } else {
