@@ -56014,22 +56014,6 @@ ${userPersona.trim()}
 2. 小格子构图：所有细节必须用这些小像素格子拼出来，不能直接用大矩形
 3. 像素级细节：要有《星露谷物语》、《泰拉瑞亚》那种一个像素一个像素拼出来的感觉
 4. 色彩限制：每个家具最多使用8-12种颜色，但要通过排列创造丰富感
-像素艺术技法：
-- 抖动处理：用棋盘格像素创造颜色过渡
-- 抗锯齿：在边缘用中间色像素平滑过渡
-- 轮廓线：用深色像素勾勒轮廓，但不是纯黑色粗线
-- 像素集群：相似的像素聚在一起形成色块，但内部要有变化
-
-设计规则（重要！）：
-2. 必须使用：多个小矩形/圆形拼合，模拟像素格子
-3. 细节密度：每8x8像素区域内至少要有2-3种颜色变化
-4. 纹理方法：用像素点阵模拟木纹、布料、金属等材质
-
-记住关键：
-- 想象你在用MS Paint一个像素一个像素地画
-- 拒绝"矢量感"，追求"像素感"
-- 细节！细节！还是细节！（但不是复杂渐变，是小像素点）
-
 
 输出要求：
 请生成10个家具，每个必须：
@@ -59130,6 +59114,11 @@ SVG要求：128x128像素，背景透明，风格统一。
                 const data = await response.json();
                 const story = data.choices[0].message.content.trim();
                 
+                // 调试日志：确认从API获取的内容长度
+                console.log("API returned story. Length:", story.length);
+                console.log("Story preview (first 200 chars):", story.substring(0, 200));
+                console.log("Story preview (last 100 chars):", story.substring(Math.max(0, story.length - 100)));
+                
                 // 添加到日记
                 if (!pet.diaries) pet.diaries = [];
                 pet.diaries.unshift({
@@ -59144,6 +59133,8 @@ SVG要求：128x128像素，背景透明，风格统一。
                 saveCabinGachaData();
                 
                 if (showModal && modalId) {
+                    // 确保传递完整内容
+                    console.log("Passing story to updateCabinStoryModal. Length:", story.length);
                     updateCabinStoryModal(modalId, story);
                 } else {
                     showToast("已生成新的互动日记！");
@@ -59189,14 +59180,15 @@ SVG要求：128x128像素，背景透明，风格统一。
                     color: #333; 
                     line-height: 1.6; 
                     text-align: left; 
-                    white-space: pre-wrap; 
+                    white-space: normal; 
                     word-wrap: break-word; 
                     word-break: break-all;
                     margin-bottom: 20px; 
-                    min-height: 100px;
-                    max-height: 50vh;
+                    min-height: 150px;
+                    max-height: 60vh;
                     overflow-y: auto; 
-                    padding: 10px;
+                    overflow-x: hidden;
+                    padding: 15px;
                     border: 1px dashed #ffd1e8;
                     border-radius: 5px;
                     background: #fff9fc;
@@ -59219,24 +59211,41 @@ SVG要求：128x128像素，背景透明，风格统一。
     // 更新剧情弹窗内容（修复版 + 防注入）
     function updateCabinStoryModal(modalId, content) {
         console.log("updateCabinStoryModal called. Content length:", content ? content.length : 0);
+        console.log("Content preview (first 100 chars):", content ? content.substring(0, 100) : "null");
+        
         const contentEl = document.getElementById(`${modalId}-content`);
         if (contentEl && content) {
-            // 1. 先进行 HTML 转义，防止 AI 生成的内容包含 < > 等字符被浏览器解析为标签而隐藏
-            let safeContent = content
+            // 关键修复：先处理换行，再转义HTML，避免<br>被转义
+            // 1. 先将换行符转换为临时标记
+            let safeContent = content.replace(/\n/g, '___NEWLINE___');
+            
+            // 2. 然后转义HTML特殊字符（注意顺序：先转义&，避免双重转义）
+            safeContent = safeContent
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
             
-            // 2. 再将换行符转换为 <br>
-            safeContent = safeContent.replace(/\n/g, '<br>');
+            // 3. 最后将临时标记替换为<br>标签
+            safeContent = safeContent.replace(/___NEWLINE___/g, '<br>');
             
-            // 3. 写入内容
+            console.log("Processed content length:", safeContent.length);
+            
+            // 4. 写入内容
             contentEl.innerHTML = safeContent;
             
-            // 4. 滚动到顶部
+            // 5. 滚动到顶部
             contentEl.scrollTop = 0;
+            
+            // 6. 验证实际显示的内容长度
+            setTimeout(() => {
+                const actualText = contentEl.innerText || contentEl.textContent || '';
+                console.log("Actual displayed text length:", actualText.length);
+                if (actualText.length < content.length * 0.5) {
+                    console.warn("Warning: Displayed text is much shorter than original. Possible truncation issue.");
+                }
+            }, 100);
             
             console.log("Modal content updated successfully.");
         } else {
