@@ -53951,15 +53951,28 @@ ${userPersona.trim()}
                 if (!state.customItems[pItem.itemId]) return;
                 const meta = state.customItems[pItem.itemId];
                 
-                const pixelPos = getCabinPixelPosition(pItem.gridX, pItem.gridY);
+                // 计算像素位置（支持小数坐标）
+                // 动态计算格子大小，因为房间可能被缩放
+                const room = document.getElementById('cabin-room-area');
+                let gridSize = CABIN_GRID_SIZE;
+                if (room) {
+                    const roomRect = room.getBoundingClientRect();
+                    if (roomRect.width > 0 && Math.abs(roomRect.width - (CABIN_ROOM_WIDTH * CABIN_GRID_SIZE)) > 5) {
+                        gridSize = roomRect.width / CABIN_ROOM_WIDTH;
+                    }
+                }
+                
+                // 直接使用 gridX 和 gridY（可以是小数）乘以 gridSize
+                const pixelX = pItem.gridX * gridSize;
+                const pixelY = pItem.gridY * gridSize;
                 
                 const el = document.createElement('div');
                 el.className = 'placed-furniture';
                 el.style.position = 'absolute';
-                el.style.left = pixelPos.x + 'px';
-                el.style.top = pixelPos.y + 'px';
-                el.style.width = ((pItem.width || meta.width || 1) * CABIN_GRID_SIZE) + 'px';
-                el.style.height = ((pItem.height || meta.height || 1) * CABIN_GRID_SIZE) + 'px';
+                el.style.left = pixelX + 'px';
+                el.style.top = pixelY + 'px';
+                el.style.width = ((pItem.width || meta.width || 1) * gridSize) + 'px';
+                el.style.height = ((pItem.height || meta.height || 1) * gridSize) + 'px';
                 el.style.transform = `rotate(${pItem.rotation || 0}deg)`;
                 el.style.zIndex = '50';
                 el.style.cursor = 'move';
@@ -54594,24 +54607,24 @@ ${userPersona.trim()}
              gridSize = roomRect.width / CABIN_ROOM_WIDTH;
         }
         
-        // 转换为网格坐标（使用floor，不进行吸附对齐）
-        let gridX = Math.floor(relativeX / gridSize);
-        let gridY = Math.floor(relativeY / gridSize);
+        // --- 核心修改：使用浮点数坐标 ---
+        // 原来是 Math.floor(currentLeft / gridSize)，现在改成保留小数
+        let gridX = parseFloat((relativeX / gridSize).toFixed(2));
+        let gridY = parseFloat((relativeY / gridSize).toFixed(2));
         
         // 获取家具数据以检查边界
         const state = window.cabinGachaState;
-        const currentRoom = getCurrentRoom(); // 获取当前房间数据
-        const pItem = currentRoom.placedItems[index]; // 使用当前房间的 placedItems
+        const currentRoom = getCurrentRoom();
+        const pItem = currentRoom.placedItems[index];
         const itemMeta = state.customItems[pItem.itemId];
         const w = (pItem.width || itemMeta.width || 1);
         const h = (pItem.height || itemMeta.height || 1);
         
-        // 边界检查（确保不超出房间范围）
+        // 边界限制
         gridX = Math.max(0, Math.min(CABIN_ROOM_WIDTH - w, gridX));
         gridY = Math.max(0, Math.min(CABIN_ROOM_HEIGHT - h, gridY));
         
-        // 尝试移动（不使用吸附，直接使用计算出的网格坐标）
-        // 注意：moveCabinPlacedItem 内部会处理重叠检查
+        // 执行移动（支持小数坐标和重叠）
         const success = moveCabinPlacedItem(index, gridX, gridY);
         
         if (success) {
@@ -54820,35 +54833,21 @@ ${userPersona.trim()}
             dragIndicator.style.top = snapY + 'px';
             dragIndicator.style.transform = 'none'; // 取消居中偏移
             
-            // 计算对应的网格坐标（不使用四舍五入，使用向下取整，避免磁吸效果）
-            // 这样可以让物品更自由地放置，不会强制对齐到网格中心
+            // --- 核心修改：计算浮点数网格坐标 (保留2位小数) ---
+            // 不再使用 Math.floor，允许 0.2, 1.5 这种坐标
             const relativeSnapX = snapX - rect.left;
             const relativeSnapY = snapY - rect.top;
             
-            // 使用 Math.floor 而不是 Math.round，让位置更自由
-            // 同时允许部分超出边界（只要中心点在房间内就允许）
-            let gridX = Math.floor(relativeSnapX / gridSize);
-            let gridY = Math.floor(relativeSnapY / gridSize);
+            let gridX = parseFloat((relativeSnapX / gridSize).toFixed(2));
+            let gridY = parseFloat((relativeSnapY / gridSize).toFixed(2));
             
-            // 放宽边界限制：只要物品的中心点或大部分在房间内就允许
-            // 允许物品部分超出边界（最多允许超出1格）
-            gridX = Math.max(-1, Math.min(CABIN_ROOM_WIDTH - itemWidth + 1, gridX));
-            gridY = Math.max(-1, Math.min(CABIN_ROOM_HEIGHT - itemHeight + 1, gridY));
-            
-            // 最终限制：确保至少有一部分在房间内
-            if (gridX < 0) gridX = 0;
-            if (gridY < 0) gridY = 0;
-            if (gridX + itemWidth > CABIN_ROOM_WIDTH) gridX = CABIN_ROOM_WIDTH - itemWidth;
-            if (gridY + itemHeight > CABIN_ROOM_HEIGHT) gridY = CABIN_ROOM_HEIGHT - itemHeight;
-            
-            // 验证位置有效性（放宽判定：只要在边界内就允许，因为已经允许重叠了）
+            // 验证位置有效性 (只检查是否出界，不再检查占用)
             let isValid = false;
-            if (window.cabinDraggingItem.type === 'inventory') {
-                // 只检查边界，不检查占用（因为允许重叠）
-                isValid = isValidCabinPosition(gridX, gridY, itemData.type, itemWidth, itemHeight);
-            } else {
-                // 移动已放置物品时，只检查边界
-                isValid = isValidCabinPosition(gridX, gridY, itemData.type, itemWidth, itemHeight);
+            // 直接调用修改后的 moveCabinPlacedItem 逻辑中的边界检查
+            if (gridX >= 0 && gridY >= 0 && 
+                gridX + itemWidth <= CABIN_ROOM_WIDTH + 0.1 && // 稍微给点容错
+                gridY + itemHeight <= CABIN_ROOM_HEIGHT + 0.1) {
+                isValid = true;
             }
             
             if (isValid) {
@@ -55053,57 +55052,35 @@ ${userPersona.trim()}
         }
     }
     
-    // 移动已放置物品
+    // 移动已放置物品（修改版：允许重叠，支持小数坐标）
     function moveCabinPlacedItem(itemIndex, newGridX, newGridY) {
         const state = window.cabinGachaState;
-        const currentRoom = getCurrentRoom(); // 获取当前房间数据
-        const item = currentRoom.placedItems[itemIndex]; // 使用当前房间的 placedItems
+        const currentRoom = getCurrentRoom();
+        const item = currentRoom.placedItems[itemIndex];
         if (!item) return false;
         
         const itemData = state.customItems[item.itemId];
         if (!itemData) return false;
         
-        if (item.gridX === newGridX && item.gridY === newGridY) return true;
-        
-        // 临时移除当前物品占用的格子 - 使用当前房间的 occupiedGrid
-        const tempGrid = { ...currentRoom.occupiedGrid };
-        for (let key in tempGrid) {
-            if (tempGrid[key].id === item.itemId && tempGrid[key].index === itemIndex) {
-                delete tempGrid[key];
-            }
-        }
-        
-        // 检查新位置是否可以放置
+        // 获取物品尺寸
         const itemWidth = item.width || itemData.width || 1;
         const itemHeight = item.height || itemData.height || 1;
         
-        let canPlace = true;
-        for (let dx = 0; dx < itemWidth; dx++) {
-            for (let dy = 0; dy < itemHeight; dy++) {
-                const cellX = newGridX + dx;
-                const cellY = newGridY + dy;
-                const cellKey = `${cellX},${cellY}`;
-                
-                if (tempGrid[cellKey]) {
-                    const occupyingItem = tempGrid[cellKey];
-                    if (itemData.type === 'floor' && occupyingItem.type === 'furniture') continue;
-                    if (occupyingItem.type === 'floor' && itemData.type === 'furniture') continue;
-                    if (itemData.type === 'decor' && occupyingItem.type === 'furniture') continue;
-                    canPlace = false;
-                    break;
-                }
-            }
-            if (!canPlace) break;
-        }
+        // --- 核心修改：删除了碰撞检测循环 ---
+        // 现在的逻辑是：只要不跑出房间墙壁范围，随便怎么放，随便重叠
         
-        if (!canPlace) return false;
-        
-        if (!isValidCabinPosition(newGridX, newGridY, itemData.type, itemWidth, itemHeight)) {
+        // 边界检查（确保不超出房间范围）
+        // 注意：这里允许 newGridX 是小数，只要加上宽度不超过总宽度即可
+        if (newGridX < 0 || newGridY < 0 || 
+            newGridX + itemWidth > CABIN_ROOM_WIDTH || 
+            newGridY + itemHeight > CABIN_ROOM_HEIGHT) {
             return false;
         }
         
         item.gridX = newGridX;
         item.gridY = newGridY;
+        
+        // 更新占用网格（虽然允许重叠了，但还是记录一下比较好）
         updateCabinOccupiedGrid();
         saveCabinGachaData();
         
