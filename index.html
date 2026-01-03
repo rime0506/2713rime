@@ -8506,7 +8506,6 @@ body.frame-mode-active #phone-screen {
     min-height: auto; 
     max-width: 100%;
     max-height: 95vh; /* 最大高度，防止溢出 */
-    box-shadow: inset 0 0 0 1px #000,   
     box-shadow: 0 10px 35px rgba(0, 0, 0, 0.1);
     box-sizing: border-box; 
     position: relative; 
@@ -9062,7 +9061,7 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
             background-color: #fff0f5;
             border: 6px solid #e06c9f;
             position: relative;
-            overflow: hidden;
+            overflow: visible; /* 改为 visible，允许墙饰超出边界显示 */
             margin-bottom: 15px;
             flex-shrink: 0;
             z-index: 10; /* 降低容器层级，避免遮挡其他浮层 */
@@ -53370,7 +53369,55 @@ ${userPersona.trim()}
                     const data = JSON.parse(event.target.result);
                     
                     if (data.cabinGachaState) {
-                        window.cabinGachaState = data.cabinGachaState;
+                        const importedState = data.cabinGachaState;
+                        const currentState = window.cabinGachaState;
+                        
+                        // 合并 customItems（家具数据）- 不覆盖，只添加新的
+                        if (importedState.customItems) {
+                            if (!currentState.customItems) {
+                                currentState.customItems = {};
+                            }
+                            // 遍历导入的家具，只添加不存在的或合并数量
+                            Object.keys(importedState.customItems).forEach(itemId => {
+                                if (!currentState.customItems[itemId]) {
+                                    // 如果当前没有这个家具，直接添加
+                                    currentState.customItems[itemId] = importedState.customItems[itemId];
+                                }
+                                // 如果已存在，不覆盖，保持原有数据
+                            });
+                        }
+                        
+                        // 合并 inventory（库存）- 累加数量而不是覆盖
+                        if (importedState.inventory) {
+                            if (!currentState.inventory) {
+                                currentState.inventory = {};
+                            }
+                            Object.keys(importedState.inventory).forEach(itemId => {
+                                if (!currentState.inventory[itemId]) {
+                                    currentState.inventory[itemId] = 0;
+                                }
+                                // 累加数量
+                                currentState.inventory[itemId] += importedState.inventory[itemId];
+                            });
+                        }
+                        
+                        // 合并 rooms（房间数据）- 如果导入的 roomId 不存在，则添加
+                        if (importedState.rooms) {
+                            if (!currentState.rooms) {
+                                currentState.rooms = {};
+                            }
+                            Object.keys(importedState.rooms).forEach(roomId => {
+                                if (!currentState.rooms[roomId]) {
+                                    // 如果当前没有这个房间，添加它
+                                    currentState.rooms[roomId] = importedState.rooms[roomId];
+                                }
+                                // 如果已存在，不覆盖，保持原有房间数据
+                            });
+                        }
+                        
+                        // 其他数据（如钱包、设置等）可以选择性合并或覆盖
+                        // 这里保持原有逻辑，只更新明确需要的数据
+                        
                         saveCabinGachaData();
                     }
                     
@@ -53390,7 +53437,7 @@ ${userPersona.trim()}
                         }
                     }
                     
-                    alert('数据导入成功！页面将刷新以应用更改。');
+                    alert('数据导入成功！新家具已添加，原有家具保持不变。页面将刷新以应用更改。');
                     location.reload();
                     
                 } catch (err) {
@@ -53845,16 +53892,26 @@ ${userPersona.trim()}
     
     // 检查位置是否有效
     function isValidCabinPosition(gridX, gridY, itemType, itemWidth = 1, itemHeight = 1) {
+        // 墙饰可以超出房间边界（允许负坐标和超出房间高度）
+        if (itemType === 'wall') {
+            // 墙饰允许超出边界，只检查基本的合理性（不要太离谱）
+            // 允许 gridY 为负数（超出顶部）或超出房间高度（超出底部）
+            // 允许 gridX 稍微超出左右边界（但不要太离谱）
+            if (gridX < -2 || gridX > CABIN_ROOM_WIDTH + 2) {
+                return false; // 只限制极端情况
+            }
+            // gridY 可以任意值，包括负数和超出房间高度
+            return true;
+        }
+        
+        // 其他类型的物品需要检查边界
         if (gridX < 0 || gridY < 0 || 
             gridX + itemWidth > CABIN_ROOM_WIDTH || 
             gridY + itemHeight > CABIN_ROOM_HEIGHT) {
             return false;
         }
         
-        if (itemType === 'wall') {
-            // 墙饰可以放在房间的任意位置（不受格子限制，只要不越界）
-            // 移除 gridY < CABIN_WALL_HEIGHT 的限制，允许自由放置
-        } else if (itemType === 'floor') {
+        if (itemType === 'floor') {
             if (gridY < CABIN_WALL_HEIGHT) return false;
         } else if (itemType === 'furniture') {
             // 家具可以靠墙放 (允许放在墙根，即 gridY 可以 < CABIN_WALL_HEIGHT，只要不越界)
@@ -54620,9 +54677,16 @@ ${userPersona.trim()}
         const w = (pItem.width || itemMeta.width || 1);
         const h = (pItem.height || itemMeta.height || 1);
         
-        // 边界限制
-        gridX = Math.max(0, Math.min(CABIN_ROOM_WIDTH - w, gridX));
-        gridY = Math.max(0, Math.min(CABIN_ROOM_HEIGHT - h, gridY));
+        // 边界限制（墙饰可以超出边界）
+        if (itemMeta.type === 'wall') {
+            // 墙饰允许超出边界，只限制极端情况
+            gridX = Math.max(-2, Math.min(CABIN_ROOM_WIDTH + 2, gridX));
+            // gridY 不限制，允许超出顶部和底部
+        } else {
+            // 其他类型正常限制
+            gridX = Math.max(0, Math.min(CABIN_ROOM_WIDTH - w, gridX));
+            gridY = Math.max(0, Math.min(CABIN_ROOM_HEIGHT - h, gridY));
+        }
         
         // 执行移动（支持小数坐标和重叠）
         const success = moveCabinPlacedItem(index, gridX, gridY);
@@ -54825,9 +54889,16 @@ ${userPersona.trim()}
             let snapX = rect.left + centeredX;
             let snapY = rect.top + centeredY;
             
-            // 限制在房间边界内
-            snapX = Math.max(rect.left, Math.min(rect.right - indicatorWidth, snapX));
-            snapY = Math.max(rect.top, Math.min(rect.bottom - indicatorHeight, snapY));
+            // 限制在房间边界内（墙饰可以超出边界）
+            if (itemData && itemData.type === 'wall') {
+                // 墙饰允许超出边界，只限制极端情况
+                snapX = Math.max(rect.left - indicatorWidth, Math.min(rect.right, snapX));
+                snapY = Math.max(rect.top - indicatorHeight * 2, Math.min(rect.bottom + indicatorHeight * 2, snapY));
+            } else {
+                // 其他类型正常限制
+                snapX = Math.max(rect.left, Math.min(rect.right - indicatorWidth, snapX));
+                snapY = Math.max(rect.top, Math.min(rect.bottom - indicatorHeight, snapY));
+            }
             
             dragIndicator.style.left = snapX + 'px';
             dragIndicator.style.top = snapY + 'px';
@@ -54841,14 +54912,8 @@ ${userPersona.trim()}
             let gridX = parseFloat((relativeSnapX / gridSize).toFixed(2));
             let gridY = parseFloat((relativeSnapY / gridSize).toFixed(2));
             
-            // 验证位置有效性 (只检查是否出界，不再检查占用)
-            let isValid = false;
-            // 直接调用修改后的 moveCabinPlacedItem 逻辑中的边界检查
-            if (gridX >= 0 && gridY >= 0 && 
-                gridX + itemWidth <= CABIN_ROOM_WIDTH + 0.1 && // 稍微给点容错
-                gridY + itemHeight <= CABIN_ROOM_HEIGHT + 0.1) {
-                isValid = true;
-            }
+            // 验证位置有效性（使用 isValidCabinPosition 函数，支持墙饰超出边界）
+            let isValid = isValidCabinPosition(gridX, gridY, itemData ? itemData.type : 'furniture', itemWidth, itemHeight);
             
             if (isValid) {
                 dragIndicator.style.borderColor = '#4CAF50';
@@ -55069,12 +55134,21 @@ ${userPersona.trim()}
         // --- 核心修改：删除了碰撞检测循环 ---
         // 现在的逻辑是：只要不跑出房间墙壁范围，随便怎么放，随便重叠
         
-        // 边界检查（确保不超出房间范围）
+        // 边界检查（墙饰可以超出边界）
         // 注意：这里允许 newGridX 是小数，只要加上宽度不超过总宽度即可
-        if (newGridX < 0 || newGridY < 0 || 
-            newGridX + itemWidth > CABIN_ROOM_WIDTH || 
-            newGridY + itemHeight > CABIN_ROOM_HEIGHT) {
-            return false;
+        if (itemData.type === 'wall') {
+            // 墙饰允许超出边界，只限制极端情况
+            if (newGridX < -2 || newGridX + itemWidth > CABIN_ROOM_WIDTH + 2) {
+                return false; // 只限制极端情况
+            }
+            // gridY 不限制，允许超出顶部和底部
+        } else {
+            // 其他类型正常限制
+            if (newGridX < 0 || newGridY < 0 || 
+                newGridX + itemWidth > CABIN_ROOM_WIDTH || 
+                newGridY + itemHeight > CABIN_ROOM_HEIGHT) {
+                return false;
+            }
         }
         
         item.gridX = newGridX;
