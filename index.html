@@ -53880,14 +53880,9 @@ ${userPersona.trim()}
                     // 地板可以与家具共存
                     if (itemType === 'floor' && occupyingItem.type === 'furniture') continue;
                     if (occupyingItem.type === 'floor' && itemType === 'furniture') continue;
-                    // 摆件可以放在家具上
-                    if (itemType === 'decor' && occupyingItem.type === 'furniture') continue;
-                    // 家具可以重叠（允许家具完全重叠放置，不检查占用）
-                    if (itemType === 'furniture' && occupyingItem.type === 'furniture') continue;
-                    // 墙饰可以重叠（允许墙饰重叠放置）
-                    if (itemType === 'wall' && occupyingItem.type === 'wall') continue;
-                    // 其他情况都算冲突
-                    return true;
+                    // 所有家具类型都可以重叠（允许任意家具类型重叠放置）
+                    // 包括：furniture, decor, wall, floor 等所有类型都可以互相重叠
+                    continue;
                 }
             }
         }
@@ -54825,26 +54820,35 @@ ${userPersona.trim()}
             dragIndicator.style.top = snapY + 'px';
             dragIndicator.style.transform = 'none'; // 取消居中偏移
             
-            // 计算对应的最近网格坐标（用于放置判定）
-            // 使用 Math.round 实现最近邻吸附逻辑
+            // 计算对应的网格坐标（不使用四舍五入，使用向下取整，避免磁吸效果）
+            // 这样可以让物品更自由地放置，不会强制对齐到网格中心
             const relativeSnapX = snapX - rect.left;
             const relativeSnapY = snapY - rect.top;
             
-            let gridX = Math.round(relativeSnapX / gridSize);
-            let gridY = Math.round(relativeSnapY / gridSize);
+            // 使用 Math.floor 而不是 Math.round，让位置更自由
+            // 同时允许部分超出边界（只要中心点在房间内就允许）
+            let gridX = Math.floor(relativeSnapX / gridSize);
+            let gridY = Math.floor(relativeSnapY / gridSize);
             
-            // 边界限制
-            gridX = Math.max(0, Math.min(CABIN_ROOM_WIDTH - itemWidth, gridX));
-            gridY = Math.max(0, Math.min(CABIN_ROOM_HEIGHT - itemHeight, gridY));
+            // 放宽边界限制：只要物品的中心点或大部分在房间内就允许
+            // 允许物品部分超出边界（最多允许超出1格）
+            gridX = Math.max(-1, Math.min(CABIN_ROOM_WIDTH - itemWidth + 1, gridX));
+            gridY = Math.max(-1, Math.min(CABIN_ROOM_HEIGHT - itemHeight + 1, gridY));
             
-            // 验证位置有效性
+            // 最终限制：确保至少有一部分在房间内
+            if (gridX < 0) gridX = 0;
+            if (gridY < 0) gridY = 0;
+            if (gridX + itemWidth > CABIN_ROOM_WIDTH) gridX = CABIN_ROOM_WIDTH - itemWidth;
+            if (gridY + itemHeight > CABIN_ROOM_HEIGHT) gridY = CABIN_ROOM_HEIGHT - itemHeight;
+            
+            // 验证位置有效性（放宽判定：只要在边界内就允许，因为已经允许重叠了）
             let isValid = false;
             if (window.cabinDraggingItem.type === 'inventory') {
-                isValid = isValidCabinPosition(gridX, gridY, itemData.type, itemWidth, itemHeight) &&
-                          !isCabinGridOccupied(gridX, gridY, itemData.type, itemWidth, itemHeight);
+                // 只检查边界，不检查占用（因为允许重叠）
+                isValid = isValidCabinPosition(gridX, gridY, itemData.type, itemWidth, itemHeight);
             } else {
-                isValid = !isCabinGridOccupied(gridX, gridY, itemData.type, itemWidth, itemHeight, window.cabinDraggingItem.index) &&
-                          isValidCabinPosition(gridX, gridY, itemData.type, itemWidth, itemHeight);
+                // 移动已放置物品时，只检查边界
+                isValid = isValidCabinPosition(gridX, gridY, itemData.type, itemWidth, itemHeight);
             }
             
             if (isValid) {
@@ -55307,9 +55311,8 @@ ${userPersona.trim()}
         
         const state = window.cabinGachaState;
         
-        // 复用已有的验证逻辑
-        const isValid = isValidCabinPosition(gridX, gridY, bagDragState.itemData.type, itemW, itemH) &&
-                        !isCabinGridOccupied(gridX, gridY, bagDragState.itemData.type, itemW, itemH);
+        // 复用已有的验证逻辑（放宽：只检查边界，不检查占用，因为允许重叠）
+        const isValid = isValidCabinPosition(gridX, gridY, bagDragState.itemData.type, itemW, itemH);
                         
         if (bagDragState.el) {
             bagDragState.el.style.boxShadow = isValid ? '0 0 0 3px #4CAF50' : '0 0 0 3px #f44336';
