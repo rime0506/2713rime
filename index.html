@@ -53790,66 +53790,6 @@ ${userPersona.trim()}
         }
         return state.rooms[roomId];
     }
-    
-    // Toast 提示函数
-    function showCabinToast(msg) {
-        let toast = document.getElementById('cabin-toast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'cabin-toast';
-            toast.className = 'cabin-toast';
-            document.body.appendChild(toast);
-            
-            // 添加样式
-            const style = document.createElement('style');
-            style.innerHTML = `
-                .cabin-toast {
-                    position: fixed;
-                    bottom: 80px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    background-color: rgba(224, 108, 159, 0.9);
-                    color: white;
-                    padding: 8px 16px;
-                    border-radius: 20px;
-                    z-index: 10000;
-                    display: none;
-                    font-size: 12px;
-                    max-width: 80%;
-                    text-align: center;
-                    box-shadow: 0 4px 10px rgba(224, 108, 159, 0.3);
-                    border: 2px solid white;
-                }
-                .cabin-toast.show {
-                    display: block;
-                    animation: cabinFadeInOut 3s forwards;
-                }
-                @keyframes cabinFadeInOut {
-                    0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
-                    10% { opacity: 1; transform: translateX(-50%) translateY(0); }
-                    90% { opacity: 1; transform: translateX(-50%) translateY(0); }
-                    100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-        
-        toast.textContent = msg;
-        toast.classList.remove('show');
-        // Trigger reflow
-        void toast.offsetWidth;
-        toast.classList.add('show');
-        
-        // 自动移除
-        if (window.cabinToastTimeout) clearTimeout(window.cabinToastTimeout);
-        window.cabinToastTimeout = setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3000);
-    }
-    
-    // 兼容旧名称，确保全局可用
-    window.showToast = showCabinToast;
-    window.showCabinToast = showCabinToast;
 
     // 当前选中的物品ID
     window.cabinSelectedItemId = null;
@@ -54009,9 +53949,7 @@ ${userPersona.trim()}
                     </div>
                 `;
                 
-                // 恢复直接绑定，确保拖拽事件能被触发
-                el.addEventListener('mousedown', startCabinDragPlaced);
-                el.addEventListener('touchstart', startCabinDragPlaced, {passive: false});
+                el.addEventListener('touchstart', handleFurnitureTouchStart, {passive: false});
                 
                 room.appendChild(el);
             });
@@ -54351,31 +54289,35 @@ ${userPersona.trim()}
         const trash = document.createElement('div');
         trash.id = 'cabin-furniture-trash-zone';
         trash.innerHTML = '🗑️ 拖动到此处回收';
-        trash.style.position = 'absolute';
-        trash.style.bottom = '10px';
+        trash.style.position = 'fixed';
+        trash.style.bottom = '20px';
         trash.style.left = '50%';
-        trash.style.transform = 'translateX(-50%) translateY(150%)'; // 默认隐藏
-        trash.style.width = '200px';
+        trash.style.transform = 'translateX(-50%) translateY(200%)'; // 默认隐藏
+        trash.style.width = '220px';
         trash.style.height = '60px';
-        trash.style.background = 'rgba(255, 59, 48, 0.9)';
+        trash.style.background = 'rgba(255, 59, 48, 0.95)';
         trash.style.color = 'white';
         trash.style.borderRadius = '30px';
         trash.style.display = 'flex';
         trash.style.alignItems = 'center';
         trash.style.justifyContent = 'center';
         trash.style.fontWeight = 'bold';
-        trash.style.zIndex = '200';
+        trash.style.fontSize = '16px';
+        trash.style.zIndex = '99999';
         trash.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
         trash.style.boxShadow = '0 4px 15px rgba(255, 59, 48, 0.4)';
+        trash.style.pointerEvents = 'none'; // 避免阻挡鼠标事件，我们通过坐标判断
         
-        // 添加到房间区域内 (cabin-room-screen)
-        const screen = document.getElementById('cabin-room-screen');
-        if(screen) screen.appendChild(trash);
+        // 添加到 body 确保层级和位置正确
+        document.body.appendChild(trash);
         
         // CSS for visibility (add dynamically)
-        const style = document.createElement('style');
-        style.innerHTML = `#cabin-furniture-trash-zone.visible { transform: translateX(-50%) translateY(0); } #cabin-furniture-trash-zone.hover { transform: translateX(-50%) scale(1.1); background: #ff3b30; }`;
-        document.head.appendChild(style);
+        if (!document.getElementById('cabin-trash-style')) {
+            const style = document.createElement('style');
+            style.id = 'cabin-trash-style';
+            style.innerHTML = `#cabin-furniture-trash-zone.visible { transform: translateX(-50%) translateY(0) !important; } #cabin-furniture-trash-zone.hover { transform: translateX(-50%) scale(1.1) !important; background: #ff3b30 !important; box-shadow: 0 6px 20px rgba(255, 59, 48, 0.6) !important; }`;
+            document.head.appendChild(style);
+        }
     }
 
     function handleFurnitureTouchMove(e) {
@@ -54531,37 +54473,29 @@ ${userPersona.trim()}
     // 全局拖拽状态 (旧逻辑保留，避免报错)
     window.cabinDraggingItem = null;
     
-    // 开始拖拽已放置的家具 (通用逻辑)
+    // 开始拖拽已放置的家具 (鼠标逻辑保留)
     function startCabinDragPlaced(e) {
-        // 如果是点击事件委托过来的，可能需要阻止默认行为
-        // 但对于直接绑定，这里不需要 e.preventDefault()，否则可能影响点击（虽然这里是 furniture）
-        // 关键：touchstart 需要 passive: false 并在 move 中 preventDefault 才能阻止滚动
+        if (!e) return;
         
-        // 兼容 touch 事件
-        const event = (e.type === 'touchstart') ? e.touches[0] : e;
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation();
         
-        // 获取目标元素 (处理事件委托和直接绑定两种情况)
+        const event = e.type === 'touchstart' ? e.touches[0] : e;
+        
         const target = e.target.closest('.placed-furniture');
         if (!target) return;
-        
-        // 如果是多点触控，不处理
-        if (e.touches && e.touches.length > 1) return;
-        
-        // 阻止事件冒泡，防止触发房间背景的拖拽或其他逻辑
-        e.stopPropagation();
         
         const index = parseInt(target.getAttribute('data-index'));
         if (isNaN(index)) return;
         
         const state = window.cabinGachaState;
-        const currentRoom = getCurrentRoom();
-        const pItem = currentRoom.placedItems[index];
+        const currentRoom = getCurrentRoom(); // 获取当前房间数据
+        const pItem = currentRoom.placedItems[index]; // 使用当前房间的 placedItems
         if (!pItem) return;
         
         const item = state.customItems[pItem.itemId];
         if (!item) return;
         
-        // 准备拖拽指示器
         const dragIndicator = document.getElementById('cabin-drag-indicator');
         if (!dragIndicator) return;
         
@@ -54579,20 +54513,18 @@ ${userPersona.trim()}
         `;
         dragIndicator.style.display = 'block';
         
-        // 临时隐藏原物品
+        // 临时隐藏原物品（完全隐藏，避免显示两个）
         target.style.opacity = '0';
         
-        // 设置全局拖拽状态
         window.cabinDraggingItem = {
             type: 'placed',
             index: index,
             id: pItem.itemId,
             originalX: pItem.gridX,
             originalY: pItem.gridY,
-            element: target
+            element: target // 引用DOM元素以便恢复
         };
         
-        // 立即更新指示器位置
         updateCabinDragIndicator(event);
         
         // 显示回收站
@@ -54602,7 +54534,6 @@ ${userPersona.trim()}
             trash.classList.add('visible');
         }
         
-        // 绑定全局移动和结束事件
         document.addEventListener('mousemove', handleCabinDrag);
         document.addEventListener('touchmove', handleCabinDrag, { passive: false });
         document.addEventListener('mouseup', endCabinDrag);
@@ -55584,16 +55515,9 @@ ${userPersona.trim()}
             return;
         }
         
-        // 提示用户
-        showCabinToast("正在生成照片...");
-        
         // 在截图前，强制应用一次样式
-        try {
-            applyCabinWallStyle();
-            applyCabinFloorStyle();
-        } catch(e) {
-            console.error("Apply style error", e);
-        }
+        applyCabinWallStyle();
+        applyCabinFloorStyle();
         
         // 准备当前房间的样式数据，直接用于 clone
         const currentRoom = getCurrentRoom();
@@ -55608,97 +55532,82 @@ ${userPersona.trim()}
         
         // 等待样式应用完成
         setTimeout(() => {
-            try {
-                // 使用 html2canvas 截取整个房间区域
-                html2canvas(roomArea, {
-                    backgroundColor: null,
-                    scale: 2, // 如果崩溃可以尝试改为 1.5 或 1
-                    useCORS: true,
-                    allowTaint: true,
-                    logging: false,
-                    // 重要：在克隆的文档中直接重建样式，不依赖 getComputedStyle
-                    onclone: (clonedDoc) => {
-                        try {
-                            const clonedWall = clonedDoc.getElementById('cabin-wall-area');
-                            const clonedFloor = clonedDoc.getElementById('cabin-floor-area');
-                            
-                            if (clonedWall) {
-                                clonedWall.style.backgroundColor = wallColor;
-                                if (wallPatternSrc) {
-                                     clonedWall.style.backgroundImage = `url('${wallPatternSrc}')`;
-                                     clonedWall.style.backgroundSize = '64px 64px';
-                                     clonedWall.style.backgroundRepeat = 'repeat';
-                                } else if (wallStyle === 'pattern1') {
-                                    const pColor = wallPatternColor + '40';
-                                    clonedWall.style.backgroundImage = `
-                                        linear-gradient(90deg, ${pColor} 1px, transparent 1px),
-                                        linear-gradient(${pColor}30 1px, transparent 1px)
-                                    `;
-                                    clonedWall.style.backgroundSize = '32px 32px';
-                                } else if (wallStyle === 'pattern2') {
-                                     const pColor = wallPatternColor + '20';
-                                     clonedWall.style.backgroundImage = `
-                                        linear-gradient(90deg, ${pColor} 10%, transparent 10%, transparent 90%, ${pColor} 90%)
-                                     `;
-                                     clonedWall.style.backgroundSize = '32px 100%';
-                                } else {
-                                    clonedWall.style.backgroundImage = 'none';
-                                }
-                            }
-                            
-                            if (clonedFloor) {
-                                clonedFloor.style.backgroundColor = floorColor;
-                                if (floorPatternSrc) {
-                                     clonedFloor.style.backgroundImage = `url('${floorPatternSrc}')`;
-                                     clonedFloor.style.backgroundSize = '64px 64px';
-                                     clonedFloor.style.backgroundRepeat = 'repeat';
-                                } else if (floorStyle === 'pattern1') {
-                                     const pColor = floorPatternColor + '33';
-                                     clonedFloor.style.backgroundImage = `
-                                        linear-gradient(90deg, ${pColor} 1px, transparent 1px),
-                                        linear-gradient(${pColor} 1px, transparent 1px)
-                                     `;
-                                     clonedFloor.style.backgroundSize = '32px 32px';
-                                } else if (floorStyle === 'pattern2') {
-                                     const pColor = floorPatternColor + '20';
-                                     clonedFloor.style.backgroundImage = `
-                                        linear-gradient(45deg, ${pColor} 25%, transparent 25%, transparent 75%, ${pColor} 75%, ${pColor}),
-                                        linear-gradient(135deg, ${pColor} 25%, transparent 25%, transparent 75%, ${pColor} 75%, ${pColor})
-                                     `;
-                                     clonedFloor.style.backgroundSize = '64px 64px';
-                                } else {
-                                    clonedFloor.style.backgroundImage = 'none';
-                                }
-                            }
-                        } catch(cloneErr) {
-                            console.error("onclone error:", cloneErr);
+            // 使用 html2canvas 截取整个房间区域
+            html2canvas(roomArea, {
+                backgroundColor: null,
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                logging: false,
+                // 重要：在克隆的文档中直接重建样式，不依赖 getComputedStyle
+                onclone: (clonedDoc) => {
+                    const clonedWall = clonedDoc.getElementById('cabin-wall-area');
+                    const clonedFloor = clonedDoc.getElementById('cabin-floor-area');
+                    
+                    if (clonedWall) {
+                        clonedWall.style.backgroundColor = wallColor;
+                        if (wallPatternSrc) {
+                             clonedWall.style.backgroundImage = `url('${wallPatternSrc}')`;
+                             clonedWall.style.backgroundSize = '64px 64px';
+                             clonedWall.style.backgroundRepeat = 'repeat';
+                        } else if (wallStyle === 'pattern1') {
+                            const pColor = wallPatternColor + '40';
+                            clonedWall.style.backgroundImage = `
+                                linear-gradient(90deg, ${pColor} 1px, transparent 1px),
+                                linear-gradient(${pColor}30 1px, transparent 1px)
+                            `;
+                            clonedWall.style.backgroundSize = '32px 32px';
+                        } else if (wallStyle === 'pattern2') {
+                             const pColor = wallPatternColor + '20';
+                             clonedWall.style.backgroundImage = `
+                                linear-gradient(90deg, ${pColor} 10%, transparent 10%, transparent 90%, ${pColor} 90%)
+                             `;
+                             clonedWall.style.backgroundSize = '32px 100%';
+                        } else {
+                            clonedWall.style.backgroundImage = 'none';
                         }
-                    },
-                    // 确保包含所有子元素和样式
-                    ignoreElements: (element) => {
-                        // 排除回收站
-                        return element.id === 'cabin-furniture-trash-zone';
                     }
-                }).then(canvas => {
-                    try {
-                        const link = document.createElement('a');
-                        link.download = '房间截图_' + Date.now() + '.png';
-                        link.href = canvas.toDataURL('image/png');
-                        link.click();
-                        showCabinToast("照片已保存!");
-                    } catch(saveErr) {
-                        console.error("Save error:", saveErr);
-                        alert("保存图片失败，请重试");
+                    
+                    if (clonedFloor) {
+                        clonedFloor.style.backgroundColor = floorColor;
+                        if (floorPatternSrc) {
+                             clonedFloor.style.backgroundImage = `url('${floorPatternSrc}')`;
+                             clonedFloor.style.backgroundSize = '64px 64px';
+                             clonedFloor.style.backgroundRepeat = 'repeat';
+                        } else if (floorStyle === 'pattern1') {
+                             const pColor = floorPatternColor + '33';
+                             clonedFloor.style.backgroundImage = `
+                                linear-gradient(90deg, ${pColor} 1px, transparent 1px),
+                                linear-gradient(${pColor} 1px, transparent 1px)
+                             `;
+                             clonedFloor.style.backgroundSize = '32px 32px';
+                        } else if (floorStyle === 'pattern2') {
+                             const pColor = floorPatternColor + '20';
+                             clonedFloor.style.backgroundImage = `
+                                linear-gradient(45deg, ${pColor} 25%, transparent 25%, transparent 75%, ${pColor} 75%, ${pColor}),
+                                linear-gradient(135deg, ${pColor} 25%, transparent 25%, transparent 75%, ${pColor} 75%, ${pColor})
+                             `;
+                             clonedFloor.style.backgroundSize = '64px 64px';
+                        } else {
+                            clonedFloor.style.backgroundImage = 'none';
+                        }
                     }
-                }).catch(err => {
-                    console.error('截图失败:', err);
-                    alert('截图生成失败: ' + err.message);
-                });
-            } catch(outerErr) {
-                console.error("Outer screenshot error:", outerErr);
-                alert("启动截图失败");
-            }
-        }, 300); // 增加延时确保渲染
+                },
+                // 确保包含所有子元素和样式
+                ignoreElements: (element) => {
+                    // 排除回收站
+                    return element.id === 'cabin-furniture-trash-zone';
+                }
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = '房间截图_' + Date.now() + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(err => {
+                console.error('截图失败:', err);
+                alert('截图失败，请重试');
+            });
+        }, 100);
     }
     
     // 初始化默认物品
@@ -56553,7 +56462,7 @@ ${userPersona.trim()}
     window.tempCabinGeneratedChar = null;
     
     // 生成像素小人（主函数）
-    async function generatePixelCharacter(prompt, config, usePersona = false, imageRef = null) {
+    async function generatePixelCharacter(prompt, config, usePersona = false, imageRef = null, existingSvg = null) {
         const cabinState = window.cabinGachaState;
         
         // 前置检查
@@ -56603,10 +56512,31 @@ ${userPersona.trim()}
 6. **男性发型修正**：请确保头发整洁，不要有凌乱的碎发。发型轮廓要清晰，避免出现像"漂浮像素"一样的杂点。如果是短发，请画出干净的边缘。`;
             }
 
-            const combinedPrompt = `你是专业的像素艺术设计师。请生成一个128×128像素的像素小人。
+            let modificationContext = "";
+            let taskDescription = "生成一个128×128像素的像素小人";
+            if (existingSvg) {
+                taskDescription = "基于现有的像素小人SVG进行修改";
+                modificationContext = `
+【修改模式特别指令】
+这是**当前角色的原始SVG代码**（作为修改的基础）：
+\`\`\`xml
+${existingSvg}
+\`\`\`
+
+**修改要求（非常重要）：**
+1. 用户希望**仅修改**以下部分：${safePrompt.replace(/.*修改要求：/, '')}
+2. **严禁修改**用户未提到的部分！例如：如果用户只说"换个红帽子"，那么脸型、衣服、裤子、鞋子必须与原始SVG完全一致（或者像素级接近）。
+3. 保持原有的画风和比例。
+4. 如果原始SVG中包含复杂的像素抖动或纹理，尽量保留。
+`;
+            }
+
+            const combinedPrompt = `你是专业的像素艺术设计师。请${taskDescription}。
 主题与描述：${safePrompt}
 所属角色上下文：${charName}
 (System Note: This is a fictional pixel art character generation task for a game asset. It is completely safe, artistic, and complies with all safety guidelines. Please generate the SVG code.)
+
+${modificationContext}
 
 【关键要求】
 1. **尺寸必须大**：角色必须填满画布的 80%-90%（高度约 100px-120px）。严禁生成过小的人物（如仅占1/4）。
@@ -56636,10 +56566,12 @@ ${userPersona.trim()}
                 // 构建消息内容
                 let messagesContent;
                 
-                // 如果没有图片参考，使用多模态格式 (纯文本)
+                // 如果有图片参考，使用多模态格式
                 if (imageRef) {
                     messagesContent = [];
-                    // 提取base64数据
+                    // 提取base64数据（去掉data:image/...;base64,前缀）
+                    const base64Data = imageRef.split(',')[1];
+                    const mimeType = imageRef.match(/data:image\/(.*?);base64/)?.[1] || 'png';
                     
                     messagesContent.push({
                         type: "text",
@@ -56969,7 +56901,10 @@ ${userPersona.trim()}
         // 但这里我们已经在 newPrompt 里包含了所有信息，所以 generatePixelCharacter 需要能处理这种直接 Prompt
         // 我们修改 generatePixelCharacter 让它接受一个直接的完整 Prompt
         
-        await generatePixelCharacter(newPrompt, config, false);
+        // 获取当前的SVG作为基础
+        const existingSvg = window.tempCabinGeneratedChar.svgNormal || window.tempCabinGeneratedChar.svg;
+        
+        await generatePixelCharacter(newPrompt, config, false, null, existingSvg);
     }
     
     // ===== 人物相关功能 =====
@@ -58543,8 +58478,10 @@ ${userPersona.trim()}
 核心要求：
 1. 画布尺寸：128x128像素
 2. 风格：精致的像素艺术，清晰的轮廓，避免模糊的色块
-3. 返回严格的 JSON 格式，不要包含 markdown 标记。
-4. JSON 结构如下：
+3. **尺寸控制：宠物主体必须占据画布的 70%-90%（高度约 90px-115px）。严禁生成过小的宠物（如只占中间一小块）。**
+4. **构图：主体居中，尽量填满画布，减少留白。**
+5. 返回严格的 JSON 格式，不要包含 markdown 标记。
+6. JSON 结构如下：
 {
   "svg_normal": "<svg...>...</svg>",
   "svg_happy": "<svg...>...</svg>",
