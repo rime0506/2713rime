@@ -9067,6 +9067,11 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
             z-index: 10; /* 降低容器层级，避免遮挡其他浮层 */
             transform: translateZ(0); /* 开启硬件加速，创建新的堆叠上下文 */
         }
+        /* 确保角色可以正常移动 */
+        .placed-character {
+            pointer-events: auto !important;
+            touch-action: none;
+        }
         /* 墙面区域 - 上方2行 */
         .room-wall-area {
             position: absolute;
@@ -9121,6 +9126,15 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         }
         
         .placed-furniture * {
+            pointer-events: none; /* 让内部元素不拦截点击 */
+        }
+        /* 确保角色可以正常移动 */
+        .placed-character {
+            pointer-events: auto !important;
+            touch-action: none;
+            z-index: 60 !important;
+        }
+        .placed-character * {
             pointer-events: none; /* 让内部元素不拦截点击 */
         }
         /* 宠物样式 */
@@ -55484,6 +55498,9 @@ ${userPersona.trim()}
                 textureList.style.display = 'flex';
                 textureList.style.gap = '5px';
                 textureList.style.flexWrap = 'wrap';
+                textureList.style.maxHeight = '200px'; // 添加最大高度，允许滚动
+                textureList.style.overflowY = 'auto'; // 允许垂直滚动
+                textureList.style.overflowX = 'hidden'; // 隐藏横向滚动
                 
                 // Add "None" option
                 const noneItem = document.createElement('div');
