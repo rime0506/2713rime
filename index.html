@@ -9877,13 +9877,24 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
                     
                     <!-- 互动按钮区域 -->
                     <div id="cabin-pet-interaction-area" style="display: none;">
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px;">
-                            <button class="pixel-btn pet-interaction-btn" onclick="interactWithCabinPet('draw')" style="background: #aedeef; font-size: 9px; padding: 8px;">🎨 DRAW</button>
-                            <button class="pixel-btn pet-interaction-btn" onclick="interactWithCabinPet('pat')" style="background: #fff3ad; font-size: 9px; padding: 8px;">✋ 摸头</button>
-                            <button class="pixel-btn pet-interaction-btn" onclick="interactWithCabinPet('ding')" style="background: #ff9ed2; font-size: 9px; padding: 8px;">🔔 叮嚓</button>
-                            <button class="pixel-btn pet-interaction-btn" onclick="interactWithCabinPet('play')" style="background: #aedeef; font-size: 9px; padding: 8px;">🎮 玩耍</button>
-                            <button class="pixel-btn pet-interaction-btn" onclick="interactWithCabinPet('feed')" style="background: #fff3ad; font-size: 9px; padding: 8px;">🍖 喂食</button>
-                            <button class="pixel-btn pet-interaction-btn" onclick="interactWithCabinPet('train')" style="background: #ff9ed2; color: white; font-size: 9px; padding: 8px;">📚 训练</button>
+                        <div style="font-size: 9px; color: #666; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>🎮 互动菜单</span>
+                            <select id="cabin-pet-story-length" style="font-size: 9px; border: 1px solid #ccc; border-radius: 4px; padding: 2px;">
+                                <option value="50">短剧情 (50字)</option>
+                                <option value="100" selected>中剧情 (100字)</option>
+                                <option value="200">长剧情 (200字)</option>
+                            </select>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 5px;">
+                            <button class="pixel-btn pet-interaction-btn" onclick="interactWithCabinPet('feed')" style="background: #ffcc80; font-size: 9px; padding: 6px;">🍚 吃饭</button>
+                            <button class="pixel-btn pet-interaction-btn" onclick="interactWithCabinPet('bathe')" style="background: #81d4fa; font-size: 9px; padding: 6px;">🛁 洗澡</button>
+                            <button class="pixel-btn pet-interaction-btn" onclick="interactWithCabinPet('pat')" style="background: #fff59d; font-size: 9px; padding: 6px;">✋ 摸摸</button>
+                            <button class="pixel-btn pet-interaction-btn" onclick="interactWithCabinPet('kick')" style="background: #ef9a9a; font-size: 9px; padding: 6px;">🦶 踹一脚</button>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 8px;">
+                            <button class="pixel-btn pet-interaction-btn" onclick="interactWithCabinPet('study')" style="background: #ce93d8; font-size: 9px; padding: 6px;">📚 学习</button>
+                            <button class="pixel-btn pet-interaction-btn" onclick="interactWithCabinPet('explore')" style="background: #a5d6a7; font-size: 9px; padding: 6px;">🗺️ 探险</button>
+                            <button class="pixel-btn pet-interaction-btn" onclick="interactWithCabinPet('custom')" style="background: #b0bec5; font-size: 9px; padding: 6px;">✨ 自定义</button>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
                             <button class="pixel-btn" onclick="openCabinPetDiaryModal()" style="background: #fff0f5; font-size: 9px; padding: 8px;">📅 查看它的一天</button>
@@ -9924,13 +9935,22 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         </div>
         
         <!-- 像素小人移动控制按钮（手柄式） -->
-        <div style="width: 120px; margin: 15px auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;">
-            <div></div>
-            <button class="pixel-btn" style="padding: 5px; font-size: 12px;" onclick="moveCabinCharacter('up')">⬆️</button>
-            <div></div>
-            <button class="pixel-btn" style="padding: 5px; font-size: 12px;" onclick="moveCabinCharacter('left')">⬅️</button>
-            <button class="pixel-btn" style="padding: 5px; font-size: 12px;" onclick="moveCabinCharacter('down')">⬇️</button>
-            <button class="pixel-btn" style="padding: 5px; font-size: 12px;" onclick="moveCabinCharacter('right')">➡️</button>
+        <div style="width: 200px; margin: 15px auto; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div style="font-size: 10px; color: var(--dark-pink); font-weight: bold;">我的小人移动</div>
+            <div style="display: flex; gap: 5px;">
+                <button class="pixel-btn" style="padding: 5px 10px; font-size: 12px;" onclick="moveCabinUserCharacter('left')">⬅️</button>
+                <button class="pixel-btn" style="padding: 5px 10px; font-size: 12px;" onclick="moveCabinUserCharacter('up')">⬆️</button>
+                <button class="pixel-btn" style="padding: 5px 10px; font-size: 12px;" onclick="moveCabinUserCharacter('down')">⬇️</button>
+                <button class="pixel-btn" style="padding: 5px 10px; font-size: 12px;" onclick="moveCabinUserCharacter('right')">➡️</button>
+            </div>
+            
+            <div style="font-size: 10px; color: var(--dark-pink); font-weight: bold; margin-top: 5px;">房主角色移动</div>
+            <div style="display: flex; gap: 5px;">
+                <button class="pixel-btn" style="padding: 5px 10px; font-size: 12px; background: #aedeef;" onclick="moveCabinOwnerCharacter('left')">⬅️</button>
+                <button class="pixel-btn" style="padding: 5px 10px; font-size: 12px; background: #aedeef;" onclick="moveCabinOwnerCharacter('up')">⬆️</button>
+                <button class="pixel-btn" style="padding: 5px 10px; font-size: 12px; background: #aedeef;" onclick="moveCabinOwnerCharacter('down')">⬇️</button>
+                <button class="pixel-btn" style="padding: 5px 10px; font-size: 12px; background: #aedeef;" onclick="moveCabinOwnerCharacter('right')">➡️</button>
+            </div>
         </div>
         
         <!-- 分类过滤器 -->
@@ -54018,7 +54038,140 @@ ${userPersona.trim()}
     }
     
     // === 小人按钮移动逻辑 (添加碰撞检测) ===
+    
+    function moveCabinUserCharacter(direction) {
+        const state = window.cabinGachaState;
+        const room = document.getElementById('cabin-room-area');
+        if (!room) return;
+        const currentRoom = getCurrentRoom();
+        
+        // 移动用户的小人
+        if (state.activeCharacterId && currentRoom.characterPos) {
+            const charId = state.activeCharacterId;
+            const itemMeta = state.customItems[charId];
+            const width = itemMeta?.width || 3;
+            const height = itemMeta?.height || 4;
+            const newPos = { ...currentRoom.characterPos };
+            
+            switch(direction) {
+                case 'up': newPos.y -= 1; break;
+                case 'down': newPos.y += 1; break;
+                case 'left': newPos.x -= 1; break;
+                case 'right': newPos.x += 1; break;
+            }
+            
+            // 边界检查
+            if (newPos.x < 0) newPos.x = 0;
+            if (newPos.y < 0) newPos.y = 0;
+            if (newPos.x > CABIN_ROOM_WIDTH - width) newPos.x = CABIN_ROOM_WIDTH - width;
+            if (newPos.y > CABIN_ROOM_HEIGHT - height) newPos.y = CABIN_ROOM_HEIGHT - height;
+            
+            if (newPos.x !== currentRoom.characterPos.x || newPos.y !== currentRoom.characterPos.y) {
+                let hasCollision = false;
+                for (let dx = 0; dx < width; dx++) {
+                    for (let dy = 0; dy < height; dy++) {
+                        const cx = newPos.x + dx;
+                        const cy = newPos.y + dy;
+                        const cellKey = `${cx},${cy}`;
+                        if (currentRoom.occupiedGrid[cellKey]) {
+                            const occ = currentRoom.occupiedGrid[cellKey];
+                            if (occ.id === charId) continue;
+                            const occItem = state.customItems[occ.id];
+                            if (occItem && occItem.type === 'furniture') {
+                                hasCollision = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (hasCollision) break;
+                }
+                
+                if (!hasCollision) {
+                    currentRoom.characterPos = newPos;
+                    const charEl = room.querySelector('.placed-character[data-char-type="active"]');
+                    if (charEl) {
+                        const pixelPos = getCabinPixelPosition(newPos.x, newPos.y);
+                        charEl.style.left = pixelPos.x + 'px';
+                        charEl.style.top = pixelPos.y + 'px';
+                        charEl.style.zIndex = Math.floor(pixelPos.y + height * CABIN_GRID_SIZE) + 10;
+                    }
+                    saveCabinGachaData();
+                } else {
+                    showCabinToast("这里走不通哦~");
+                }
+            }
+        }
+    }
+
+    function moveCabinOwnerCharacter(direction) {
+        const state = window.cabinGachaState;
+        const room = document.getElementById('cabin-room-area');
+        if (!room) return;
+        const currentRoom = getCurrentRoom();
+        
+        // 移动房主的小人
+        if (currentRoom.ownerAvatarId && currentRoom.ownerPos) {
+             const charId = currentRoom.ownerAvatarId;
+             const itemMeta = state.customItems[charId];
+             const width = itemMeta?.width || 3;
+             const height = itemMeta?.height || 4;
+            const newPos = { ...currentRoom.ownerPos };
+            
+            switch(direction) {
+                case 'up': newPos.y -= 1; break;
+                case 'down': newPos.y += 1; break;
+                case 'left': newPos.x -= 1; break;
+                case 'right': newPos.x += 1; break;
+            }
+            
+            if (newPos.x < 0) newPos.x = 0;
+            if (newPos.y < 0) newPos.y = 0;
+            if (newPos.x > CABIN_ROOM_WIDTH - width) newPos.x = CABIN_ROOM_WIDTH - width;
+            if (newPos.y > CABIN_ROOM_HEIGHT - height) newPos.y = CABIN_ROOM_HEIGHT - height;
+            
+             if (newPos.x !== currentRoom.ownerPos.x || newPos.y !== currentRoom.ownerPos.y) {
+                 let hasCollision = false;
+                 for (let dx = 0; dx < width; dx++) {
+                    for (let dy = 0; dy < height; dy++) {
+                        const cx = newPos.x + dx;
+                        const cy = newPos.y + dy;
+                        const cellKey = `${cx},${cy}`;
+                        if (currentRoom.occupiedGrid[cellKey]) {
+                            const occ = currentRoom.occupiedGrid[cellKey];
+                             if (occ.id === charId) continue;
+                            const occItem = state.customItems[occ.id];
+                            if (occItem && occItem.type === 'furniture') {
+                                hasCollision = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (hasCollision) break;
+                 }
+                 
+                 if(!hasCollision) {
+                     currentRoom.ownerPos = newPos;
+                     const charEl = room.querySelector('.placed-character[data-char-type="owner"]');
+                    if (charEl) {
+                        const pixelPos = getCabinPixelPosition(newPos.x, newPos.y);
+                        charEl.style.left = pixelPos.x + 'px';
+                        charEl.style.top = pixelPos.y + 'px';
+                        charEl.style.zIndex = Math.floor(pixelPos.y + height * CABIN_GRID_SIZE) + 10;
+                    }
+                     saveCabinGachaData();
+                 } else {
+                     showCabinToast("那里有东西挡着~");
+                 }
+             }
+        }
+    }
+
     function moveCabinCharacter(direction) {
+        moveCabinUserCharacter(direction);
+        moveCabinOwnerCharacter(direction);
+    }
+
+    function moveCabinCharacter_Old(direction) {
         const state = window.cabinGachaState;
         const room = document.getElementById('cabin-room-area');
         if (!room) return;
@@ -58601,7 +58754,7 @@ SVG要求：128x128像素，背景透明，风格统一。
     }
 
     // 互动
-    function interactWithCabinPet(action) {
+    async function interactWithCabinPet(action) {
         const state = window.cabinGachaState;
         const pet = getCurrentCabinPet();
         if (!pet) { 
@@ -58613,73 +58766,434 @@ SVG要求：128x128像素，背景透明，风格统一。
             return; 
         }
         
-        // 检查精力
-        if (pet.energy < 10 && ['play','train','draw'].includes(action)) {
-            if (typeof showToast === 'function') {
-                showToast(`${pet.name}太累了，需要休息！`);
+        // 检查是否正在探险
+        if (pet.isExploring) {
+            const now = Date.now();
+            if (now < pet.explorationEndTime) {
+                const remaining = Math.ceil((pet.explorationEndTime - now) / 1000);
+                showToast(`${pet.name} 正在探险中，还有 ${remaining} 秒回来！`);
+                return;
+            } else {
+                // 探险完成，但需要点击探险按钮来结算
+                if (action !== 'explore') {
+                    showToast(`${pet.name} 探险回来了！点击探险按钮查看收获！`);
+                    return;
+                }
             }
+        }
+        
+        // 检查精力 (除了吃饭、睡觉、洗澡外，其他活动消耗精力)
+        const energyCostMap = {
+            'play': 20,
+            'train': 25,
+            'study': 20,
+            'draw': 15,
+            'kick': 5,
+            'explore': 30
+        };
+        
+        const cost = energyCostMap[action] || 0;
+        if (cost > 0 && (pet.energy || 100) < cost) {
+            showToast(`${pet.name}太累了，需要休息！(精力不足)`);
             return;
         }
 
         let msg = "";
+        let interactionPrompt = "";
+        let newEmotion = "normal";
+        
+        // 获取用户选择的剧情长度
+        const storyLengthSelect = document.getElementById('cabin-pet-story-length');
+        const storyLength = storyLengthSelect ? parseInt(storyLengthSelect.value) : 100;
+
+        // 处理自定义互动
+        if (action === 'custom') {
+            const customAction = prompt("你想和宠物做什么？");
+            if (!customAction) return;
+            action = 'custom'; // 保持 action 为 custom
+            interactionPrompt = `主人${customAction}。`;
+            // 简单估算消耗
+            pet.energy = Math.max(0, (pet.energy || 100) - 10);
+            pet.mood = Math.min(100, (pet.mood || 80) + 5);
+            msg = `你与${pet.name}进行了互动：${customAction}`;
+        }
+
         switch(action) {
             case 'pat':
-                pet.mood = Math.min(100, pet.mood + 10);
+                pet.mood = Math.min(100, (pet.mood || 80) + 15);
                 pet.energy = Math.max(0, (pet.energy || 100) - 5);
-                pet.svg = pet.svgHappy || pet.svgNormal;
-                msg = `摸摸${pet.name}的头，心情+10`;
+                newEmotion = 'happy';
+                interactionPrompt = "主人温柔地摸了摸宠物的头。";
+                msg = `摸摸${pet.name}的头，心情+15`;
                 break;
             case 'feed':
-                pet.hunger = Math.min(100, (pet.hunger || 100) + 20);
-                pet.mood = Math.min(100, pet.mood + 5);
-                pet.svg = pet.svgHappy || pet.svgNormal;
-                msg = `喂饱了${pet.name}，饥饿度+20`;
+                pet.hunger = Math.min(100, (pet.hunger || 100) + 30);
+                pet.mood = Math.min(100, (pet.mood || 80) + 10);
+                newEmotion = 'happy';
+                interactionPrompt = "主人给宠物喂了好吃的食物。";
+                msg = `喂饱了${pet.name}，饥饿度+30`;
                 break;
+            case 'bathe':
+                pet.mood = Math.min(100, (pet.mood || 80) + 5);
+                pet.cleanliness = 100; // 假设有清洁度，或者只加心情
+                newEmotion = 'normal'; // 或者 happy
+                interactionPrompt = "主人给宠物洗了个澡，香喷喷的。";
+                msg = `给${pet.name}洗澡，变得干干净净！`;
+                break;
+            case 'kick':
+                pet.mood = Math.max(0, (pet.mood || 80) - 30);
+                pet.energy = Math.max(0, (pet.energy || 100) - 5);
+                newEmotion = 'angry'; // 或者 sad
+                interactionPrompt = "主人竟然踹了宠物一脚！宠物非常生气和委屈。";
+                msg = `踹了${pet.name}一脚，心情-30`;
+                break;
+            case 'study':
+                pet.energy = Math.max(0, (pet.energy || 100) - 20);
+                pet.experience = (pet.experience || 0) + 20;
+                pet.mood = Math.max(0, (pet.mood || 80) - 5);
+                newEmotion = 'normal';
+                interactionPrompt = "主人让宠物去学习新知识。";
+                msg = `${pet.name}努力学习，经验+20`;
+                break;
+            case 'explore':
+                // 探险逻辑特殊处理
+                handleCabinPetExploration(pet);
+                return; // 探险逻辑内部处理后续
+            // 兼容旧按钮 (如果有的话)
             case 'play':
                 pet.energy = Math.max(0, (pet.energy || 100) - 20);
-                pet.mood = Math.min(100, pet.mood + 15);
-                pet.experience += 10;
-                pet.svg = pet.svgHappy || pet.svgNormal;
+                pet.mood = Math.min(100, (pet.mood || 80) + 15);
+                pet.experience = (pet.experience || 0) + 10;
+                newEmotion = 'happy';
+                interactionPrompt = "主人和宠物一起开心地玩耍。";
                 msg = `和${pet.name}玩耍，经验+10`;
                 break;
-            case 'train':
+            case 'train': // 映射到学习? 或者保留
                 pet.energy = Math.max(0, (pet.energy || 100) - 25);
-                pet.experience += 15;
-                pet.mood = Math.max(0, pet.mood - 5);
-                pet.svg = pet.svgNormal;
+                pet.experience = (pet.experience || 0) + 15;
+                pet.mood = Math.max(0, (pet.mood || 80) - 5);
+                newEmotion = 'normal';
+                interactionPrompt = "主人对宠物进行了严格的训练。";
                 msg = `训练${pet.name}，经验+15`;
                 break;
-             case 'draw':
-                pet.energy = Math.max(0, (pet.energy || 100) - 15);
-                pet.experience += 12;
-                pet.mood = Math.min(100, pet.mood + 10);
-                pet.svg = pet.svgHappy || pet.svgNormal;
-                msg = `一起画画，经验+12`;
-                break;
-             case 'ding':
-                pet.energy = Math.min(100, (pet.energy || 100) + 10);
-                pet.mood = Math.min(100, pet.mood + 15);
-                pet.svg = pet.svgHappy || pet.svgNormal;
-                msg = `叮嚓！心情+15，精力+10`;
-                break;
         }
         
-        if (typeof checkCabinPetLevelUp === 'function') checkCabinPetLevelUp(pet);
+        // 更新表情
+        updateCabinPetEmotion(pet, newEmotion);
+        
+        // 检查升级
+        checkCabinPetLevelUp(pet);
+        
         saveCabinGachaData();
-        // 确保渲染的是当前选择的宠物（通过ID查找，确保是同一个）
-        const currentPet = getCurrentCabinPet();
-        if (currentPet && currentPet.id === pet.id) {
-            renderCabinPetDisplay(currentPet);
-        } else {
-            renderCabinPetDisplay(pet);
+        renderCabinPetDisplay(pet);
+        showToast(msg);
+        
+        // 调用 AI 生成小剧场，并显示弹窗
+        generateCabinPetInteractionStory(pet, interactionPrompt, storyLength, true);
+    }
+    
+    // 更新宠物表情
+    function updateCabinPetEmotion(pet, emotionType) {
+        switch(emotionType) {
+            case 'happy': pet.svg = pet.svgHappy || pet.svgNormal; break;
+            case 'sad': pet.svg = pet.svgSad || pet.svgNormal; break;
+            case 'angry': pet.svg = pet.svgAngry || pet.svgNormal; break;
+            default: pet.svg = pet.svgNormal; break;
         }
-        if (typeof showToast === 'function') {
-            showToast(msg);
+        // 2秒后恢复正常表情 (可选)
+        setTimeout(() => {
+            const current = getCurrentCabinPet();
+            if (current && current.id === pet.id && !current.isExploring) {
+                current.svg = current.svgNormal;
+                renderCabinPetDisplay(current);
+            }
+        }, 3000);
+    }
+
+    // 处理探险逻辑
+    function handleCabinPetExploration(pet) {
+        const now = Date.now();
+        
+        if (pet.isExploring) {
+            // 结算探险
+            if (now >= pet.explorationEndTime) {
+                pet.isExploring = false;
+                pet.explorationEndTime = 0;
+                
+                // 奖励结算
+                const coinsFound = Math.floor(Math.random() * 50) + 10;
+                const xpGained = Math.floor(Math.random() * 30) + 20;
+                
+                window.cabinGachaState.coins += coinsFound;
+                pet.experience = (pet.experience || 0) + xpGained;
+                
+                // 随机获得家具概率 (20%)
+                let itemReward = null;
+                if (Math.random() < 0.2) {
+                    // 简单的随机家具逻辑
+                    const pool = Object.keys(window.cabinGachaState.customItems);
+                    if (pool.length > 0) {
+                        const rewardId = pool[Math.floor(Math.random() * pool.length)];
+                        window.cabinGachaState.inventory[rewardId] = (window.cabinGachaState.inventory[rewardId] || 0) + 1;
+                        itemReward = window.cabinGachaState.customItems[rewardId].name;
+                    }
+                }
+                
+                let resultMsg = `探险归来！获得 ${coinsFound} 金币，${xpGained} 经验。`;
+                if (itemReward) resultMsg += ` 居然带回了 [${itemReward}]！`;
+                
+                alert(resultMsg); // 或者用模态框展示
+                
+                checkCabinPetLevelUp(pet);
+                saveCabinGachaData();
+                updateCabinUI();
+                renderCabinPetDisplay(pet);
+                
+                // 生成探险日记 (默认150字)
+                generateCabinPetInteractionStory(pet, "宠物独自出去探险回来了，带回了一些战利品。", 150, true);
+            } else {
+                const remaining = Math.ceil((pet.explorationEndTime - now) / 1000);
+                // 转换为分钟
+                const remainingMin = Math.ceil(remaining / 60);
+                
+                if (confirm(`还在探险中... 剩余 ${remainingMin} 分钟。\n是否消耗 10 金币立即完成探险？`)) {
+                    if (window.cabinGachaState.coins >= 10) {
+                        window.cabinGachaState.coins -= 10;
+                        pet.explorationEndTime = now - 1000; // Set to past to ensure completion
+                        saveCabinGachaData();
+                        showToast("⚡ 已消耗 10 金币加速探险！");
+                        
+                        // Recursively call to settle immediately
+                        handleCabinPetExploration(pet);
+                    } else {
+                        showToast("金币不足，无法加速！");
+                    }
+                }
+            }
+        } else {
+            // 开始探险
+            const durationMinutes = 30; // 修改为30分钟
+            pet.isExploring = true;
+            pet.explorationEndTime = now + (durationMinutes * 60 * 1000);
+            pet.energy = Math.max(0, (pet.energy || 100) - 30);
+            
+            // 探险动画逻辑
+            handleExplorationAnimation(pet, durationMinutes);
+        }
+    }
+    
+    // 处理探险动画生成与显示
+    async function handleExplorationAnimation(pet, durationMinutes) {
+         // 检查是否有缓存的探险动画 SVG
+        if (!pet.svgExploration) {
+            showToast("正在生成探险动画...");
+            // 调用 AI 生成探险动画
+            // 这里我们复用生成宠物的逻辑，但是 prompt 不同
+             const config = getPrimaryApiConfig();
+             if (config.apiKey) {
+                 try {
+                     const prompt = `为${pet.name}生成一个正在探险的像素动画帧。
+                     当前宠物外观SVG：
+                     ${pet.svgNormal}
+                     
+                     要求：
+                     1. 基于原外观，增加背包、地图、望远镜等探险装备。
+                     2. 动作：正在行走或寻找东西。
+                     3. 返回 SVG 代码。`;
+                     
+                     // 简化的生成调用，实际应复用 generatePixelCharacter 的部分逻辑或单独封装
+                      const response = await fetch(`${config.apiUrl}/chat/completions`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${config.apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: config.model,
+                            messages: [
+                                { role: "system", content: "你是一个像素艺术生成器。请返回 SVG 代码。不要包含 markdown 标记。" },
+                                { role: "user", content: prompt }
+                            ],
+                            temperature: 0.7
+                        })
+                    });
+                    
+                    if (response.ok) {
+                         const data = await response.json();
+                         let svgContent = data.choices[0].message.content.trim();
+                         // 清理 markdown
+                         svgContent = svgContent.replace(/```xml/g, '').replace(/```/g, '').trim();
+                         pet.svgExploration = svgContent;
+                         pet.svg = svgContent; 
+                    } else {
+                        // 降级显示
+                         pet.svg = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:30px;">🗺️🏃</div>';
+                    }
+                 } catch(e) {
+                      console.error("生成探险动画失败", e);
+                      pet.svg = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:30px;">🗺️🏃</div>';
+                 }
+             } else {
+                  pet.svg = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:30px;">🗺️🏃</div>';
+             }
+        } else {
+            pet.svg = pet.svgExploration;
         }
         
-        if (typeof autoSwitchCabinPetEmotionByMood === 'function') {
-            setTimeout(() => autoSwitchCabinPetEmotionByMood(pet), 2000);
+        saveCabinGachaData();
+        renderCabinPetDisplay(pet);
+        showToast(`${pet.name}背上小包袱出发去探险了！(${durationMinutes}分钟后回来)`);
+    }
+
+    // 生成互动小剧场
+    async function generateCabinPetInteractionStory(pet, actionPrompt, length, showModal = false) {
+        const config = getPrimaryApiConfig();
+        if (!config.apiKey) return; // 没有配置API就不生成
+        
+        const systemPrompt = `你正在扮演一只电子宠物。
+你的名字是：${pet.name}
+你的性格是：${pet.personality || '活泼可爱'}
+你的设定：${pet.bio || '无'}
+
+用户刚刚与你进行了互动。
+互动描述：${actionPrompt}
+
+请以第三人称（或者以宠物的视角）写一段简短的互动反馈/小剧场。
+**核心要求：**
+1. **严格遵循性格设定**：这是最重要的。例如，如果性格是"调皮/懒惰"，面对"学习"互动时，必须表现出抗拒、偷懒或捣乱，而不是乖乖学习；如果性格是"傲娇"，摸头时可能会假装嫌弃其实开心。
+2. 字数控制在 ${length} 字左右。
+3. 生动有趣，多描写动作和心理活动。`;
+
+        try {
+            // 如果需要显示弹窗，先显示 loading 状态
+            let modalId = null;
+            if (showModal) {
+                 modalId = showCabinStoryModal("正在构思小剧场...", true);
+            }
+
+            const response = await fetch(`${config.apiUrl}/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${config.apiKey}`
+                },
+                body: JSON.stringify({
+                    model: config.model,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: "请生成互动剧情。" }
+                    ],
+                    temperature: 0.8, // 提高一点随机性以体现性格
+                    max_tokens: Math.max(500, length * 2) // 确保有足够 token
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const story = data.choices[0].message.content.trim();
+                
+                // 添加到日记
+                if (!pet.diaries) pet.diaries = [];
+                pet.diaries.unshift({
+                    date: new Date().toISOString(),
+                    content: story,
+                    action: actionPrompt
+                });
+                
+                // 限制日记数量
+                if (pet.diaries.length > 50) pet.diaries.pop();
+                
+                saveCabinGachaData();
+                
+                if (showModal && modalId) {
+                    updateCabinStoryModal(modalId, story);
+                } else {
+                    showToast("已生成新的互动日记！");
+                }
+            } else {
+                if (showModal && modalId) {
+                    updateCabinStoryModal(modalId, "生成失败，请检查网络或API Key设置。");
+                    // 3秒后关闭
+                    setTimeout(() => closeCabinStoryModal(modalId), 3000);
+                }
+            }
+        } catch (e) {
+            console.error("生成剧情失败", e);
+             if (showModal && typeof modalId !== 'undefined' && modalId) {
+                 updateCabinStoryModal(modalId, "生成出错: " + e.message);
+                 // 3秒后关闭
+                 setTimeout(() => closeCabinStoryModal(modalId), 3000);
+             }
         }
+    }
+    
+    // 显示剧情弹窗
+    function showCabinStoryModal(content, isLoading = false) {
+        const modalId = 'cabin-story-modal-' + Date.now();
+        const modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'modal';
+        modal.style.display = 'flex';
+        modal.style.zIndex = '3000'; // 确保在最上层
+        
+        let innerHTML = `
+            <div class="modal-content" style="background: #fff; width: 85%; max-width: 350px; padding: 20px; border: 4px solid #ff9ed2; border-radius: 10px; text-align: center; max-height: 80vh; overflow-y: auto; position: relative;">
+                <div class="modal-title" style="font-size: 14px; color: #e06c9f; margin-bottom: 15px;">📖 互动小剧场</div>
+                <div id="${modalId}-content" style="font-size: 12px; color: #333; line-height: 1.6; text-align: left; white-space: pre-wrap; margin-bottom: 20px;">
+                    ${isLoading ? '<div style="text-align:center; color: #e06c9f;">⏳ ' + content + '</div>' : content}
+                </div>
+                <button class="pixel-btn pink" onclick="document.getElementById('${modalId}').remove()" style="width: 100%;">关闭</button>
+            </div>
+        `;
+        
+        modal.innerHTML = innerHTML;
+        document.body.appendChild(modal);
+        return modalId;
+    }
+    
+    // 更新剧情弹窗内容
+    function updateCabinStoryModal(modalId, content) {
+        const contentEl = document.getElementById(`${modalId}-content`);
+        if (contentEl) {
+            contentEl.innerHTML = content;
+        }
+    }
+
+    // 关闭剧情弹窗 (备用)
+    function closeCabinStoryModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.remove();
+    }
+
+    // 检查升级逻辑
+    function checkCabinPetLevelUp(pet) {
+        if (!pet.experience) pet.experience = 0;
+        if (!pet.level) pet.level = 1;
+        
+        // 简易升级公式：等级 * 100
+        const expNeeded = pet.level * 100;
+        
+        if (pet.experience >= expNeeded) {
+            pet.level++;
+            pet.experience -= expNeeded;
+            
+            let rewardMsg = `${pet.name} 升级到了 Lv.${pet.level}！`;
+            
+            // 升级奖励：家具或衣服 (模拟)
+            // 这里简单送金币作为奖励，或者随机送一个物品
+            window.cabinGachaState.coins += 50;
+            rewardMsg += " 获得 50 金币！";
+            
+            // 触发升级小剧场 (调用 AI)
+            generateCabinPetInteractionStory(pet, `宠物升级到了 Lv.${pet.level}，非常开心！`, 200);
+            
+            alert(rewardMsg);
+            saveCabinGachaData();
+            updateCabinUI();
+        }
+        
+        // 更新经验条显示 (如果 UI 有的话)
+        pet.experienceToNext = pet.level * 100;
     }
 
     function getMoodEmoji(mood) {
