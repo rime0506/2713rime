@@ -56014,6 +56014,29 @@ ${userPersona.trim()}
             const viewBoxSize = isFurniture ? '64' : '128';
             const slotInfo = isFurniture ? '' : '，每个服装必须包含slot字段（hair/top/bottom/dress/shoes）';
             
+            // 收集已存在的家具类型（仅对家具生成）
+            let existingCategoriesInfo = '';
+            if (isFurniture) {
+                const categoryCount = {};
+                Object.values(state.customItems).forEach(item => {
+                    if (item.type === 'furniture' || item.type === 'decor' || item.type === 'wall' || item.type === 'floor') {
+                        const cat = item.category || 'unknown';
+                        categoryCount[cat] = (categoryCount[cat] || 0) + 1;
+                    }
+                });
+                
+                const existingCategories = Object.keys(categoryCount);
+                if (existingCategories.length > 0) {
+                    const categoryList = existingCategories.map(cat => {
+                        const count = categoryCount[cat];
+                        return count > 1 ? `${cat}(${count}个)` : cat;
+                    }).join('、');
+                    existingCategoriesInfo = `\n\n【重要】已存在的家具类型包括：${categoryList}。请优先生成**不同类型**的家具，避免重复生成相同类型。如果已存在类型较多，请优先生成未出现过的创意家具类型（如：bookshelf, plant, painting, clock, mirror, vase, tv, refrigerator, musical_instrument, exercise_equipment等）。`;
+                } else {
+                    existingCategoriesInfo = '\n\n【提示】这是首次生成，请生成多样化的创意家具。';
+                }
+            }
+            
             const systemPrompt = isFurniture ? 
                 `你是复古像素游戏美术师，专门创作16-bit时代的精致像素艺术。            
 
@@ -56030,7 +56053,11 @@ ${userPersona.trim()}
 3. 包含抖动、抗锯齿等像素艺术技巧
 4. 每个SVG至少有20-30个元素（小矩形/圆形）
 5. **尺寸要求**：家具应该足够大，建议 width 和 height 至少为 2-3 格（对应 64-96 像素），这样才与人物大小匹配。小物件（如摆件）可以是 1x1，但主要家具（床、桌子、柜子等）应该是 2x2 或更大。
-6. 返回JSON数组，格式如下：
+6. **多样性要求（非常重要）**：
+   - 每次生成时，必须随机选择不同的家具类型组合，避免总是生成相同的类型
+   - 如果用户提示了已存在的家具类型，请优先生成未出现过的类型
+   - 家具类型必须多样化，包括但不限于：bed, table, chair, cabinet, desk, sofa, bookshelf, wardrobe, dresser, tv, refrigerator, plant, painting, clock, mirror, vase, lamp, rug, workbench, musical_instrument, exercise_equipment, storage_box等
+7. 返回JSON数组，格式如下：
 [
   {
     "name": "家具名称",
@@ -56085,11 +56112,17 @@ ${userPersona.trim()}
 - 拒绝"矢量感"，追求"像素感"
 - 细节！细节！还是细节！（但不是复杂渐变，是小像素点）`;
             
+            // 构建用户消息，包含已存在类型信息
+            let userMessage = `生成10个像素${itemType}，主题：${prompt}`;
+            if (isFurniture && existingCategoriesInfo) {
+                userMessage += existingCategoriesInfo;
+            }
+            
             const requestBody = {
                 model: config.model,
                 messages: [
                     { role: "system", content: systemPrompt },
-                    { role: "user", content: `生成10个像素${itemType}，主题：${prompt}` }
+                    { role: "user", content: userMessage }
                 ],
                 temperature: 0.8,
                 max_tokens: 8192
