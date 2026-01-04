@@ -1898,6 +1898,184 @@
         #wallet-screen {  
             background-color: var(--secondary-bg);
         }
+        /* ========== 披萨游戏样式 ========== */
+        .pizza-dough-real {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 248, 220, 0.8) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(255, 235, 180, 0.6) 0%, transparent 50%),
+                radial-gradient(circle, #f4d03f 0%, #e6c200 50%, #d4a017 100%);
+            box-shadow: 
+                inset 0 0 40px rgba(139, 69, 19, 0.3),
+                inset 0 0 20px rgba(160, 82, 45, 0.2),
+                0 4px 20px rgba(0, 0, 0, 0.3),
+                0 0 0 8px rgba(139, 69, 19, 0.4);
+            z-index: 1;
+        }
+        .pizza-dough-real::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: 
+                repeating-radial-gradient(circle at 0 0, transparent 0, rgba(139, 69, 19, 0.1) 2px, transparent 4px),
+                repeating-conic-gradient(from 0deg, transparent 0deg, rgba(160, 82, 45, 0.05) 5deg, transparent 10deg);
+            pointer-events: none;
+        }
+        .pizza-layer-canvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            top: 0;
+            left: 0;
+        }
+        .pizza-toppings-layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            top: 0;
+            left: 0;
+        }
+        /* 配料CSS绘制 */
+        .topping-item {
+            position: absolute;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+        }
+        /* 香肠片 */
+        .topping-pepperoni {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, #c92a2a);
+            box-shadow: 
+                inset 0 0 5px rgba(0, 0, 0, 0.3),
+                0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .topping-pepperoni::before {
+            content: '';
+            position: absolute;
+            width: 60%;
+            height: 60%;
+            top: 20%;
+            left: 20%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3), transparent);
+        }
+        /* 蘑菇片 */
+        .topping-mushroom {
+            width: 18px;
+            height: 18px;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            background: #8b4513;
+            box-shadow: 
+                inset 0 -3px 0 rgba(0, 0, 0, 0.3),
+                0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .topping-mushroom::before {
+            content: '';
+            position: absolute;
+            width: 70%;
+            height: 50%;
+            top: 0;
+            left: 15%;
+            border-radius: 50% 50% 0 0;
+            background: #d4a574;
+        }
+        .topping-mushroom::after {
+            content: '';
+            position: absolute;
+            width: 30%;
+            height: 30%;
+            top: 25%;
+            left: 35%;
+            border-radius: 50%;
+            background: rgba(139, 69, 19, 0.4);
+        }
+        /* 辣椒片 */
+        .topping-pepper {
+            width: 16px;
+            height: 22px;
+            border-radius: 50% 50% 0 0;
+            background: linear-gradient(to bottom, #ff4757, #c92a2a);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .topping-pepper::before {
+            content: '';
+            position: absolute;
+            width: 40%;
+            height: 20%;
+            top: 0;
+            left: 30%;
+            border-radius: 50%;
+            background: #2ed573;
+        }
+        /* 橄榄 */
+        .topping-olive {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #2f3542;
+            box-shadow: 
+                inset 0 0 3px rgba(0, 0, 0, 0.5),
+                0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        .topping-olive::before {
+            content: '';
+            position: absolute;
+            width: 30%;
+            height: 30%;
+            top: 35%;
+            left: 35%;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        /* 洋葱片 */
+        .topping-onion {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: 
+                radial-gradient(circle at 50% 50%, #ffa502, #ff6348);
+            box-shadow: 
+                inset 0 0 5px rgba(255, 255, 255, 0.3),
+                0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .topping-onion::before {
+            content: '';
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            top: 25%;
+            left: 25%;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+        }
+        /* 罗勒叶 */
+        .topping-basil {
+            width: 14px;
+            height: 14px;
+            border-radius: 50% 0;
+            background: #2ed573;
+            transform: translate(-50%, -50%) rotate(45deg);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        .topping-basil::before {
+            content: '';
+            position: absolute;
+            width: 60%;
+            height: 60%;
+            top: 20%;
+            left: 20%;
+            border-radius: 50%;
+            background: rgba(46, 213, 115, 0.3);
+        }
         #api-settings-screen .form-container,
         #font-settings-screen .form-container,
         #wallpaper-screen .form-container {
@@ -9397,6 +9575,9 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
                 <div class="small-widget" onclick="showScreen('cabin-screen')">
                   <div class="small-widget-icon-wrapper"> <img class="small-widget-img" id="icon-img-cabin" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='55' height='55'%3E%3Crect width='55' height='55' fill='%23e0e0e0' rx='14'/%3E%3C/svg%3E" alt="小屋"> </div> <span class="small-widget-label">小屋</span>
                 </div>
+                <div class="small-widget" onclick="showScreen('pizza-game-screen')">
+                  <div class="small-widget-icon-wrapper" style="background: linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%); display: flex; align-items: center; justify-content: center; font-size: 32px;">🍕</div> <span class="small-widget-label">披萨</span>
+                </div>
               </div>
             </div>
           </div>
@@ -11061,8 +11242,7 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
             </select>
           </div>
           <div style="margin-top: 15px; display: flex; gap: 10px;">
-            <button id="add-income-btn" class="form-button" style="flex: 1; margin-top: 0; background-color: #4caf50;">添加收入</button>
-            <button id="add-expense-btn" class="form-button" style="flex: 1; margin-top: 0; background-color: #f44336;">添加支出</button>
+            <!-- 手动添加收入/支出按钮已移除 - 所有交易将自动记录 -->
           </div>
         </div>
         <div class="wallet-transactions-section">
@@ -11072,6 +11252,55 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
           <div class="wallet-transactions-list" id="wallet-transactions-list">
             <!-- 交易记录将在这里动态生成 -->
           </div>
+        </div>
+      </div>
+    </div>
+    <div id="pizza-game-screen" class="screen">
+      <div class="header">
+        <span class="back-btn" onclick="showScreen('home-screen')">‹</span>
+        <span>做披萨</span>
+        <span style="width: 30px;"></span>
+      </div>
+      <div style="flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; align-items: center; background: linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%);">
+        <!-- 工具选择区域 -->
+        <div id="pizza-tools" style="width: 100%; display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; justify-content: center;">
+          <button class="pizza-tool-btn" data-tool="sauce" style="background: #ff6b6b; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">🍅 酱料</button>
+          <button class="pizza-tool-btn" data-tool="cheese" style="background: #ffd93d; color: #333; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">🧀 芝士</button>
+          <button class="pizza-tool-btn" data-tool="topping" style="background: #6bcf7f; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">🥓 配料</button>
+          <button class="pizza-tool-btn" data-tool="reset" style="background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">🔄 重置</button>
+        </div>
+        
+        <!-- 配料选择区域 -->
+        <div id="pizza-toppings-panel" style="width: 100%; display: none; margin-bottom: 15px; background: rgba(255,255,255,0.9); padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 10px; color: #333;">选择配料：</div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="topping-btn" data-topping="pepperoni" style="background: #ff6b6b; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 12px;">🍕 香肠</button>
+            <button class="topping-btn" data-topping="mushroom" style="background: #8b4513; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 12px;">🍄 蘑菇</button>
+            <button class="topping-btn" data-topping="pepper" style="background: #ff4757; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 12px;">🌶️ 辣椒</button>
+            <button class="topping-btn" data-topping="olive" style="background: #2f3542; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 12px;">🫒 橄榄</button>
+            <button class="topping-btn" data-topping="onion" style="background: #ffa502; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 12px;">🧅 洋葱</button>
+            <button class="topping-btn" data-topping="basil" style="background: #2ed573; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 12px;">🌿 罗勒</button>
+          </div>
+        </div>
+        
+        <!-- 披萨制作区域 -->
+        <div id="pizza-canvas-container" style="position: relative; width: 320px; height: 320px; margin: 20px auto; touch-action: none;">
+          <!-- 面饼 - 更真实的效果 -->
+          <div id="pizza-dough" class="pizza-dough-real"></div>
+          
+          <!-- 酱料层 -->
+          <canvas id="pizza-sauce-canvas" class="pizza-layer-canvas" style="z-index: 2; pointer-events: none;"></canvas>
+          
+          <!-- 芝士层 -->
+          <canvas id="pizza-cheese-canvas" class="pizza-layer-canvas" style="z-index: 3; pointer-events: none;"></canvas>
+          
+          <!-- 配料层 - 可点击放置 -->
+          <div id="pizza-toppings-layer" class="pizza-toppings-layer" style="z-index: 4; pointer-events: auto;"></div>
+        </div>
+        
+        <!-- 提示信息 -->
+        <div id="pizza-hint" style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.9); border-radius: 8px; font-size: 12px; color: #333; text-align: center;">
+          选择工具开始制作披萨！滑动可以涂抹酱料和芝士
         </div>
       </div>
     </div>
@@ -14229,6 +14458,7 @@ window.db = db;
                     if (screenId === 'x-social-screen') window.renderXSocialScreenProxy();
                      if (screenId === 'douban-screen') renderDoubanScreen();
                     if (screenId === 'wallet-screen') renderWalletScreen();
+                    if (screenId === 'pizza-game-screen') initPizzaGame();
                     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
                     const screenToShow = document.getElementById(screenId);
                     if (screenToShow) screenToShow.classList.add('active');
@@ -23006,7 +23236,47 @@ stopSilentAudio();
         
                 async function sendSticker(sticker) { if (!state.activeChatId) return; const chat = state.chats[state.activeChatId]; const msg = { role: 'user', content: sticker.url, meaning: sticker.name, timestamp: Date.now() }; chat.history.push(msg); await db.chats.put(chat); appendMessage(msg, chat); renderChatList(); document.getElementById('sticker-panel').classList.remove('visible'); }
         
-                async function sendUserTransfer() { if (!state.activeChatId) return; const amountInput = document.getElementById('transfer-amount'); const noteInput = document.getElementById('transfer-note'); const amount = parseFloat(amountInput.value); const note = noteInput.value.trim(); if (isNaN(amount) || amount < 0) { alert('请输入有效的金额(必须大于0)！'); return; } const chat = state.chats[state.activeChatId]; const senderName = chat.isGroup ? (chat.settings.myNickname || '我') : '我'; const receiverName = chat.isGroup ? '群聊' : chat.name; const msg = { role: 'user', type: 'transfer', amount: amount, note: note, senderName, receiverName, timestamp: Date.now() }; chat.history.push(msg); await db.chats.put(chat); appendMessage(msg, chat); renderChatList(); document.getElementById('transfer-modal').classList.remove('visible'); amountInput.value = ''; noteInput.value = ''; }
+                async function sendUserTransfer() { 
+                    if (!state.activeChatId) return; 
+                    const amountInput = document.getElementById('transfer-amount'); 
+                    const noteInput = document.getElementById('transfer-note'); 
+                    const amount = parseFloat(amountInput.value); 
+                    const note = noteInput.value.trim(); 
+                    if (isNaN(amount) || amount < 0) { 
+                        alert('请输入有效的金额(必须大于0)！'); 
+                        return; 
+                    } 
+                    const chat = state.chats[state.activeChatId]; 
+                    const senderName = chat.isGroup ? (chat.settings.myNickname || '我') : '我'; 
+                    const receiverName = chat.isGroup ? '群聊' : chat.name; 
+                    const msg = { 
+                        role: 'user', 
+                        type: 'transfer', 
+                        amount: amount, 
+                        note: note, 
+                        senderName, 
+                        receiverName, 
+                        timestamp: Date.now() 
+                    }; 
+                    chat.history.push(msg); 
+                    await db.chats.put(chat); 
+                    appendMessage(msg, chat); 
+                    renderChatList(); 
+                    
+                    // 自动记录到钱包流水（支出）
+                    if (typeof addWalletTransaction === 'function') {
+                        addWalletTransaction({
+                            type: 'expense',
+                            title: `转账给${receiverName}`,
+                            amount: amount,
+                            timestamp: new Date().toISOString()
+                        });
+                    }
+                    
+                    document.getElementById('transfer-modal').classList.remove('visible'); 
+                    amountInput.value = ''; 
+                    noteInput.value = ''; 
+                }
 
 /**
  * 【全新 V2.0 | AI认知修复版】处理用户点击“为TA点外卖”的逻辑
@@ -26901,6 +27171,17 @@ async function showWaimaiDetails(timestamp) {
             
             if (choice === 'paid') {
                 originalMessage.paidBy = myNickname; 
+                
+                // 自动记录到钱包流水（支出）
+                if (typeof addWalletTransaction === 'function') {
+                    addWalletTransaction({
+                        type: 'expense',
+                        title: `为${originalMessage.senderName}支付外卖`,
+                        amount: originalMessage.amount,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+                
                 systemContent = `[系统提示：你 (${myNickname}) 为 ${originalMessage.senderName} 的外卖订单（时间戳: ${originalTimestamp}）完成了支付。此订单已关闭，其他成员不能再支付。]`;
             } else {
                 systemContent = `[系统提示：你 (${myNickname}) 拒绝了 ${originalMessage.senderName} 的外卖代付请求（时间戳: ${originalTimestamp}）。]`;
@@ -27386,6 +27667,17 @@ ${linkedContents}
             
             if (choice === 'paid') {
                 originalMessage.paidBy = myNickname; 
+                
+                // 自动记录到钱包流水（支出）
+                if (typeof addWalletTransaction === 'function') {
+                    addWalletTransaction({
+                        type: 'expense',
+                        title: `为${originalMessage.senderName}支付外卖`,
+                        amount: originalMessage.amount,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+                
                 systemContent = `[系统提示：你 (${myNickname}) 为 ${originalMessage.senderName} 的外卖订单（时间戳: ${originalTimestamp}）完成了支付。此订单已关闭，其他成员不能再支付。]`;
             } else {
                 systemContent = `[系统提示：你 (${myNickname}) 拒绝了 ${originalMessage.senderName} 的外卖代付请求（时间戳: ${originalTimestamp}）。]`;
@@ -27650,11 +27942,29 @@ let selectedFrames = new Set();
                 };
                 chat.history.push(refundMessage);
                 
+                // 自动记录到钱包流水（退款收入）
+                if (typeof addWalletTransaction === 'function') {
+                    addWalletTransaction({
+                        type: 'income',
+                        title: `退款来自${originalMessage.senderName}`,
+                        amount: originalMessage.amount,
+                        timestamp: new Date().toISOString()
+                    });
+                }
                 
-                systemContent = `[系统提示：你拒绝并退还了“${originalMessage.senderName}”的转账。]`;
+                systemContent = `[系统提示：你拒绝并退还了"${originalMessage.senderName}"的转账。]`;
             } else { 
+                // 自动记录到钱包流水（收入）
+                if (typeof addWalletTransaction === 'function') {
+                    addWalletTransaction({
+                        type: 'income',
+                        title: `转账来自${originalMessage.senderName}`,
+                        amount: originalMessage.amount,
+                        timestamp: new Date().toISOString()
+                    });
+                }
                 
-                systemContent = `[系统提示：你接受了“${originalMessage.senderName}”的转账。]`;
+                systemContent = `[系统提示：你接受了"${originalMessage.senderName}"的转账。]`;
             }
         
             
@@ -30384,11 +30694,29 @@ ${formattedHistory}
                 };
                 chat.history.push(refundMessage);
                 
+                // 自动记录到钱包流水（退款收入）
+                if (typeof addWalletTransaction === 'function') {
+                    addWalletTransaction({
+                        type: 'income',
+                        title: `退款来自${originalMessage.senderName}`,
+                        amount: originalMessage.amount,
+                        timestamp: new Date().toISOString()
+                    });
+                }
                 
-                systemContent = `[系统提示：你拒绝并退还了“${originalMessage.senderName}”的转账。]`;
+                systemContent = `[系统提示：你拒绝并退还了"${originalMessage.senderName}"的转账。]`;
             } else { 
+                // 自动记录到钱包流水（收入）
+                if (typeof addWalletTransaction === 'function') {
+                    addWalletTransaction({
+                        type: 'income',
+                        title: `转账来自${originalMessage.senderName}`,
+                        amount: originalMessage.amount,
+                        timestamp: new Date().toISOString()
+                    });
+                }
                 
-                systemContent = `[系统提示：你接受了“${originalMessage.senderName}”的转账。]`;
+                systemContent = `[系统提示：你接受了"${originalMessage.senderName}"的转账。]`;
             }
         
             
@@ -33342,6 +33670,18 @@ const itemsForMessage = itemsToSend.map(cartItem => {
             appendMessage(giftMessage, chat);
             renderChatList();
             
+            // 自动记录到钱包流水（支出）
+            if (typeof addWalletTransaction === 'function') {
+                const recipientText = recipients && recipients.length > 0 
+                    ? recipients.map(originalName => getDisplayNameInGroup(chat, originalName)).join('、')
+                    : (chat.isGroup ? '群聊' : chat.name);
+                addWalletTransaction({
+                    type: 'expense',
+                    title: `购物礼物送给${recipientText}`,
+                    amount: giftMessage.total,
+                    timestamp: new Date().toISOString()
+                });
+            }
             
             shoppingCart = shoppingCart.filter(item => !itemsToSend.some(sent => sent.productId === item.productId));
             updateCartCount();
@@ -48015,7 +48355,18 @@ document.getElementById('waimai-confirm-btn').addEventListener('click', async ()
     await db.chats.put(chat);
     appendMessage(msg, chat);
     renderChatList();
-
+    
+    // 自动记录到钱包流水（支出 - 为TA点单）
+    if (typeof addWalletTransaction === 'function') {
+        const recipientName = chat.isGroup ? chat.name : chat.name;
+        addWalletTransaction({
+            type: 'expense',
+            title: `为${recipientName}点外卖`,
+            amount: amount,
+            timestamp: new Date().toISOString()
+        });
+    }
+    
     productInfoInput.value = '';
     amountInput.value = '';
     waimaiModal.classList.remove('visible');
@@ -58907,34 +59258,35 @@ SVG要求：128x128像素，背景透明，风格统一。
             pet.energy = Math.max(0, (pet.energy || 100) - 10);
             pet.mood = Math.min(100, (pet.mood || 80) + 5);
             msg = `你与${pet.name}进行了互动：${customAction}`;
+            // 自定义互动根据心情随机选择表情（在switch中处理）
         }
 
         switch(action) {
             case 'pat':
                 pet.mood = Math.min(100, (pet.mood || 80) + 15);
                 pet.energy = Math.max(0, (pet.energy || 100) - 5);
-                newEmotion = 'happy';
+                newEmotion = 'happy'; // 摸摸头 -> 开心表情
                 interactionPrompt = "主人温柔地摸了摸宠物的头。";
                 msg = `摸摸${pet.name}的头，心情+15`;
                 break;
             case 'feed':
                 pet.hunger = Math.min(100, (pet.hunger || 100) + 30);
                 pet.mood = Math.min(100, (pet.mood || 80) + 10);
-                newEmotion = 'happy';
+                newEmotion = 'happy'; // 喂食 -> 开心表情
                 interactionPrompt = "主人给宠物喂了好吃的食物。";
                 msg = `喂饱了${pet.name}，饥饿度+30`;
                 break;
             case 'bathe':
                 pet.mood = Math.min(100, (pet.mood || 80) + 5);
                 pet.cleanliness = 100; // 假设有清洁度，或者只加心情
-                newEmotion = 'normal'; // 或者 happy
+                newEmotion = 'normal'; // 洗澡 -> 正常表情
                 interactionPrompt = "主人给宠物洗了个澡，香喷喷的。";
                 msg = `给${pet.name}洗澡，变得干干净净！`;
                 break;
             case 'kick':
                 pet.mood = Math.max(0, (pet.mood || 80) - 30);
                 pet.energy = Math.max(0, (pet.energy || 100) - 5);
-                newEmotion = 'angry'; // 或者 sad
+                newEmotion = 'angry'; // 踹一脚 -> 生气表情
                 interactionPrompt = "主人竟然踹了宠物一脚！宠物非常生气和委屈。";
                 msg = `踹了${pet.name}一脚，心情-30`;
                 break;
@@ -58942,7 +59294,7 @@ SVG要求：128x128像素，背景透明，风格统一。
                 pet.energy = Math.max(0, (pet.energy || 100) - 20);
                 pet.experience = (pet.experience || 0) + 20;
                 pet.mood = Math.max(0, (pet.mood || 80) - 5);
-                newEmotion = 'normal';
+                newEmotion = 'sad'; // 学习 -> 伤心表情（因为学习有点累）
                 interactionPrompt = "主人让宠物去学习新知识。";
                 msg = `${pet.name}努力学习，经验+20`;
                 break;
@@ -58955,7 +59307,7 @@ SVG要求：128x128像素，背景透明，风格统一。
                 pet.energy = Math.max(0, (pet.energy || 100) - 20);
                 pet.mood = Math.min(100, (pet.mood || 80) + 15);
                 pet.experience = (pet.experience || 0) + 10;
-                newEmotion = 'happy';
+                newEmotion = 'happy'; // 玩耍 -> 开心表情
                 interactionPrompt = "主人和宠物一起开心地玩耍。";
                 msg = `和${pet.name}玩耍，经验+10`;
                 break;
@@ -58963,9 +59315,19 @@ SVG要求：128x128像素，背景透明，风格统一。
                 pet.energy = Math.max(0, (pet.energy || 100) - 25);
                 pet.experience = (pet.experience || 0) + 15;
                 pet.mood = Math.max(0, (pet.mood || 80) - 5);
-                newEmotion = 'normal';
+                newEmotion = 'sad'; // 训练 -> 伤心表情（因为训练很累）
                 interactionPrompt = "主人对宠物进行了严格的训练。";
                 msg = `训练${pet.name}，经验+15`;
+                break;
+            case 'custom':
+                // 自定义互动根据心情随机选择表情
+                if (pet.mood >= 70) {
+                    newEmotion = 'happy';
+                } else if (pet.mood <= 30) {
+                    newEmotion = 'sad';
+                } else {
+                    newEmotion = 'normal';
+                }
                 break;
         }
         
@@ -58985,17 +59347,49 @@ SVG要求：128x128像素，背景透明，风格统一。
     
     // 更新宠物表情
     function updateCabinPetEmotion(pet, emotionType) {
+        if (!pet) return;
+        
+        // 根据表情类型切换对应的SVG（使用生成的四个表情）
         switch(emotionType) {
-            case 'happy': pet.svg = pet.svgHappy || pet.svgNormal; break;
-            case 'sad': pet.svg = pet.svgSad || pet.svgNormal; break;
-            case 'angry': pet.svg = pet.svgAngry || pet.svgNormal; break;
-            default: pet.svg = pet.svgNormal; break;
+            case 'happy': 
+                if (pet.svgHappy) {
+                    pet.svg = pet.svgHappy;
+                    pet.currentEmotion = 'happy';
+                } else {
+                    pet.svg = pet.svgNormal || pet.svg;
+                }
+                break;
+            case 'sad': 
+                if (pet.svgSad) {
+                    pet.svg = pet.svgSad;
+                    pet.currentEmotion = 'sad';
+                } else {
+                    pet.svg = pet.svgNormal || pet.svg;
+                }
+                break;
+            case 'angry': 
+                if (pet.svgAngry) {
+                    pet.svg = pet.svgAngry;
+                    pet.currentEmotion = 'angry';
+                } else {
+                    pet.svg = pet.svgNormal || pet.svg;
+                }
+                break;
+            default: 
+                pet.svg = pet.svgNormal || pet.svg;
+                pet.currentEmotion = 'normal';
+                break;
         }
-        // 2秒后恢复正常表情 (可选)
+        
+        // 立即更新显示
+        renderCabinPetDisplay(pet);
+        
+        // 3秒后自动恢复正常表情
         setTimeout(() => {
             const current = getCurrentCabinPet();
             if (current && current.id === pet.id && !current.isExploring) {
-                current.svg = current.svgNormal;
+                current.svg = current.svgNormal || current.svg;
+                current.currentEmotion = 'normal';
                 renderCabinPetDisplay(current);
             }
         }, 3000);
@@ -60652,14 +61046,483 @@ async function generateWalletDataAPI(charId) {
         
         state.wallets[charId] = walletData;
         saveCabinGachaData();
-        renderWalletData(charId);
-        
     } catch (e) {
         console.error("Wallet Gen Error", e);
         state.wallets[charId] = { balance: 0, transactions: [] };
         renderWalletData(charId);
     }
 }
+
+    // ========== 披萨游戏 ==========
+    let pizzaGameState = {
+        currentTool: null,
+        currentTopping: null,
+        isDrawing: false,
+        sauceCanvas: null,
+        sauceCtx: null,
+        cheeseCanvas: null,
+        cheeseCtx: null,
+        toppings: []
+    };
+
+    function initPizzaGame() {
+        const container = document.getElementById('pizza-canvas-container');
+        const sauceCanvas = document.getElementById('pizza-sauce-canvas');
+        const cheeseCanvas = document.getElementById('pizza-cheese-canvas');
+        const toppingsLayer = document.getElementById('pizza-toppings-layer');
+        
+        if (!container || !sauceCanvas || !cheeseCanvas || !toppingsLayer) return;
+        
+        // 初始化画布
+        const size = 320;
+        sauceCanvas.width = size;
+        sauceCanvas.height = size;
+        cheeseCanvas.width = size;
+        cheeseCanvas.height = size;
+        
+        pizzaGameState.sauceCanvas = sauceCanvas;
+        pizzaGameState.sauceCtx = sauceCanvas.getContext('2d');
+        pizzaGameState.cheeseCanvas = cheeseCanvas;
+        pizzaGameState.cheeseCtx = cheeseCanvas.getContext('2d');
+        
+        // 设置画布样式
+        pizzaGameState.sauceCtx.globalCompositeOperation = 'source-over';
+        pizzaGameState.cheeseCtx.globalCompositeOperation = 'source-over';
+        
+        // 工具按钮事件
+        document.querySelectorAll('.pizza-tool-btn').forEach(btn => {
+            btn.onclick = () => {
+                const tool = btn.getAttribute('data-tool');
+                selectPizzaTool(tool);
+            };
+        });
+        
+        // 配料按钮事件 - 选择配料类型
+        document.querySelectorAll('.topping-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const topping = btn.getAttribute('data-topping');
+                pizzaGameState.currentTopping = topping;
+                // 高亮选中的配料按钮
+                document.querySelectorAll('.topping-btn').forEach(b => {
+                    b.style.opacity = b === btn ? '1' : '0.6';
+                    b.style.transform = b === btn ? 'scale(1.1)' : 'scale(1)';
+                });
+                updatePizzaHint('点击披萨上的位置放置配料');
+            };
+        });
+        
+        // 画布触摸/鼠标事件 - 用于涂抹酱料和芝士
+        container.addEventListener('touchstart', handlePizzaTouchStart, { passive: false });
+        container.addEventListener('touchmove', handlePizzaTouchMove, { passive: false });
+        container.addEventListener('touchend', handlePizzaTouchEnd, { passive: false });
+        container.addEventListener('mousedown', handlePizzaMouseDown);
+        container.addEventListener('mousemove', handlePizzaMouseMove);
+        container.addEventListener('mouseup', handlePizzaMouseUp);
+        container.addEventListener('mouseleave', handlePizzaMouseUp);
+        
+        // 配料层点击事件 - 用于放置配料
+        toppingsLayer.addEventListener('click', handlePizzaToppingClick);
+        toppingsLayer.addEventListener('touchend', handlePizzaToppingClick);
+        
+        // 重置提示
+        updatePizzaHint('选择工具开始制作披萨！滑动可以涂抹酱料和芝士');
+    }
+
+    function handlePizzaTouchStart(e) {
+        e.preventDefault();
+        if (!pizzaGameState.currentTool || (pizzaGameState.currentTool !== 'sauce' && pizzaGameState.currentTool !== 'cheese')) return;
+        
+        const pos = getPizzaCanvasPosition(e);
+        if (!pos) return;
+        
+        pizzaGameState.isDrawing = true;
+        drawPizzaIngredient(pos.x, pos.y);
+    }
+
+    function handlePizzaTouchMove(e) {
+        e.preventDefault();
+        if (!pizzaGameState.isDrawing) return;
+        
+        const pos = getPizzaCanvasPosition(e);
+        if (!pos) return;
+        
+        drawPizzaIngredient(pos.x, pos.y);
+    }
+
+    function handlePizzaTouchEnd(e) {
+        e.preventDefault();
+        pizzaGameState.isDrawing = false;
+    }
+
+    function handlePizzaMouseDown(e) {
+        if (!pizzaGameState.currentTool || (pizzaGameState.currentTool !== 'sauce' && pizzaGameState.currentTool !== 'cheese')) return;
+        
+        const pos = getPizzaCanvasPosition(e);
+        if (!pos) return;
+        
+        pizzaGameState.isDrawing = true;
+        drawPizzaIngredient(pos.x, pos.y);
+    }
+
+    function handlePizzaMouseMove(e) {
+        if (!pizzaGameState.isDrawing) return;
+        
+        const pos = getPizzaCanvasPosition(e);
+        if (!pos) return;
+        
+        drawPizzaIngredient(pos.x, pos.y);
+    }
+
+    function handlePizzaMouseUp(e) {
+        pizzaGameState.isDrawing = false;
+    }
+
+    function drawPizzaIngredient(x, y) {
+        if (pizzaGameState.currentTool === 'sauce' && pizzaGameState.sauceCtx) {
+            // 绘制酱料（红色半透明）
+            pizzaGameState.sauceCtx.fillStyle = 'rgba(220, 53, 69, 0.6)';
+            pizzaGameState.sauceCtx.beginPath();
+            pizzaGameState.sauceCtx.arc(x, y, 15, 0, Math.PI * 2);
+            pizzaGameState.sauceCtx.fill();
+        } else if (pizzaGameState.currentTool === 'cheese' && pizzaGameState.cheeseCtx) {
+            // 绘制芝士（黄色半透明）
+            pizzaGameState.cheeseCtx.fillStyle = 'rgba(255, 217, 61, 0.7)';
+            pizzaGameState.cheeseCtx.beginPath();
+            pizzaGameState.cheeseCtx.arc(x, y, 12, 0, Math.PI * 2);
+            pizzaGameState.cheeseCtx.fill();
+        }
+    }
+
+    function handlePizzaToppingClick(e) {
+        if (pizzaGameState.currentTool !== 'topping' || !pizzaGameState.currentTopping) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const pos = getPizzaCanvasPosition(e);
+        if (!pos) return;
+        
+        addPizzaTopping(pizzaGameState.currentTopping, pos.relativeX, pos.relativeY);
+    }
+
+    function addPizzaTopping(toppingType, xPercent, yPercent) {
+        const toppingsLayer = document.getElementById('pizza-toppings-layer');
+        if (!toppingsLayer) return;
+        
+        // 创建CSS绘制的配料元素
+        const topping = document.createElement('div');
+        topping.className = `topping-item topping-${toppingType}`;
+        topping.style.left = xPercent + '%';
+        topping.style.top = yPercent + '%';
+        
+        // 添加随机旋转角度，让配料更自然
+        const rotation = Math.random() * 360;
+        topping.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+        
+        // 添加动画
+        topping.style.opacity = '0';
+        topping.style.transform = `translate(-50%, -50%) rotate(${rotation}deg) scale(0)`;
+        toppingsLayer.appendChild(topping);
+        
+        setTimeout(() => {
+            topping.style.transition = 'all 0.3s ease';
+            topping.style.opacity = '1';
+            topping.style.transform = `translate(-50%, -50%) rotate(${rotation}deg) scale(1)`;
+        }, 10);
+        
+        pizzaGameState.toppings.push({ type: toppingType, element: topping });
+    }
+
+    function resetPizza() {
+        // 清空画布
+        if (pizzaGameState.sauceCtx) {
+            pizzaGameState.sauceCtx.clearRect(0, 0, 320, 320);
+        }
+        if (pizzaGameState.cheeseCtx) {
+            pizzaGameState.cheeseCtx.clearRect(0, 0, 320, 320);
+        }
+        
+        // 移除所有配料
+        const toppingsLayer = document.getElementById('pizza-toppings-layer');
+        if (toppingsLayer) {
+            toppingsLayer.innerHTML = '';
+        }
+        
+        pizzaGameState.toppings = [];
+        pizzaGameState.currentTool = null;
+        pizzaGameState.currentTopping = null;
+        pizzaGameState.isDrawing = false;
+        
+        // 重置按钮样式
+        document.querySelectorAll('.pizza-tool-btn').forEach(btn => {
+            btn.style.opacity = '1';
+            btn.style.transform = 'scale(1)';
+        });
+        
+        document.querySelectorAll('.topping-btn').forEach(btn => {
+            btn.style.opacity = '1';
+            btn.style.transform = 'scale(1)';
+        });
+        
+        // 隐藏配料面板
+        const toppingsPanel = document.getElementById('pizza-toppings-panel');
+        if (toppingsPanel) {
+            toppingsPanel.style.display = 'none';
+        }
+    }
+
+    function updatePizzaHint(text) {
+        const hint = document.getElementById('pizza-hint');
+        if (hint) {
+            hint.textContent = text;
+        }
+    }
+
+    function initPizzaGame() {
+        const container = document.getElementById('pizza-canvas-container');
+        const sauceCanvas = document.getElementById('pizza-sauce-canvas');
+        const cheeseCanvas = document.getElementById('pizza-cheese-canvas');
+        const toppingsLayer = document.getElementById('pizza-toppings-layer');
+        
+        if (!container || !sauceCanvas || !cheeseCanvas || !toppingsLayer) return;
+        
+        // 初始化画布
+        const size = 320;
+        sauceCanvas.width = size;
+        sauceCanvas.height = size;
+        cheeseCanvas.width = size;
+        cheeseCanvas.height = size;
+        
+        pizzaGameState.sauceCanvas = sauceCanvas;
+        pizzaGameState.sauceCtx = sauceCanvas.getContext('2d');
+        pizzaGameState.cheeseCanvas = cheeseCanvas;
+        pizzaGameState.cheeseCtx = cheeseCanvas.getContext('2d');
+        
+        // 设置画布样式
+        pizzaGameState.sauceCtx.globalCompositeOperation = 'source-over';
+        pizzaGameState.cheeseCtx.globalCompositeOperation = 'source-over';
+        
+        // 工具按钮事件
+        document.querySelectorAll('.pizza-tool-btn').forEach(btn => {
+            btn.onclick = () => {
+                const tool = btn.getAttribute('data-tool');
+                selectPizzaTool(tool);
+            };
+        });
+        
+        // 配料按钮事件 - 选择配料类型
+        document.querySelectorAll('.topping-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const topping = btn.getAttribute('data-topping');
+                pizzaGameState.currentTopping = topping;
+                // 高亮选中的配料按钮
+                document.querySelectorAll('.topping-btn').forEach(b => {
+                    b.style.opacity = b === btn ? '1' : '0.6';
+                    b.style.transform = b === btn ? 'scale(1.1)' : 'scale(1)';
+                });
+                updatePizzaHint('点击披萨上的位置放置配料');
+            };
+        });
+        
+        // 画布触摸/鼠标事件 - 用于涂抹酱料和芝士
+        container.addEventListener('touchstart', handlePizzaTouchStart, { passive: false });
+        container.addEventListener('touchmove', handlePizzaTouchMove, { passive: false });
+        container.addEventListener('touchend', handlePizzaTouchEnd, { passive: false });
+        container.addEventListener('mousedown', handlePizzaMouseDown);
+        container.addEventListener('mousemove', handlePizzaMouseMove);
+        container.addEventListener('mouseup', handlePizzaMouseUp);
+        container.addEventListener('mouseleave', handlePizzaMouseUp);
+        
+        // 配料层点击事件 - 用于放置配料
+        toppingsLayer.addEventListener('click', handlePizzaToppingClick);
+        toppingsLayer.addEventListener('touchend', handlePizzaToppingClick);
+        
+        // 重置提示
+        updatePizzaHint('选择工具开始制作披萨！滑动可以涂抹酱料和芝士');
+    }
+
+    function selectPizzaTool(tool) {
+        pizzaGameState.currentTool = tool;
+        pizzaGameState.currentTopping = null;
+        
+        // 更新按钮样式
+        document.querySelectorAll('.pizza-tool-btn').forEach(btn => {
+            btn.style.opacity = btn.getAttribute('data-tool') === tool ? '1' : '0.6';
+            btn.style.transform = btn.getAttribute('data-tool') === tool ? 'scale(1.05)' : 'scale(1)';
+        });
+        
+        // 重置配料按钮样式
+        document.querySelectorAll('.topping-btn').forEach(btn => {
+            btn.style.opacity = '1';
+            btn.style.transform = 'scale(1)';
+        });
+        
+        // 显示/隐藏配料面板
+        const toppingsPanel = document.getElementById('pizza-toppings-panel');
+        if (tool === 'topping') {
+            toppingsPanel.style.display = 'block';
+            updatePizzaHint('先选择配料，然后点击披萨上的位置放置');
+        } else {
+            toppingsPanel.style.display = 'none';
+            if (tool === 'sauce') {
+                updatePizzaHint('在披萨上滑动涂抹酱料');
+            } else if (tool === 'cheese') {
+                updatePizzaHint('在披萨上滑动涂抹芝士');
+            } else if (tool === 'reset') {
+                resetPizza();
+                updatePizzaHint('披萨已重置！选择工具开始制作');
+            }
+        }
+    }
+
+    function getPizzaCanvasPosition(e) {
+        const container = document.getElementById('pizza-canvas-container');
+        const rect = container.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const radius = rect.width / 2;
+        
+        let clientX, clientY;
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else if (e.changedTouches) {
+            clientX = e.changedTouches[0].clientX;
+            clientY = e.changedTouches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        
+        const x = clientX - centerX;
+        const y = clientY - centerY;
+        const distance = Math.sqrt(x * x + y * y);
+        
+        // 检查是否在圆形范围内
+        if (distance > radius) return null;
+        
+        // 转换为画布坐标
+        const canvasX = (x / radius) * 160 + 160;
+        const canvasY = (y / radius) * 160 + 160;
+        
+        // 返回容器内的相对位置（百分比）
+        const relativeX = (clientX - rect.left) / rect.width * 100;
+        const relativeY = (clientY - rect.top) / rect.height * 100;
+        
+        return { x: canvasX, y: canvasY, distance, relativeX, relativeY };
+    }
+
+    function handlePizzaTouchStart(e) {
+        e.preventDefault();
+        if (!pizzaGameState.currentTool || (pizzaGameState.currentTool !== 'sauce' && pizzaGameState.currentTool !== 'cheese')) return;
+        
+        const pos = getPizzaCanvasPosition(e);
+        if (!pos) return;
+        
+        pizzaGameState.isDrawing = true;
+        drawPizzaIngredient(pos.x, pos.y);
+    }
+
+    function handlePizzaTouchMove(e) {
+        e.preventDefault();
+        if (!pizzaGameState.isDrawing) return;
+        
+        const pos = getPizzaCanvasPosition(e);
+        if (!pos) return;
+        
+        drawPizzaIngredient(pos.x, pos.y);
+    }
+
+    function handlePizzaTouchEnd(e) {
+        e.preventDefault();
+        pizzaGameState.isDrawing = false;
+    }
+
+    function handlePizzaMouseDown(e) {
+        if (!pizzaGameState.currentTool || (pizzaGameState.currentTool !== 'sauce' && pizzaGameState.currentTool !== 'cheese')) return;
+        
+        const pos = getPizzaCanvasPosition(e);
+        if (!pos) return;
+        
+        pizzaGameState.isDrawing = true;
+        drawPizzaIngredient(pos.x, pos.y);
+    }
+
+    function handlePizzaMouseMove(e) {
+        if (!pizzaGameState.isDrawing) return;
+        
+        const pos = getPizzaCanvasPosition(e);
+        if (!pos) return;
+        
+        drawPizzaIngredient(pos.x, pos.y);
+    }
+
+    function handlePizzaMouseUp(e) {
+        pizzaGameState.isDrawing = false;
+    }
+
+    function drawPizzaIngredient(x, y) {
+        if (pizzaGameState.currentTool === 'sauce' && pizzaGameState.sauceCtx) {
+            // 绘制酱料（红色半透明）
+            pizzaGameState.sauceCtx.fillStyle = 'rgba(220, 53, 69, 0.6)';
+            pizzaGameState.sauceCtx.beginPath();
+            pizzaGameState.sauceCtx.arc(x, y, 15, 0, Math.PI * 2);
+            pizzaGameState.sauceCtx.fill();
+        } else if (pizzaGameState.currentTool === 'cheese' && pizzaGameState.cheeseCtx) {
+            // 绘制芝士（黄色半透明）
+            pizzaGameState.cheeseCtx.fillStyle = 'rgba(255, 217, 61, 0.7)';
+            pizzaGameState.cheeseCtx.beginPath();
+            pizzaGameState.cheeseCtx.arc(x, y, 12, 0, Math.PI * 2);
+            pizzaGameState.cheeseCtx.fill();
+        }
+    }
+
+    function resetPizza() {
+        // 清空画布
+        if (pizzaGameState.sauceCtx) {
+            pizzaGameState.sauceCtx.clearRect(0, 0, 320, 320);
+        }
+        if (pizzaGameState.cheeseCtx) {
+            pizzaGameState.cheeseCtx.clearRect(0, 0, 320, 320);
+        }
+        
+        // 移除所有配料
+        const toppingsLayer = document.getElementById('pizza-toppings-layer');
+        if (toppingsLayer) {
+            toppingsLayer.innerHTML = '';
+        }
+        
+        pizzaGameState.toppings = [];
+        pizzaGameState.currentTool = null;
+        pizzaGameState.currentTopping = null;
+        pizzaGameState.isDrawing = false;
+        
+        // 重置按钮样式
+        document.querySelectorAll('.pizza-tool-btn').forEach(btn => {
+            btn.style.opacity = '1';
+            btn.style.transform = 'scale(1)';
+        });
+        
+        document.querySelectorAll('.topping-btn').forEach(btn => {
+            btn.style.opacity = '1';
+            btn.style.transform = 'scale(1)';
+        });
+        
+        // 隐藏配料面板
+        const toppingsPanel = document.getElementById('pizza-toppings-panel');
+        if (toppingsPanel) {
+            toppingsPanel.style.display = 'none';
+        }
+    }
+
+    function updatePizzaHint(text) {
+        const hint = document.getElementById('pizza-hint');
+        if (hint) {
+            hint.textContent = text;
+        }
+    }
      </script>   
         
 
