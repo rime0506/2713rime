@@ -9929,6 +9929,8 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         <div style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 5px;">
             <button class="pixel-btn" style="margin:0; padding: 8px; flex: 1;" onclick="switchCabinScreen('gacha')">⬅️返回</button>
             <button class="pixel-btn" style="margin:0; padding: 8px; background: #aedeef; flex: 1;" onclick="takeCabinScreenshot()">📸拍照</button>
+            <button class="pixel-btn" style="margin:0; padding: 8px; background: #f8c3cd; flex: 1;" onclick="openCabinColorPicker('wall')" id="cabin-wall-color-btn">🎨 墙面</button>
+            <button class="pixel-btn" style="margin:0; padding: 8px; background: #f5e6e8; flex: 1;" onclick="openCabinColorPicker('floor')" id="cabin-floor-color-btn">🎨 地板</button>
         </div>
         
         <!-- 房间区域 -->
@@ -9940,12 +9942,6 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         
         <!-- 拖拽指示器 -->
         <div id="cabin-drag-indicator" style="position: fixed; width: 64px; height: 64px; border: 3px solid #e06c9f; border-radius: 8px; background: rgba(255, 255, 255, 0.9); box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 10000; display: none; pointer-events: none; transform: translate(-50%, -50%);"></div>
-        
-        <!-- 颜色修改按钮 -->
-        <div style="width: 100%; display: flex; justify-content: space-between; margin: 10px 0; gap: 5px;">
-            <button class="pixel-btn" style="flex: 1; background: #f8c3cd;" onclick="openCabinColorPicker('wall')" id="cabin-wall-color-btn">🎨 修改墙面颜色</button>
-            <button class="pixel-btn" style="flex: 1; background: #f5e6e8;" onclick="openCabinColorPicker('floor')" id="cabin-floor-color-btn">🎨 修改地板颜色</button>
-        </div>
         
         <!-- 像素小人移动控制按钮（手柄式） -->
         <div style="width: 200px; margin: 15px auto; display: flex; flex-direction: column; align-items: center; gap: 8px;">
@@ -55475,13 +55471,31 @@ ${userPersona.trim()}
                 textureTitle.style.marginBottom = '5px';
                 patternSection.appendChild(textureTitle);
                 
+                // 创建一个外层容器用于滚动
+                const textureListWrapper = document.createElement('div');
+                textureListWrapper.style.maxHeight = '400px'; // 设置最大高度，允许滚动
+                textureListWrapper.style.overflowY = 'auto'; // 允许垂直滚动
+                textureListWrapper.style.overflowX = 'hidden'; // 隐藏横向滚动
+                textureListWrapper.style.padding = '5px'; // 添加内边距
+                textureListWrapper.style.border = '1px solid #e0e0e0'; // 添加边框，更清晰
+                textureListWrapper.style.borderRadius = '8px'; // 圆角
+                textureListWrapper.style.backgroundColor = '#f9f9f9'; // 背景色
+                textureListWrapper.style.width = '100%'; // 确保宽度填满
+                textureListWrapper.style.boxSizing = 'border-box'; // 包含边框和内边距
+                textureListWrapper.style.marginTop = '5px'; // 上边距
+                // 确保滚动条样式更好看
+                textureListWrapper.style.scrollbarWidth = 'thin'; // Firefox
+                textureListWrapper.style.scrollbarColor = '#e06c9f #f9f9f9'; // Firefox
+                // WebKit浏览器滚动条样式
+                textureListWrapper.style.setProperty('--scrollbar-thumb', '#e06c9f');
+                textureListWrapper.style.setProperty('--scrollbar-track', '#f9f9f9');
+                
                 const textureList = document.createElement('div');
                 textureList.style.display = 'flex';
                 textureList.style.gap = '5px';
                 textureList.style.flexWrap = 'wrap';
-                textureList.style.maxHeight = '200px'; // 添加最大高度，允许滚动
-                textureList.style.overflowY = 'auto'; // 允许垂直滚动
-                textureList.style.overflowX = 'hidden'; // 隐藏横向滚动
+                textureList.style.width = '100%'; // 确保宽度填满
+                textureList.style.minHeight = 'min-content'; // 最小高度为内容高度
                 
                 // Add "None" option
                 const noneItem = document.createElement('div');
@@ -55511,6 +55525,7 @@ ${userPersona.trim()}
                     item.style.backgroundImage = `url('${p.src}')`;
                     item.style.backgroundSize = 'cover';
                     item.style.cursor = 'pointer';
+                    item.style.flexShrink = '0'; // 防止收缩
                     item.title = p.name;
                     
                     item.onclick = () => {
@@ -55522,7 +55537,9 @@ ${userPersona.trim()}
                     textureList.appendChild(item);
                 });
                 
-                patternSection.appendChild(textureList);
+                // 将列表放入滚动容器
+                textureListWrapper.appendChild(textureList);
+                patternSection.appendChild(textureListWrapper);
             }
         }
         
