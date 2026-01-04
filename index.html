@@ -462,6 +462,38 @@
         }
         .message-bubble.user .content { background-color: rgba(255, 255, 255, 0.75); color: #585858; border-radius: 8px 2px 8px 8px; }
         .message-bubble.ai .content { background-color: rgba(255, 255, 255, 0.7); color: #585858; border-radius: 2px 8px 8px 8px; }
+        /* 线上模式消息样式（默认样式，可通过CSS覆盖） */
+        .message-bubble.online-message.user .content { background-color: rgba(255, 255, 255, 0.75); color: #585858; border-radius: 8px 2px 8px 8px; }
+        .message-bubble.online-message.ai .content { background-color: rgba(255, 255, 255, 0.7); color: #585858; border-radius: 2px 8px 8px 8px; }
+        /* 线下模式消息样式（可通过CSS覆盖） */
+        .message-bubble.offline-message {
+            margin-bottom: 12px;
+        }
+        .message-bubble.offline-message .content {
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 4px;
+        }
+        .message-bubble.offline-message.user .content {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            border-radius: 12px;
+            margin-left: auto;
+            max-width: 75%;
+        }
+        .message-bubble.offline-message.ai .content {
+            background-color: #f3e5f5;
+            color: #6a1b9a;
+            border-radius: 12px;
+            margin-right: auto;
+            max-width: 75%;
+        }
+        .message-bubble.offline-message.user {
+            justify-content: flex-end;
+        }
+        .message-bubble.offline-message.ai {
+            justify-content: flex-start;
+        }
         .message-bubble::after {
             content: "";
             position: absolute;
@@ -19096,7 +19128,8 @@ function scrollToOriginalMessage(originalTimestamp) {
             }
         
             const bubble = document.createElement('div');
-            bubble.className = `message-bubble ${isUser ? 'user' : 'ai'}`;
+            const isOfflineMessage = msg.isOfflineMode === true;
+            bubble.className = `message-bubble ${isUser ? 'user' : 'ai'} ${isOfflineMessage ? 'offline-message' : 'online-message'}`;
             bubble.dataset.timestamp = msg.timestamp;
         
             const timestampEl = document.createElement('span');
@@ -19728,7 +19761,7 @@ ${stickerContext}
             let aiMessage = null;
             const currentMessageTimestamp = messageTimestamp++;
             lastResponseTimestamps.push(currentMessageTimestamp);
-            const baseMessage = { role: 'assistant', senderName: msgData.name, timestamp: currentMessageTimestamp };
+            const baseMessage = { role: 'assistant', senderName: msgData.name, timestamp: currentMessageTimestamp, isOfflineMode: chat.settings.isOfflineMode || false };
  
             
             switch (msgData.type) {
@@ -19914,7 +19947,7 @@ ${stickerContext}
                                 if (msgData.decision === 'accept') {
                                     startVideoCall();
                                 } else {
-                                    const aiMessage = { role: 'assistant', content: '对方拒绝了你的视频通话请求。', timestamp: Date.now() };
+                                    const aiMessage = { role: 'assistant', content: '对方拒绝了你的视频通话请求。', timestamp: Date.now(), isOfflineMode: chat.settings.isOfflineMode || false };
                                     chat.history.push(aiMessage);
                                     await db.chats.put(chat);
                                     showScreen('chat-interface-screen');
@@ -19956,7 +19989,7 @@ ${stickerContext}
                             alert('无人接听群聊邀请。');
                             showScreen('chat-interface-screen');
                         } else {
-                            const aiMessage = { role: 'assistant', content: '对方拒绝了你的视频通话请求。', timestamp: Date.now() };
+                            const aiMessage = { role: 'assistant', content: '对方拒绝了你的视频通话请求。', timestamp: Date.now(), isOfflineMode: chat.settings.isOfflineMode || false };
                             chat.history.push(aiMessage);
                             await db.chats.put(chat);
                             showScreen('chat-interface-screen');
@@ -20028,11 +20061,11 @@ ${stickerContext}
                         
                         if (decisionObj.decision === 'accept') {
                             chat.relationship.status = 'friend';
-                            const acceptMessage = { role: 'assistant', senderName: chat.name, content: decisionObj.reason, timestamp: Date.now() };
+                            const acceptMessage = { role: 'assistant', senderName: chat.name, content: decisionObj.reason, timestamp: Date.now(), isOfflineMode: chat.settings.isOfflineMode || false };
                             chat.history.push(acceptMessage);
                         } else {
                             chat.relationship.status = 'blocked_by_ai';
-                            const rejectMessage = { role: 'assistant', senderName: chat.name, content: decisionObj.reason, timestamp: Date.now() };
+                            const rejectMessage = { role: 'assistant', senderName: chat.name, content: decisionObj.reason, timestamp: Date.now(), isOfflineMode: chat.settings.isOfflineMode || false };
                             chat.history.push(rejectMessage);
                         }
                         chat.relationship.applicationReason = '';
@@ -21548,7 +21581,7 @@ if (chat.settings.enableTts !== false && msgData.type === 'text' && typeof msgDa
         
                     let aiMessage = null;
                     const currentMessageTimestamp = messageTimestamp++;
-                    const baseMessage = { role: 'assistant', senderName: msgData.name || chat.name, timestamp: currentMessageTimestamp };
+                    const baseMessage = { role: 'assistant', senderName: msgData.name || chat.name, timestamp: currentMessageTimestamp, isOfflineMode: chat.settings.isOfflineMode || false };
                     
                     lastResponseTimestamps.push(currentMessageTimestamp);
         
@@ -25630,10 +25663,51 @@ image_prompt: msgData.image_prompt
             }
             
             
-            const scopedCss = cssString
-                .replace(/\s*\.message-bubble\.user\s+([^{]+\{)/g, `${scopeId} .message-bubble.user $1`)
-                .replace(/\s*\.message-bubble\.ai\s+([^{]+\{)/g, `${scopeId} .message-bubble.ai $1`)
-                .replace(/\s*\.message-bubble\s+([^{]+\{)/g, `${scopeId} .message-bubble $1`);
+            let scopedCss = cssString;
+            // 处理 offline-message 和 online-message 选择器（包括嵌套选择器和带前缀的选择器）
+            // 使用更精确的正则表达式，匹配选择器直到 { 之前
+            // 先处理最具体的选择器，避免被更通用的规则覆盖
+            
+            // 处理带 .user 或 .ai 的选择器
+            scopedCss = scopedCss.replace(/([^{]*?)(\.message-bubble\.offline-message\.user\s+[^{]*?\{)/g, (match, prefix, selector) => {
+                // 如果前缀已经包含 scopeId，则不再添加
+                if (prefix.includes(scopeId)) return match;
+                return prefix + scopeId + ' ' + selector;
+            });
+            scopedCss = scopedCss.replace(/([^{]*?)(\.message-bubble\.offline-message\.ai\s+[^{]*?\{)/g, (match, prefix, selector) => {
+                if (prefix.includes(scopeId)) return match;
+                return prefix + scopeId + ' ' + selector;
+            });
+            scopedCss = scopedCss.replace(/([^{]*?)(\.message-bubble\.online-message\.user\s+[^{]*?\{)/g, (match, prefix, selector) => {
+                if (prefix.includes(scopeId)) return match;
+                return prefix + scopeId + ' ' + selector;
+            });
+            scopedCss = scopedCss.replace(/([^{]*?)(\.message-bubble\.online-message\.ai\s+[^{]*?\{)/g, (match, prefix, selector) => {
+                if (prefix.includes(scopeId)) return match;
+                return prefix + scopeId + ' ' + selector;
+            });
+            // 处理 offline-message 和 online-message 的嵌套选择器（如 .avatar-group, .content 等）
+            scopedCss = scopedCss.replace(/([^{]*?)(\.message-bubble\.offline-message\s+[^{]*?\{)/g, (match, prefix, selector) => {
+                if (prefix.includes(scopeId)) return match;
+                return prefix + scopeId + ' ' + selector;
+            });
+            scopedCss = scopedCss.replace(/([^{]*?)(\.message-bubble\.online-message\s+[^{]*?\{)/g, (match, prefix, selector) => {
+                if (prefix.includes(scopeId)) return match;
+                return prefix + scopeId + ' ' + selector;
+            });
+            // 处理原有的选择器
+            scopedCss = scopedCss.replace(/([^{]*?)(\.message-bubble\.user\s+[^{]*?\{)/g, (match, prefix, selector) => {
+                if (prefix.includes(scopeId)) return match;
+                return prefix + scopeId + ' ' + selector;
+            });
+            scopedCss = scopedCss.replace(/([^{]*?)(\.message-bubble\.ai\s+[^{]*?\{)/g, (match, prefix, selector) => {
+                if (prefix.includes(scopeId)) return match;
+                return prefix + scopeId + ' ' + selector;
+            });
+            scopedCss = scopedCss.replace(/([^{]*?)(\.message-bubble\s+[^{]*?\{)/g, (match, prefix, selector) => {
+                if (prefix.includes(scopeId)) return match;
+                return prefix + scopeId + ' ' + selector;
+            });
             
             styleTag.innerHTML = scopedCss;
         }
@@ -46595,7 +46669,8 @@ playSilentAudio();
     const msg = {
         role: 'user',
         content,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        isOfflineMode: chat.settings.isOfflineMode || false
     };
 
     if (currentReplyContext) {
