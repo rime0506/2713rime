@@ -9635,14 +9635,14 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
                 <div class="small-widget" onclick="showScreen('wallet-screen')">
                   <div class="small-widget-icon-wrapper"> <img class="small-widget-img" id="icon-img-wallet" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='55' height='55'%3E%3Crect width='55' height='55' fill='%23e0e0e0' rx='14'/%3E%3C/svg%3E" alt="钱包"> </div> <span class="small-widget-label">钱包</span>
             </div>
-                <div class="small-widget">
+                <div class="small-widget" onclick="showScreen('farm-screen')">
                   <div class="small-widget-icon-wrapper"> <img class="small-widget-img" id="icon-img-farm" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='55' height='55'%3E%3Crect width='55' height='55' fill='%23e0e0e0' rx='14'/%3E%3C/svg%3E" alt="农场"> </div> <span class="small-widget-label">农场</span>
                 </div>
                 <div class="small-widget" onclick="showScreen('cabin-screen')">
                   <div class="small-widget-icon-wrapper"> <img class="small-widget-img" id="icon-img-cabin" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='55' height='55'%3E%3Crect width='55' height='55' fill='%23e0e0e0' rx='14'/%3E%3C/svg%3E" alt="小屋"> </div> <span class="small-widget-label">小屋</span>
                 </div>
                 <div class="small-widget" onclick="showScreen('pizza-game-screen')">
-                  <div class="small-widget-icon-wrapper" style="background: linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%); display: flex; align-items: center; justify-content: center; font-size: 32px;">🍕</div> <span class="small-widget-label">披萨</span>
+                  <div class="small-widget-icon-wrapper"> <img class="small-widget-img" id="icon-img-pizza" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='55' height='55'%3E%3Crect width='55' height='55' fill='%23e0e0e0' rx='14'/%3E%3C/svg%3E" alt="披萨"> </div> <span class="small-widget-label">披萨</span>
                 </div>
               </div>
             </div>
@@ -11367,6 +11367,230 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         <!-- 提示信息 -->
         <div id="pizza-hint" style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.9); border-radius: 8px; font-size: 12px; color: #333; text-align: center;">
           选择工具开始制作披萨！滑动可以涂抹酱料和芝士
+        </div>
+      </div>
+    </div>
+    <style>
+    /* Farm Game Styles - Pixel & Pastel */
+    #farm-screen {
+        background: #fff0f5; /* LavenderBlush */
+        font-family: 'Courier New', Courier, monospace; /* Monospace fits pixel style better */
+        image-rendering: pixelated;
+    }
+    
+    .farm-container {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+        overflow-y: auto;
+    }
+
+    .farm-header {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+        background: #fff;
+        padding: 10px 25px;
+        border-radius: 15px;
+        border: 4px solid #ffb7b2; /* Pastel Red/Pink border */
+        box-shadow: 4px 4px 0 rgba(255, 183, 178, 0.4);
+        color: #ff6f91;
+    }
+
+    .farm-stat {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: bold;
+        font-size: 16px;
+        color: #ff9aa2; /* Pastel Red */
+        text-shadow: 1px 1px 0 #fff;
+    }
+
+    .farm-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        padding: 15px;
+        background: #ffdac1; /* Pastel Orange/Peach Soil */
+        border: 6px solid #e2f0cb; /* Pastel Green border */
+        border-radius: 10px;
+        box-shadow: 6px 6px 0 #c7ceea; /* Pastel Blue shadow */
+        margin-bottom: 20px;
+    }
+
+    .farm-plot {
+        width: 80px;
+        height: 80px;
+        background: #fff5e6; /* Very light soil */
+        border: 2px dashed #ffb7b2;
+        border-radius: 4px;
+        position: relative;
+        cursor: pointer;
+        image-rendering: pixelated;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: transform 0.1s;
+    }
+
+    .farm-plot:active {
+        transform: translateY(2px);
+    }
+    
+    .farm-plot.wet {
+        background: #ffdfba; /* Wet pastel soil */
+        border-style: solid;
+        border-color: #ffb7b2;
+    }
+
+    .crop-sprite {
+        width: 64px; /* Multiple of 16 */
+        height: 64px;
+        image-rendering: pixelated;
+        pointer-events: none;
+        animation: pixel-bounce 0.6s steps(4);
+    }
+    
+    @keyframes pixel-bounce {
+        0% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+        100% { transform: translateY(0); }
+    }
+
+    .farm-controls {
+        width: 90%;
+        background: #ffffff;
+        padding: 15px;
+        border-radius: 16px;
+        border: 4px solid #b5ead7; /* Pastel Mint */
+        box-shadow: 4px 4px 0 #e2f0cb;
+    }
+
+    .seed-selector {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 5px 5px 15px 5px;
+        margin-bottom: 10px;
+        scrollbar-width: thin;
+    }
+
+    .seed-option {
+        min-width: 64px;
+        height: 80px;
+        border: 2px solid #ff9aa2;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        background: #fff;
+        transition: all 0.2s;
+    }
+
+    .seed-option:hover {
+        background: #fff0f5;
+    }
+
+    .seed-option.selected {
+        background: #ffb7b2;
+        border-color: #ff6f91;
+        color: white;
+        box-shadow: 2px 2px 0 #ff9aa2;
+        transform: translate(-1px, -1px);
+    }
+
+    .seed-icon {
+        width: 32px;
+        height: 32px;
+        margin-bottom: 4px;
+        image-rendering: pixelated;
+    }
+    
+    .seed-cost {
+        font-size: 10px;
+        font-weight: bold;
+        font-family: monospace;
+    }
+    
+    .seed-name {
+        font-size: 10px;
+        margin-top: 2px;
+    }
+
+    .farm-btn {
+        width: 100%;
+        padding: 12px;
+        background: #ff9aa2;
+        color: white;
+        border: 2px solid #ff6f91;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        box-shadow: 2px 2px 0 #ff6f91;
+        font-family: monospace;
+        transition: all 0.1s;
+    }
+
+    .farm-btn:active {
+        transform: translate(2px, 2px);
+        box-shadow: none;
+    }
+
+    .harvest-float {
+        position: absolute;
+        color: #ffb7b2;
+        font-weight: bold;
+        font-family: monospace;
+        font-size: 18px;
+        animation: floatPixel 1s steps(8) forwards;
+        pointer-events: none;
+        z-index: 100;
+        text-shadow: 1px 1px 0 #fff;
+    }
+
+    @keyframes floatPixel {
+        0% { transform: translateY(0); opacity: 1; }
+        100% { transform: translateY(-30px); opacity: 0; }
+    }
+    </style>
+
+    <div id="farm-screen" class="screen">
+      <div class="header">
+        <span class="back-btn" onclick="showScreen('home-screen')">‹</span>
+        <span>奇迹农场</span>
+        <span style="width: 30px;"></span>
+      </div>
+      <div class="farm-container">
+        <div class="farm-header">
+           <div class="farm-stat">
+             <span style="font-size: 20px;">🪙</span>
+             <span id="farm-money">100</span>
+           </div>
+           <div class="farm-stat">
+             <span style="font-size: 20px;">⭐</span>
+             <span id="farm-level">Lv.1</span>
+           </div>
+        </div>
+        
+        <div class="farm-grid" id="farm-grid">
+           <!-- Plots will be generated by JS -->
+        </div>
+
+        <div class="farm-controls">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <span style="font-size:12px; color:#5d4037; font-weight:bold;">选择种子</span>
+                <span style="font-size:10px; color:#999;">点击土地种植</span>
+            </div>
+            <div class="seed-selector" id="seed-selector">
+               <!-- Seeds generated by JS -->
+            </div>
+            <button class="farm-btn" onclick="farmGame.harvestAll()">✨ 一键收获所有成熟作物</button>
         </div>
       </div>
     </div>
@@ -13661,7 +13885,11 @@ let readingState = {};
             'tutorial': 'https://i.postimg.cc/d10GjC4g/IMG-7302.jpg',
     'werewolf': 'https://i.postimg.cc/k401K5g7/IMG-7304.jpg',
       
-    'x': 'https://i.postimg.cc/Y9d3BztC/1.png'
+    'x': 'https://i.postimg.cc/Y9d3BztC/1.png',
+            'wallet': 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'55\' height=\'55\'%3E%3Crect width=\'55\' height=\'55\' fill=\'%23e0e0e0\' rx=\'14\'/%3E%3C/svg%3E',
+            'farm': 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'55\' height=\'55\'%3E%3Crect width=\'55\' height=\'55\' fill=\'%23e0e0e0\' rx=\'14\'/%3E%3C/svg%3E',
+            'cabin': 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'55\' height=\'55\'%3E%3Crect width=\'55\' height=\'55\' fill=\'%23e0e0e0\' rx=\'14\'/%3E%3C/svg%3E',
+            'pizza': 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'55\' height=\'55\'%3E%3Crect width=\'55\' height=\'55\' fill=\'%23e0e0e0\' rx=\'14\'/%3E%3C/svg%3E'
         };
           
        
@@ -14525,6 +14753,7 @@ window.db = db;
                      if (screenId === 'douban-screen') renderDoubanScreen();
                     if (screenId === 'wallet-screen') renderWalletScreen();
                     if (screenId === 'pizza-game-screen') initPizzaGame();
+                    if (screenId === 'farm-screen') initFarmGame();
                     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
                     const screenToShow = document.getElementById(screenId);
                     if (screenToShow) screenToShow.classList.add('active');
@@ -29568,13 +29797,24 @@ function applyCPhoneWallpaper() {
            'tutorial': '教程',
    'werewolf': '狼人杀',
      
-   'x': 'X'
+   'x': 'X',
+       'wallet': '钱包',
+       'farm': '农场',
+       'cabin': '小屋',
+       'pizza': '披萨'
     };
           
+        // 只渲染 DEFAULT_APP_ICONS 中定义的图标，避免重复
+        const validIconIds = Object.keys(DEFAULT_APP_ICONS);
         
-            for (const iconId in state.globalSettings.appIcons) {
+            for (const iconId of validIconIds) {
+                // 确保图标存在于 state.globalSettings.appIcons 中
+                if (!state.globalSettings.appIcons[iconId]) {
+                    state.globalSettings.appIcons[iconId] = DEFAULT_APP_ICONS[iconId];
+                }
+                
                 const iconUrl = state.globalSettings.appIcons[iconId];
-                const labelText = appLabels[iconId] || 'Cphone';
+                const labelText = appLabels[iconId] || iconId;
         
                 const item = document.createElement('div');
                 item.className = 'icon-setting-item';
@@ -53801,6 +54041,58 @@ ${userPersona.trim()}
     window.currentCatalogTab = 'all';
     window.currentCatalogFilter = 'all';
     
+    // === 导出单个家具 (新增) ===
+    function exportSelectedCabinItem() {
+        const id = window.cabinSelectedItemId;
+        if (!id) {
+            showCabinToast('请先在背包中选中一个家具');
+            return;
+        }
+        
+        const state = window.cabinGachaState;
+        if (!state.customItems || !state.customItems[id]) {
+            showCabinToast('无效的物品数据');
+            return;
+        }
+        
+        const item = state.customItems[id];
+        
+        // 构造导出数据
+        const exportData = {
+            id: item.id, // 保留ID可能是为了引用，但导入时通常会重新生成ID以防冲突
+            name: item.name,
+            type: item.type,
+            rarity: item.rarity,
+            svg: item.svg,
+            width: item.width || 1,
+            height: item.height || 1,
+            timestamp: Date.now()
+        };
+        
+        // 使用带有 BOM 的 UTF-8 格式，防止中文乱码
+        const fileContent = `\uFEFF=== AI像素屋单个家具导出文件 ===
+${JSON.stringify(exportData, null, 2)}
+=== 结束 ===
+文件说明：这是单个家具的导出文件，您可以分享给朋友。
+请使用“导入数据”功能（如果支持）或手动复制JSON内容。`;
+
+        const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        // 安全的文件名
+        const safeName = item.name.replace(/[\\/:*?"<>|]/g, '_');
+        a.download = `家具_${safeName}_${item.rarity}.txt`;
+        
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showCabinToast(`✅ 已导出: ${item.name}`);
+    }
+
     // === 数据导入导出 ===
     function exportCabinData() {
         const data = {
@@ -53923,6 +54215,7 @@ ${userPersona.trim()}
 
     // 打开图鉴弹窗 (Modify to add buttons)
     function openCatalogModal() {
+        console.log('Opening Catalog Modal - Updated Version'); // Debug log
         const modal = document.getElementById('catalog-modal');
         if (modal) {
             modal.style.display = 'flex';
@@ -53940,17 +54233,21 @@ ${userPersona.trim()}
                 actionsBar.id = 'catalog-data-actions';
                 actionsBar.style.padding = '10px 15px';
                 actionsBar.style.borderTop = '1px solid #eee';
-                actionsBar.style.display = 'flex';
-                actionsBar.style.justifyContent = 'space-between';
-                actionsBar.style.gap = '10px';
-                
-                actionsBar.innerHTML = `
-                    <button class="pixel-btn" onclick="exportCabinData()" style="flex: 1; background: #aedeef; border-color: #8ac0d6; font-size: 12px;">📤 导出数据</button>
-                    <button class="pixel-btn" onclick="importCabinData()" style="flex: 1; background: #ffdfba; border-color: #ffb7b2; font-size: 12px;">📥 导入数据</button>
-                `;
-                
                 content.appendChild(actionsBar);
             }
+            
+            // 强制更新按钮 HTML，防止旧按钮残留
+            actionsBar.innerHTML = `
+                <div id="catalog-default-controls" style="display:flex; justify-content:space-between; gap:10px; width:100%;">
+                    <button class="pixel-btn" onclick="toggleCatalogSelectionMode()" style="flex: 1; background: #aedeef; border-color: #8ac0d6; font-size: 12px;">📤 批量导出</button>
+                    <button class="pixel-btn" onclick="importCabinData()" style="flex: 1; background: #ffdfba; border-color: #ffb7b2; font-size: 12px;">📥 导入数据</button>
+                </div>
+                <div id="catalog-selection-controls" style="display:none; justify-content:space-between; gap:10px; width:100%;">
+                    <button class="pixel-btn" onclick="toggleSelectAllCatalog()" style="flex: 1; background: #fff; border-color: #ccc; font-size: 12px;">全选/反选</button>
+                    <button class="pixel-btn" onclick="exportSelectedCatalogItems()" style="flex: 1; background: #aedeef; border-color: #8ac0d6; font-size: 12px;">确认导出</button>
+                    <button class="pixel-btn" onclick="toggleCatalogSelectionMode()" style="flex: 0.5; background: #ffb7b2; border-color: #ff6f91; font-size: 12px;">取消</button>
+                </div>
+            `;
             
             renderCatalogItems();
         }
@@ -54065,9 +54362,14 @@ ${userPersona.trim()}
             
             const catalogItem = document.createElement('div');
             catalogItem.className = `catalog-item ${isOwned ? 'owned' : ''}`;
+            catalogItem.style.position = 'relative'; // 确保checkbox定位正确
             
+            // Checkbox for selection mode
+            const checkboxHtml = `<input type="checkbox" class="catalog-item-checkbox" data-id="${id}" style="display:none; position:absolute; top:2px; right:2px; z-index:10; width:16px; height:16px;">`;
+
             if (!isSeen) {
                 catalogItem.innerHTML = `
+                    ${checkboxHtml}
                     <div style="width:40px; height:40px; background:#eee; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20px; margin:0 auto;">?</div>
                     <div class="catalog-item-name">未发现</div>
                     <div class="catalog-stats">???</div>
@@ -54075,6 +54377,7 @@ ${userPersona.trim()}
             } else {
                 const inPoolBadge = item.inPool ? '<div class="in-pool-badge">🎁</div>' : '';
                 catalogItem.innerHTML = `
+                    ${checkboxHtml}
                     <div style="width:40px; height:40px; margin:0 auto; display:flex; align-items:center; justify-content:center; position:relative;">
                         ${item.svg || '<div style="font-size:20px;">🎁</div>'}
                         ${inPoolBadge}
@@ -54091,6 +54394,97 @@ ${userPersona.trim()}
         if (filteredItems.length === 0) {
             catalogGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; font-size:10px; color:#999;">暂无物品</div>';
         }
+    }
+    
+    // 渲染图鉴物品 (结束)
+    
+    // === 图鉴导出相关功能 ===
+    // 导出选中的图鉴数据
+    function exportSelectedCatalogItems() {
+        const checkboxes = document.querySelectorAll('.catalog-item-checkbox:checked');
+        if (checkboxes.length === 0) {
+            showCabinToast('请至少选择一个物品');
+            return;
+        }
+        
+        const state = window.cabinGachaState;
+        const itemsToExport = [];
+        
+        checkboxes.forEach(cb => {
+            const id = cb.dataset.id;
+            if (state.customItems[id]) {
+                const item = state.customItems[id];
+                itemsToExport.push({
+                    id: item.id,
+                    name: item.name,
+                    type: item.type,
+                    rarity: item.rarity,
+                    svg: item.svg,
+                    width: item.width || 1,
+                    height: item.height || 1,
+                    timestamp: Date.now()
+                });
+            }
+        });
+        
+        const fileContent = `\uFEFF=== AI像素屋家具批量导出 ===
+${JSON.stringify(itemsToExport, null, 2)}
+=== 结束 ===
+文件说明：包含 ${itemsToExport.length} 个家具的导出数据。`;
+
+        const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `家具批量导出_${itemsToExport.length}个_${new Date().toISOString().slice(0,10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showCabinToast(`✅ 已导出 ${itemsToExport.length} 个物品`);
+        
+        // 导出后自动退出选择模式
+        toggleCatalogSelectionMode();
+    }
+
+    // 切换选择模式
+    function toggleCatalogSelectionMode() {
+        const selectionControls = document.getElementById('catalog-selection-controls');
+        const defaultControls = document.getElementById('catalog-default-controls');
+        
+        if (!selectionControls || !defaultControls) return;
+        
+        const isSelectionMode = selectionControls.style.display === 'flex';
+        
+        if (isSelectionMode) {
+            // 退出选择模式
+            selectionControls.style.display = 'none';
+            defaultControls.style.display = 'flex';
+            document.querySelectorAll('.catalog-item-checkbox').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.catalog-item').forEach(el => el.classList.remove('selection-mode'));
+        } else {
+            // 进入选择模式
+            selectionControls.style.display = 'flex';
+            defaultControls.style.display = 'none';
+            document.querySelectorAll('.catalog-item-checkbox').forEach(el => el.style.display = 'block');
+            document.querySelectorAll('.catalog-item').forEach(el => el.classList.add('selection-mode'));
+        }
+    }
+
+    // 全选/反选
+    function toggleSelectAllCatalog() {
+        // 只选择当前可见的（被过滤的）checkbox
+        // 查找所有在 .catalog-items 容器内的 checkbox
+        const container = document.getElementById('catalog-items');
+        if (!container) return;
+        
+        const checkboxes = container.querySelectorAll('.catalog-item-checkbox');
+        if (checkboxes.length === 0) return;
+        
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        
+        checkboxes.forEach(cb => cb.checked = !allChecked);
     }
     
     // 切换小屋屏幕
@@ -61161,6 +61555,338 @@ async function generateWalletDataAPI(charId) {
         renderWalletData(charId);
     }
 }
+
+    // ========== 农场游戏 ==========
+    const farmGame = {
+        state: {
+            money: 100,
+            level: 1,
+            plots: Array(12).fill(null).map(() => ({ state: 'empty', crop: null, stage: 0, plantTime: 0 })),
+            selectedSeed: 'cat_tomato'
+        },
+        
+        crops: {
+            'cat_tomato': {
+                id: 'cat_tomato',
+                name: '猫猫番茄',
+                cost: 10,
+                sell: 25,
+                growthTime: 5000, 
+                stages: [
+                    // Stage 0: Sprout
+                    `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+                        <rect x="7" y="12" width="2" height="4" fill="#8d6e63"/>
+                        <rect x="7" y="10" width="2" height="2" fill="#4caf50"/>
+                        <rect x="6" y="9" width="1" height="1" fill="#4caf50"/>
+                        <rect x="9" y="9" width="1" height="1" fill="#4caf50"/>
+                    </svg>`, 
+                    // Stage 1: Growing
+                    `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+                        <rect x="7" y="12" width="2" height="4" fill="#8d6e63"/>
+                        <rect x="7" y="8" width="2" height="4" fill="#4caf50"/>
+                        <rect x="5" y="6" width="2" height="2" fill="#4caf50"/>
+                        <rect x="9" y="6" width="2" height="2" fill="#4caf50"/>
+                        <rect x="4" y="5" width="1" height="1" fill="#4caf50"/>
+                        <rect x="11" y="5" width="1" height="1" fill="#4caf50"/>
+                    </svg>`, 
+                    // Stage 2: Mature (Cat Tomato)
+                    `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+                        <!-- Stem -->
+                        <rect x="7" y="2" width="2" height="4" fill="#4caf50"/>
+                        <rect x="5" y="4" width="2" height="1" fill="#4caf50"/>
+                        <rect x="9" y="4" width="2" height="1" fill="#4caf50"/>
+                        <!-- Body -->
+                        <rect x="3" y="6" width="10" height="9" fill="#ff5252"/>
+                        <rect x="4" y="5" width="8" height="1" fill="#ff5252"/>
+                        <rect x="4" y="15" width="8" height="1" fill="#ff5252"/>
+                        <!-- Ears -->
+                        <rect x="3" y="4" width="2" height="2" fill="#ff5252"/>
+                        <rect x="11" y="4" width="2" height="2" fill="#ff5252"/>
+                        <!-- Face -->
+                        <rect x="5" y="9" width="1" height="1" fill="#440000" opacity="0.6"/>
+                        <rect x="10" y="9" width="1" height="1" fill="#440000" opacity="0.6"/>
+                        <rect x="7" y="11" width="2" height="1" fill="#440000" opacity="0.6"/>
+                    </svg>` 
+                ]
+            },
+            'bunny_carrot': {
+                id: 'bunny_carrot',
+                name: '兔兔萝卜',
+                cost: 25,
+                sell: 60,
+                growthTime: 12000,
+                stages: [
+                    // Stage 0
+                    `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+                         <rect x="7" y="14" width="2" height="2" fill="#8d6e63"/>
+                         <rect x="7" y="11" width="2" height="3" fill="#4caf50"/>
+                         <rect x="6" y="11" width="1" height="2" fill="#4caf50"/>
+                    </svg>`,
+                    // Stage 1
+                    `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+                         <rect x="7" y="10" width="2" height="2" fill="#4caf50"/>
+                         <rect x="6" y="8" width="1" height="2" fill="#4caf50"/>
+                         <rect x="9" y="8" width="1" height="2" fill="#4caf50"/>
+                         <rect x="5" y="6" width="1" height="2" fill="#4caf50"/>
+                         <rect x="10" y="6" width="1" height="2" fill="#4caf50"/>
+                    </svg>`,
+                    // Stage 2 (Bunny Carrot)
+                    `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+                        <!-- Greens -->
+                        <rect x="7" y="1" width="2" height="4" fill="#4caf50"/>
+                        <rect x="5" y="2" width="2" height="2" fill="#4caf50"/>
+                        <rect x="9" y="2" width="2" height="2" fill="#4caf50"/>
+                        <!-- Body -->
+                        <rect x="5" y="5" width="6" height="4" fill="#ff9800"/>
+                        <rect x="6" y="9" width="4" height="4" fill="#ff9800"/>
+                        <rect x="7" y="13" width="2" height="2" fill="#ff9800"/>
+                        <rect x="7" y="15" width="2" height="1" fill="#e65100"/>
+                        <!-- Ears (Carrot style) -->
+                        <rect x="5" y="3" width="1" height="2" fill="#ff9800"/>
+                        <rect x="10" y="3" width="1" height="2" fill="#ff9800"/>
+                        <!-- Face -->
+                        <rect x="6" y="7" width="1" height="1" fill="#3e2723"/>
+                        <rect x="9" y="7" width="1" height="1" fill="#3e2723"/>
+                        <rect x="7" y="8" width="2" height="1" fill="#ffcc80"/>
+                    </svg>`
+                ]
+            },
+            'bear_potato': {
+                id: 'bear_potato',
+                name: '熊熊土豆',
+                cost: 50,
+                sell: 130,
+                growthTime: 25000,
+                stages: [
+                   // Stage 0
+                   `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+                        <rect x="6" y="13" width="4" height="3" fill="#8d6e63"/>
+                   </svg>`,
+                   // Stage 1
+                   `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+                        <rect x="7" y="10" width="2" height="4" fill="#4caf50"/>
+                        <rect x="5" y="10" width="2" height="1" fill="#4caf50"/>
+                        <rect x="9" y="10" width="2" height="1" fill="#4caf50"/>
+                   </svg>`,
+                   // Stage 2 (Bear Potato)
+                   `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+                        <!-- Body -->
+                        <rect x="4" y="6" width="8" height="8" fill="#a1887f"/>
+                        <rect x="5" y="5" width="6" height="1" fill="#a1887f"/>
+                        <rect x="5" y="14" width="6" height="1" fill="#a1887f"/>
+                        <!-- Ears -->
+                        <rect x="3" y="5" width="2" height="2" fill="#8d6e63"/>
+                        <rect x="11" y="5" width="2" height="2" fill="#8d6e63"/>
+                        <!-- Face -->
+                        <rect x="6" y="9" width="1" height="1" fill="#3e2723"/>
+                        <rect x="9" y="9" width="1" height="1" fill="#3e2723"/>
+                        <rect x="7" y="10" width="2" height="1" fill="#5d4037"/>
+                    </svg>`
+                ]
+            }
+        },
+
+        init: function() {
+            this.loadState();
+            this.renderGrid();
+            this.renderSeeds();
+            this.updateStats();
+            if (!this.interval) {
+                this.interval = setInterval(() => this.tick(), 1000);
+            }
+        },
+
+        loadState: function() {
+            try {
+                const saved = localStorage.getItem('farmGameState');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    if (data.plots) {
+                        this.state.plots = data.plots.map(p => p || { state: 'empty', crop: null, stage: 0, plantTime: 0 });
+                    }
+                    if (data.money !== undefined) this.state.money = data.money;
+                    if (data.level !== undefined) this.state.level = data.level;
+                    if (data.selectedSeed) this.state.selectedSeed = data.selectedSeed;
+                }
+            } catch (e) { console.error('Farm load error', e); }
+        },
+
+        saveState: function() {
+            localStorage.setItem('farmGameState', JSON.stringify(this.state));
+        },
+
+        updateStats: function() {
+            const moneyEl = document.getElementById('farm-money');
+            const levelEl = document.getElementById('farm-level');
+            if(moneyEl) moneyEl.textContent = this.state.money;
+            if(levelEl) levelEl.textContent = 'Lv.' + this.state.level;
+        },
+
+        renderSeeds: function() {
+            const container = document.getElementById('seed-selector');
+            if(!container) return;
+            container.innerHTML = '';
+            Object.values(this.crops).forEach(crop => {
+                const div = document.createElement('div');
+                div.className = `seed-option ${this.state.selectedSeed === crop.id ? 'selected' : ''}`;
+                div.onclick = () => this.selectSeed(crop.id);
+                div.innerHTML = `
+                    <div class="seed-icon">${crop.stages[2]}</div>
+                    <div class="seed-cost">🪙${crop.cost}</div>
+                    <div class="seed-name">${crop.name}</div>
+                `;
+                container.appendChild(div);
+            });
+        },
+
+        selectSeed: function(id) {
+            this.state.selectedSeed = id;
+            this.renderSeeds();
+        },
+
+        renderGrid: function() {
+            const grid = document.getElementById('farm-grid');
+            if(!grid) return;
+            grid.innerHTML = '';
+            this.state.plots.forEach((plot, index) => {
+                const div = document.createElement('div');
+                div.className = 'farm-plot';
+                if (plot.state !== 'empty') {
+                    div.className += ' wet'; 
+                }
+                
+                div.onclick = () => this.handlePlotClick(index);
+
+                if (plot.state === 'growing' || plot.state === 'ready') {
+                    const cropDef = this.crops[plot.crop];
+                    if(cropDef) {
+                        let svgContent = '';
+                        if (plot.state === 'ready') {
+                            svgContent = cropDef.stages[2];
+                        } else {
+                            const elapsed = Date.now() - plot.plantTime;
+                            const progress = elapsed / cropDef.growthTime;
+                            if (progress < 0.5) svgContent = cropDef.stages[0];
+                            else svgContent = cropDef.stages[1];
+                        }
+                        div.innerHTML = `<div class="crop-sprite" style="${plot.state === 'ready' ? 'animation: crop-bounce 1s infinite' : ''}">${svgContent}</div>`;
+                    }
+                }
+                grid.appendChild(div);
+            });
+        },
+
+        handlePlotClick: function(index) {
+            const plot = this.state.plots[index];
+            
+            if (plot.state === 'empty') {
+                const crop = this.crops[this.state.selectedSeed];
+                if (this.state.money >= crop.cost) {
+                    this.state.money -= crop.cost;
+                    plot.state = 'growing';
+                    plot.crop = crop.id;
+                    plot.plantTime = Date.now();
+                    this.updateStats();
+                    this.renderGrid();
+                    this.saveState();
+                    this.showFloatText(index, `-🪙${crop.cost}`);
+                } else {
+                    alert('金币不足！');
+                }
+            } else if (plot.state === 'ready') {
+                this.harvest(index);
+            }
+        },
+        
+        harvest: function(index) {
+            const plot = this.state.plots[index];
+            if (plot.state !== 'ready') return;
+            
+            const crop = this.crops[plot.crop];
+            if(!crop) return;
+
+            const profit = crop.sell;
+            this.state.money += profit;
+            plot.state = 'empty';
+            plot.crop = null;
+            
+            this.updateStats();
+            this.renderGrid();
+            this.saveState();
+            this.showFloatText(index, `+🪙${profit}`);
+        },
+        
+        harvestAll: function() {
+            let total = 0;
+            let harvestedCount = 0;
+            this.state.plots.forEach((plot, index) => {
+                if (plot.state === 'ready') {
+                    const crop = this.crops[plot.crop];
+                    if(crop) {
+                        total += crop.sell;
+                        plot.state = 'empty';
+                        plot.crop = null;
+                        this.showFloatText(index, `+🪙${crop.sell}`);
+                        harvestedCount++;
+                    }
+                }
+            });
+            
+            if (harvestedCount > 0) {
+                this.state.money += total;
+                this.updateStats();
+                this.renderGrid();
+                this.saveState();
+            }
+        },
+
+        tick: function() {
+            let changed = false;
+            const now = Date.now();
+            const grid = document.getElementById('farm-grid');
+            if(!grid || grid.offsetParent === null) return; 
+
+            this.state.plots.forEach(plot => {
+                if (plot.state === 'growing') {
+                    const crop = this.crops[plot.crop];
+                    if (crop) {
+                        const elapsed = now - plot.plantTime;
+                        const wasStage1 = elapsed < crop.growthTime * 0.5;
+                        const isStage1 = elapsed < crop.growthTime * 0.5;
+                        
+                        if (elapsed >= crop.growthTime && plot.state !== 'ready') {
+                            plot.state = 'ready';
+                            changed = true;
+                        } else if (wasStage1 !== isStage1) {
+                            changed = true; 
+                        }
+                    }
+                }
+            });
+            
+            if (changed) {
+                this.renderGrid();
+                this.saveState();
+            }
+        },
+        
+        showFloatText: function(index, text) {
+            const grid = document.getElementById('farm-grid');
+            if(!grid) return;
+            const plots = grid.children;
+            if (plots[index]) {
+                const float = document.createElement('div');
+                float.className = 'harvest-float';
+                float.textContent = text;
+                plots[index].appendChild(float);
+                setTimeout(() => float.remove(), 1200);
+            }
+        }
+    };
+
+    function initFarmGame() {
+        farmGame.init();
+    }
 
     // ========== 披萨游戏 ==========
     let pizzaGameState = {
