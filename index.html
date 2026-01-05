@@ -22719,12 +22719,14 @@ case 'qzone_comment': { // 使用块级作用域
                                 chat.history.push(hiddenMessage);
                                 await db.chats.put(chat);
                                 
-                                // 显示拉黑通知弹窗（类似用户拉黑AI的弹窗内容）
+                                // 显示拉黑通知弹窗（类似用户拉黑AI的弹窗内容，使用非阻塞方式）
                                 if (isViewingThisChat) {
-                                    await showCustomAlert(
-                                        'AI拉黑通知', 
-                                        `"${chat.name}"决定拉黑你。拉黑后你将无法向其发送消息，直到对方将你移出黑名单，或等待对方主动解除拉黑。`
-                                    );
+                                    setTimeout(() => {
+                                        showCustomAlert(
+                                            'AI拉黑通知', 
+                                            `"${chat.name}"决定拉黑你。拉黑后你将无法向其发送消息，直到对方将你移出黑名单，或等待对方主动解除拉黑。`
+                                        );
+                                    }, 100);
                                 }
                                 
                                 if (isViewingThisChat) {
