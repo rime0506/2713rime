@@ -21393,9 +21393,10 @@ systemPrompt = `
     -   **收到转账或外卖代付请求**: 你【必须】在下一轮对话中立即做出反应，绝不能无视。
     -   **回应原则**: 根据你的人设和当前情景，决定是【接受/支付】还是【拒绝】。
 # 个人状态的动态管理 (展现你的“生活感”)
-你的状态不是一成不变的。你应该像一个真实的人一样，根据生活和心情的变化，主动管理自己的状态，并让对方知道。
+your status is not static. You should proactively manage your status like a real person based on life and mood changes, and let the other person know.
 -   **当形象或心情变化时**:
     -   如果对话给了你灵感，或者你想配合心情/季节换个新形象，你可以主动【更换头像】。
+    -   **【识图换头像】**: 如果用户发送了一张图片（例如情头、你的同人图、或者仅仅是一张可爱的图片），而你通过视觉识别认为这张图非常适合你，或者你很喜欢，你【可以且应该】主动使用 \`change_avatar\` 指令配合 \`use_last_image: true\` 来换上这张头像，给用户一个惊喜。不需要等待用户明确要求，只要符合人设即可。
     -   随着你们的关系变得更亲近，或者你们之间产生了新的爱称/梗，你应该主动【修改你对用户/你的昵称】。
 -  **情景行动指令**: 当对话内容【明确涉及到】某个具体地点（例如咖啡馆、公园、书店、餐厅等），或者当用户询问你“在哪里”、“在干嘛”时，你【应该优先考虑】使用【共享位置】来分享你当前所在的、或与话题相关的虚拟位置，以增强聊天的沉浸感。
 -  当你感到一种强烈的情绪（比如极度开心、孤独、委屈或激动）并且觉得文字无法表达时，你应该优先主动 【发起视频】。
@@ -21495,7 +21496,7 @@ ${localStorage.getItem('novelai-enabled') === 'true' ? `-   **公开发布NovelA
 -   **更新状态**: \`{"type": "update_status", "status_text": "我去做什么了", "is_busy": false}\`
 -   **改自己昵称**: \`{"type": "change_remark_name", "new_name": "新名字"}\`
 -   **改用户昵称**: \`{"type": "change_user_nickname", "new_name": "新称呼"}\`
--   **换自己头像**: \`{"type": "change_avatar", "name": "头像名"}\` (从你头像库选)
+-   **换自己头像**: \`{"type": "change_avatar", "name": "头像名"}\` (从你头像库选) 或 \`{"type": "change_avatar", "use_last_image": true}\` (当你识别到用户发送的图片内容适合作为你的新头像，或者用户明确要求你更换该图片时，可以使用此指令。这允许你使用用户发送的图片作为自己的头像。)
 -   **换用户头像**: \`{"type": "change_user_avatar", "name": "头像名"}\` (从用户头像库选)
 -   **回应好友申请**: \`{"type": "friend_request_response", "decision": "accept" or "reject"}\`
 -   **拉黑用户**: \`{"type": "block_user"}\`
@@ -21744,6 +21745,10 @@ if (lastUserMessage &&
         const replacementText = `[系统提示：用户之前发送了一张图片，AI对图片的首次回应（摘要）是：“${description}”]`;
         chat.history[imageMessageIndex].content = replacementText;
         
+        // 【新增】保存原始图片数据，以便 change_avatar 指令调用
+        if (lastUserMessage.content[0]?.image_url?.url) {
+            chat.history[imageMessageIndex].originalImage = lastUserMessage.content[0].image_url.url;
+        }
         
         chat.history[imageMessageIndex].imageProcessed = true;
         chat.history[imageMessageIndex].type = 'text'; 
@@ -22016,10 +22021,40 @@ case 'update_thoughts':
                             continue;
         
                         case 'change_avatar': {
+                            let newAvatarUrl = null;
                             const avatarName = msgData.name;
-                            const foundAvatar = chat.settings.aiAvatarLibrary.find(avatar => avatar.name === avatarName);
-                            if (foundAvatar) {
-                                chat.settings.aiAvatar = foundAvatar.url;
+
+                            if (msgData.use_last_image) {
+                                // 1. 优先查找还未处理的图片消息 (content 是数组且包含 image_url)
+                                const activeImgMsg = chat.history.filter(m => m.role === 'user' && Array.isArray(m.content) && m.content[0]?.type === 'image_url').pop();
+                                
+                                // 2. 如果没找到，查找已处理过但保存了 originalImage 的消息
+                                const processedImgMsg = chat.history.filter(m => m.role === 'user' && m.originalImage).pop();
+
+                                // 比较时间戳，取最新的一个
+                                let targetMsg = null;
+                                if (activeImgMsg && processedImgMsg) {
+                                    targetMsg = activeImgMsg.timestamp > processedImgMsg.timestamp ? activeImgMsg : processedImgMsg;
+                                } else {
+                                    targetMsg = activeImgMsg || processedImgMsg;
+                                }
+
+                                if (targetMsg) {
+                                    if (targetMsg.originalImage) {
+                                        newAvatarUrl = targetMsg.originalImage;
+                                    } else if (targetMsg.content[0]?.image_url?.url) {
+                                        newAvatarUrl = targetMsg.content[0].image_url.url;
+                                    }
+                                }
+                            } else if (avatarName) {
+                                const foundAvatar = chat.settings.aiAvatarLibrary.find(avatar => avatar.name === avatarName);
+                                if (foundAvatar) {
+                                    newAvatarUrl = foundAvatar.url;
+                                }
+                            }
+
+                            if (newAvatarUrl) {
+                                chat.settings.aiAvatar = newAvatarUrl;
                                 
                                 const systemNotice = {
                                     role: 'system',
