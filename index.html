@@ -10552,6 +10552,8 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
               60-300。值越大，费用越低，但角色反应越慢。 </p> </label> <input type="number" id="background-interval-input" min="30" value="60" style="width: 80px; text-align: center;"> </div>
         <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;"> <label for="block-cooldown-input" style="margin-bottom: 0;"data-lang-key="apiBlockCooldownLabel"> AI被拉黑后冷静期 (小时) <p style="font-size: 12px; font-weight: normal; color: #999; margin-top: 5px;">
               被拉黑超过这个时间后，AI才有几率重新申请好友。 </p> </label> <input type="number" id="block-cooldown-input" min="0.1" step="0.1" value="1" style="width: 80px; text-align: center;"> </div>
+        <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;"> <label for="user-block-cooldown-input" style="margin-bottom: 0;"> 用户被AI拉黑后冷静期 (小时) <p style="font-size: 12px; font-weight: normal; color: #999; margin-top: 5px;">
+              被AI拉黑超过这个时间后，AI将有几率在后台检查并主动将你移出黑名单。 </p> </label> <input type="number" id="user-block-cooldown-input" min="0.1" step="0.1" value="1" style="width: 80px; text-align: center;"> </div>
         <hr style="margin: 30px 0; opacity: 0.3;">
         <h3 style="border-bottom: 1px solid #eee; padding-bottom: 10px;"data-lang-key="apiTtsSettings">语音消息设置 (Minimax TTS)</h3>
         <p style="font-size: 14px; color: #666; background-color: #f0f0f0; padding: 10px; border-radius: 8px;"> 在 AI 回复的文字前加上 <code style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 4px;">[V]</code> 前缀，即可让该条消息自动渲染为可播放的语音。</p>
@@ -12902,6 +12904,7 @@ const translations = {
     apiEnableBgActivityLabel: '启用后台角色活动',
     apiBgIntervalLabel: '后台活动检测间隔 (秒)',
     apiBlockCooldownLabel: 'AI被拉黑后冷静期 (小时)',
+    apiUserBlockCooldownLabel: '用户被AI拉黑后冷静期 (小时)',
     apiTtsSettings: '语音消息设置 (Minimax TTS)',
     apiTtsModelLabel: '语音模型 (Model)',
     apiPerformanceSettings: '性能与显示设置',
@@ -18547,9 +18550,26 @@ function createChatListItem(chat) {
                             `;
                             break;
                         case 'blocked_by_ai':
+                            const aiBlockTimestamp = chat.relationship.blockedTimestamp || 0;
+                            const aiCooldownHours = state.globalSettings.userBlockCooldownHours || 1;
+                            const aiCooldownMilliseconds = aiCooldownHours * 60 * 60 * 1000;
+                            const aiTimeSinceBlock = Date.now() - aiBlockTimestamp;
+                            const isAiCooldownOver = aiTimeSinceBlock > aiCooldownMilliseconds;
+                            const aiTimeRemainingMinutes = Math.max(0, Math.ceil((aiCooldownMilliseconds - aiTimeSinceBlock) / (1000 * 60)));
+
                             lockHtml = `
                                 <span class="lock-text">你被对方拉黑了。</span>
                                 <button id="apply-friend-btn" class="lock-action-btn">重新申请加为好友</button>
+                                <div style="margin-top: 20px; padding: 10px; border: 1px dashed #ccc; border-radius: 8px; font-size: 11px; text-align: left; color: #666; background: rgba(0,0,0,0.02);">
+                                    <strong style="color: #333;">【AI解封状态】</strong><br>
+                                    - 后台活动总开关: ${state.globalSettings.enableBackgroundActivity ? '<span style="color: green;">已开启</span>' : '<span style="color: red;">已关闭</span>'}<br>
+                                    - 系统心跳计时器: ${isSimulationRunning ? '<span style="color: green;">运行中</span>' : '<span style="color: red;">未运行</span>'}<br>
+                                    - 当前角色状态: <strong>${chat.relationship.status}</strong><br>
+                                    - 需要冷静(小时): <strong>${aiCooldownHours}</strong><br>
+                                    - 冷静期是否结束: ${isAiCooldownOver ? '<span style="color: green;">是</span>' : `<span style="color: orange;">否 (还剩约 ${aiTimeRemainingMinutes} 分钟)</span>`}<br>
+                                    - 触发条件: ${isAiCooldownOver && state.globalSettings.enableBackgroundActivity ? '<span style="color: green;">已满足，等待AI主动解封</span>' : '<span style="color: red;">未满足</span>'}
+                                </div>
+                                <button id="force-ai-unblock-check-btn" class="lock-action-btn secondary" style="margin-top: 10px;">强制检测AI是否解封</button>
                             `;
                             break;
                         case 'pending_user_approval':
@@ -24384,7 +24404,22 @@ async function runBackgroundSimulationTick() {
     
     const allSingleChats = Object.values(state.chats).filter(chat => !chat.isGroup);
     allSingleChats.forEach(chat => {
-        if (chat.relationship?.status === 'blocked_by_user') {
+        // === 用户被AI拉黑的检测 ===
+        if (chat.relationship?.status === 'blocked_by_ai') {
+            const blockedTimestamp = chat.relationship.blockedTimestamp || 0;
+            if (!blockedTimestamp) return;
+            const blockedDuration = Date.now() - blockedTimestamp;
+            const cooldownMilliseconds = (state.globalSettings.userBlockCooldownHours || 1) * 60 * 60 * 1000;
+            
+            // 如果冷静期已过，AI 有 5% 的概率进行一次解封检测
+            if (blockedDuration > cooldownMilliseconds && Math.random() < 0.05) {
+                console.log(`角色 "${chat.name}" 的拉黑冷静期已过，触发解封检测...`);
+                triggerAiUnblockCheck(chat.id);
+            }
+        }
+        
+        // === AI被用户拉黑的检测 ===
+        else if (chat.relationship?.status === 'blocked_by_user') {
             const blockedTimestamp = chat.relationship.blockedTimestamp;
             if (!blockedTimestamp) return;
             const blockedDuration = Date.now() - blockedTimestamp;
@@ -28539,6 +28574,81 @@ let selectedFrames = new Set();
           
         
         
+        // 新增：触发AI解封检测
+        async function triggerAiUnblockCheck(chatId) {
+            const chat = state.chats[chatId];
+            if (!chat) return;
+
+            const { proxyUrl, apiKey, model } = state.apiConfig;
+            if (!proxyUrl || !apiKey || !model) {
+                alert('请先配置API设置。');
+                return;
+            }
+
+            const decisionPrompt = `
+# 你的任务
+你现在是角色“${chat.name}”。你之前把用户拉黑了。现在，根据你的角色设定和当时拉黑的原因，请重新审视你们的关系。
+# 供你决策的信息:
+- **你的角色设定**: ${chat.settings.aiPersona}
+- **拉黑状态持续时间**: 已经过去了一段时间。
+- **你的任务**: 决定是否现在将用户移出黑名单。
+# 你的唯一指令
+根据以上信息，你【必须】做出决定。你的回复【必须且只能】是一个JSON对象，格式如下:
+{"decision": "unblock", "reason": "（在这里写下你决定解封的理由）"}
+或
+{"decision": "keep_blocked", "reason": "（在这里写下你决定继续拉黑的理由）"}
+`;
+
+            try {
+                const messagesForDecision = [
+                    { role: 'system', content: decisionPrompt },
+                    { role: 'user', content: "请根据你的心情，立即做出决定。" }
+                ];
+
+                let isGemini = proxyUrl === GEMINI_API_URL;
+                let geminiConfig = toGeminiRequestData(model, apiKey, decisionPrompt, [{ role: 'user', content: "请根据你的心情，立即做出决定。" }]);
+
+                const response = isGemini 
+                    ? await fetch(geminiConfig.url, geminiConfig.data) 
+                    : await fetch(`${proxyUrl}/v1/chat/completions`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}`},
+                        body: JSON.stringify({model: model, messages: messagesForDecision, temperature: 0.8})
+                    });
+
+                if (!response.ok) throw new Error(`API失败: ${(await response.json()).error.message}`);
+                
+                const data = await response.json();
+                const rawContent = getGeminiResponseText(data).replace(/^```json\s*/, '').replace(/```$/, '').trim();
+                const decisionObj = JSON.parse(rawContent);
+
+                if (decisionObj.decision === 'unblock') {
+                    chat.relationship.status = 'friend';
+                    // 清除拉黑时间戳
+                    chat.relationship.blockedTimestamp = null;
+                    
+                    const unblockMessage = { role: 'assistant', senderName: chat.name, content: `[系统提示：${chat.name} 主动将你移出了黑名单。理由：${decisionObj.reason}]`, timestamp: Date.now() };
+                    chat.history.push(unblockMessage);
+                    
+                    // 仅当用户当前正在查看此聊天时才弹窗提示，避免干扰
+                    if (document.getElementById('chat-interface-screen').classList.contains('active') && state.activeChatId === chatId) {
+                        alert(`好消息！${chat.name} 已经把你放出来了！\n理由：${decisionObj.reason}`);
+                    }
+                } else {
+                    // 仅当用户当前正在查看此聊天时才弹窗提示
+                    if (document.getElementById('chat-interface-screen').classList.contains('active') && state.activeChatId === chatId) {
+                        alert(`${chat.name} 决定继续拉黑你。\n理由：${decisionObj.reason}`);
+                    }
+                }
+
+                await db.chats.put(chat);
+                renderChatInterface(chatId);
+            } catch (error) {
+                console.error("解封检测出错:", error);
+                alert(`检测出错: ${error.message}`);
+            }
+        }
+
         async function triggerAiFriendApplication(chatId) {
             const chat = state.chats[chatId];
             if (!chat) return;
@@ -50333,6 +50443,13 @@ if (deleteBtn) {
                 alert("正在手动触发好友申请流程，请稍后...\n如果API调用成功，将弹出提示。如果失败，也会有错误提示。如果长时间无反应，说明AI可能决定暂时不申请。");
                 await triggerAiFriendApplication(chat.id);
                 renderChatInterface(chat.id); 
+                return;
+            }
+
+            if (e.target.id === 'force-ai-unblock-check-btn') {
+                alert("正在强制检测AI是否愿意解除拉黑，请稍后...");
+                await triggerAiUnblockCheck(chat.id);
+                renderChatInterface(chat.id);
                 return;
             }
         
