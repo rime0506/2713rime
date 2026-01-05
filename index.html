@@ -38,6 +38,7 @@
             display: flex;
             flex-direction: column;
             gap: 5px;
+            position: relative; /* 确保 lockOverlay 相对于此定位 */
         }
 #status-bar {
     display: none;
@@ -2695,7 +2696,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            background-color: rgba(247, 247, 247, 0.9);
+            background-color: rgba(247, 247, 247, 0.95);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             z-index: 150; 
@@ -2706,11 +2707,16 @@
             box-sizing: border-box;
             border-top: 1px solid var(--border-color);
             text-align: center;
+            min-height: 200px; /* 最小高度确保内容可见 */
+            max-height: 80vh; /* 最大高度不超过视口80% */
+            overflow-y: auto; /* 内容过多时滚动 */
         }
         #chat-lock-content {
             display: flex;
             flex-direction: column;
             gap: 15px;
+            width: 100%;
+            max-width: 300px;
         }
         #chat-lock-content .lock-text {
             color: var(--text-secondary);
@@ -10876,9 +10882,12 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         </div>
       </div>
       <div id="chat-messages">
-        <div id="typing-indicator">对方正在输入...</div>
+        <div id="typing-indicator">对方正在输入...        </div>
       </div>
       <div id="chat-input-area">
+        <div id="chat-lock-overlay">
+          <div id="chat-lock-content"></div>
+        </div>
         <div id="chat-at-mention-popup" class="at-mention-popup"></div>
         <div id="reply-preview-bar">
           <div class="reply-preview-content">
@@ -10977,9 +10986,6 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         <div id="chat-input-main-row"> <button id="chat-expand-btn" class="chat-action-icon-btn action-button" title="展开功能">+</button><textarea id="chat-input" rows="1" placeholder="输入消息..."></textarea>
           <div id="input-actions-wrapper"> <button id="wait-reply-btn" title="等待回复"><img src="https://i.postimg.cc/q72zq80N/ECE92-BBC-BE57-48-E9-BB2-C-345-B6019-C4-B2.png" alt="等待回复"></button> <button id="send-btn" class="action-button">发送</button> </div>
         </div>
-      </div>
-      <div id="chat-lock-overlay">
-        <div id="chat-lock-content"></div>
       </div>
 <div id="nai-gallery-panel">
     <div id="nai-gallery-panel-header">
