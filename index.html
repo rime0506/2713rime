@@ -21438,9 +21438,9 @@ ${linkedContents}
                 
                 // 【图片识别与换头像功能】收集用户最近发送的图片
                 const recentUserImages = [];
-                const recentUserMessages = historySlice.filter(msg => msg.role === 'user' && !msg.isHidden);
+                const userMessagesForImages = historySlice.filter(msg => msg.role === 'user' && !msg.isHidden);
                 let imageCount = 0;
-                recentUserMessages.forEach((msg) => {
+                userMessagesForImages.forEach((msg) => {
                     if (msg.type === 'user_photo' && msg.content) {
                         imageCount++;
                         recentUserImages.push({
