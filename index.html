@@ -11738,9 +11738,10 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         grid-template-rows: repeat(3, 1fr);
-        gap: 4px;
+        gap: 12px;
         padding: 15px;
         border-radius: 8px;
+        box-sizing: border-box;
     }
     
     .game-container .tile {
@@ -11751,6 +11752,12 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         cursor: pointer;
         border-radius: 12px;
         overflow: hidden;
+        aspect-ratio: 1;
+        min-width: 0;
+        min-height: 0;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
     }
     
     .game-container .tile svg {
@@ -12357,7 +12364,7 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
     }
 
     .seed-selector-popup {
-        position: absolute;
+        position: fixed;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
@@ -12365,20 +12372,80 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         padding: 15px;
         border-radius: 12px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        z-index: 20;
+        z-index: 1000;
         min-width: 200px;
+        max-width: 90vw;
+        width: 280px;
+        max-height: 400px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        touch-action: none;
+    }
+    
+    /* 弹窗打开时阻止页面滚动 */
+    body.seed-popup-open {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+    }
+    
+    #farm-screen.seed-popup-open {
+        overflow: hidden;
+    }
+    
+    .farm-container.seed-popup-open {
+        overflow: hidden;
     }
 
     .seed-selector-popup h4 {
         margin: 0 0 10px 0;
         font-size: 14px;
         color: #333;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .seed-selector-popup-header {
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
     }
 
     .seed-option-list {
         display: flex;
         flex-direction: column;
         gap: 8px;
+        max-height: 300px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        padding-right: 5px;
+        touch-action: pan-y;
+        overscroll-behavior: contain;
+        flex: 1;
+        min-height: 0;
+        position: relative;
+    }
+    
+    /* 确保滚动条样式 */
+    .seed-option-list::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .seed-option-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+    
+    .seed-option-list::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+    
+    .seed-option-list::-webkit-scrollbar-thumb:hover {
+        background: #555;
     }
 
     .seed-option-item {
@@ -12390,6 +12457,8 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.2s;
+        flex-shrink: 0;
+        touch-action: manipulation;
     }
 
     .seed-option-item:hover {
@@ -12436,6 +12505,8 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         display: flex;
         align-items: center;
         justify-content: center;
+        z-index: 21;
+        flex-shrink: 0;
     }
 
     .close-popup-btn:hover {
@@ -12875,6 +12946,7 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
           <select id="moment-character-select" style="padding: 5px 10px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--secondary-bg); color: var(--text-primary); font-size: 14px; cursor: pointer;">
             <option value="">选择角色</option>
           </select>
+          <button id="moment-cover-settings-btn" style="padding: 5px 10px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--secondary-bg); color: var(--text-primary); font-size: 14px; cursor: pointer; margin-left: 10px;" title="封面设置">🎨</button>
         </div>
       </div>
       <div id="moment-content" style="flex: 1; display: flex; justify-content: center; align-items: center; background-color: #4a5568; overflow: hidden; position: relative;">
@@ -12882,6 +12954,66 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
           <div class="book" id="moment-book">
             <!-- 书籍页面将动态生成 -->
           </div>
+        </div>
+      </div>
+    </div>
+    <!-- 封面设置弹窗 -->
+    <div id="moment-cover-settings-modal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+          <span>封面设置</span>
+          <span class="close-btn" onclick="closeMomentCoverSettings()">×</span>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+              <input type="checkbox" id="cover-show-title" checked>
+              <span>显示封面标题</span>
+            </label>
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label>封面标题文字</label>
+            <input type="text" id="cover-title-text" placeholder="输入封面标题" style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;">
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label>标题颜色</label>
+            <input type="color" id="cover-title-color" value="#2a2a2a" style="width: 100%; height: 40px; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;">
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label>背景颜色</label>
+            <input type="color" id="cover-bg-color" value="#d0d0d0" style="width: 100%; height: 40px; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer;">
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label>上传背景壁纸</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <input type="file" id="cover-bg-image-input" accept="image/*" style="display: none;" onchange="handleCoverImageUpload(event)">
+              <button onclick="document.getElementById('cover-bg-image-input').click()" style="padding: 8px 15px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--secondary-bg); cursor: pointer;">选择图片</button>
+              <button id="cover-remove-bg-btn" onclick="removeCoverBackgroundImage()" style="padding: 8px 15px; border: 1px solid var(--border-color); border-radius: 6px; background-color: #ff3b30; color: white; cursor: pointer; display: none;">移除壁纸</button>
+            </div>
+            <div id="cover-bg-preview" style="margin-top: 10px; max-width: 100%; max-height: 200px; border-radius: 8px; overflow: hidden; display: none;">
+              <img id="cover-bg-preview-img" src="" style="width: 100%; height: auto; display: block;">
+            </div>
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label>上传封面图片</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <input type="file" id="cover-image-input" accept="image/*" style="display: none;" onchange="handleCoverImageUpload(event, true)">
+              <button onclick="document.getElementById('cover-image-input').click()" style="padding: 8px 15px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--secondary-bg); cursor: pointer;">选择图片</button>
+              <button id="cover-remove-img-btn" onclick="removeCoverImage()" style="padding: 8px 15px; border: 1px solid var(--border-color); border-radius: 6px; background-color: #ff3b30; color: white; cursor: pointer; display: none;">移除图片</button>
+            </div>
+            <div id="cover-img-preview" style="margin-top: 10px; max-width: 100%; max-height: 200px; border-radius: 8px; overflow: hidden; display: none;">
+              <img id="cover-img-preview-img" src="" style="width: 100%; height: auto; display: block;">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="cancel" onclick="closeMomentCoverSettings()">取消</button>
+          <button class="save" onclick="saveMomentCoverSettings()">保存</button>
         </div>
       </div>
     </div>
@@ -64018,13 +64150,27 @@ async function generateWalletDataAPI(charId) {
             
             const popup = document.createElement('div');
             popup.className = 'seed-selector-popup';
-            popup.innerHTML = '<button class="close-popup-btn" onclick="this.parentElement.remove()">×</button><h4>选择种子</h4><div class="seed-option-list">';
+            
+            // 创建关闭弹窗的函数
+            const closePopup = function() {
+                document.body.classList.remove('seed-popup-open');
+                const farmScreen = document.getElementById('farm-screen');
+                if (farmScreen) farmScreen.classList.remove('seed-popup-open');
+                const farmContainer = document.querySelector('.farm-container');
+                if (farmContainer) farmContainer.classList.remove('seed-popup-open');
+                popup.remove();
+            };
+            
+            // 将关闭函数保存到popup元素上，方便在onclick中调用
+            popup.closePopup = closePopup;
+            
+            popup.innerHTML = '<button class="close-popup-btn">×</button><h4>选择种子</h4><div class="seed-option-list">';
             
             Object.keys(this.seeds).forEach(type => {
                 const seed = this.seeds[type];
                 const disabled = seed.count <= 0;
                 popup.innerHTML += `
-                    <div class="seed-option-item ${disabled ? 'disabled' : ''}" ${disabled ? '' : `onclick="farmingGame.plantSeed(${tileIndex}, '${type}'); this.closest('.seed-selector-popup').remove();"`}>
+                    <div class="seed-option-item ${disabled ? 'disabled' : ''}" ${disabled ? '' : `onclick="farmingGame.plantSeed(${tileIndex}, '${type}'); const pop=this.closest('.seed-selector-popup'); if(pop&&pop.closePopup)pop.closePopup();"`}>
                         <div class="seed-option-icon">${this.seedSVG[type]}</div>
                         <div class="seed-option-info">
                             <div class="seed-option-name">${seed.name}</div>
@@ -64035,7 +64181,71 @@ async function generateWalletDataAPI(charId) {
             });
             
             popup.innerHTML += '</div>';
-            tileDiv.appendChild(popup);
+            // 由于弹窗是fixed定位，添加到body更合适
+            document.body.appendChild(popup);
+            
+            // 阻止页面主体滚动
+            document.body.classList.add('seed-popup-open');
+            const farmScreen = document.getElementById('farm-screen');
+            if (farmScreen) farmScreen.classList.add('seed-popup-open');
+            const farmContainer = document.querySelector('.farm-container');
+            if (farmContainer) farmContainer.classList.add('seed-popup-open');
+            
+            // 关闭弹窗时恢复页面滚动
+            const closeBtn = popup.querySelector('.close-popup-btn');
+            if (closeBtn) {
+                closeBtn.onclick = closePopup;
+            }
+            
+            // 阻止弹窗背景区域的滚动，只允许列表滚动
+            popup.addEventListener('touchmove', function(e) {
+                const list = popup.querySelector('.seed-option-list');
+                // 如果触摸点在列表内，允许滚动；否则阻止
+                if (!list || !list.contains(e.target)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }, { passive: false });
+            
+            popup.addEventListener('wheel', function(e) {
+                const list = popup.querySelector('.seed-option-list');
+                // 如果滚轮事件在列表内，允许滚动；否则阻止
+                if (!list || !list.contains(e.target)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }, { passive: false });
+            
+            // 阻止弹窗区域的触摸事件冒泡到页面，防止页面滚动
+            popup.addEventListener('touchstart', function(e) {
+                e.stopPropagation();
+            }, { passive: true });
+            
+            popup.addEventListener('touchend', function(e) {
+                e.stopPropagation();
+            }, { passive: true });
+            
+            // 确保列表滚动时不会影响页面主体
+            const listElement = popup.querySelector('.seed-option-list');
+            if (listElement) {
+                // 列表内的滚动事件不冒泡
+                listElement.addEventListener('touchstart', function(e) {
+                    e.stopPropagation();
+                }, { passive: true });
+                
+                listElement.addEventListener('touchmove', function(e) {
+                    // 允许列表滚动，但阻止冒泡
+                    e.stopPropagation();
+                }, { passive: false });
+                
+                listElement.addEventListener('touchend', function(e) {
+                    e.stopPropagation();
+                }, { passive: true });
+                
+                listElement.addEventListener('wheel', function(e) {
+                    e.stopPropagation();
+                }, { passive: false });
+            }
         },
         
         // 播种
@@ -64827,9 +65037,18 @@ async function generateWalletDataAPI(charId) {
         if (!momentBooks[characterId]) {
             momentBooks[characterId] = {
                 pages: [
-                    { title: '封面', content: `${character.originalName || character.name || '未知'}的瞬间` },
-                    { title: '第一页', content: '这是第一页的内容...' },
-                    { title: '第二页', content: '这是第二页的内容...' },
+                    { 
+                        title: `${character.originalName || character.name || '未知'}的瞬间`, 
+                        content: '',
+                        coverStyle: {
+                            showTitle: true,
+                            backgroundColor: '#d0d0d0',
+                            titleColor: '#2a2a2a',
+                            backgroundImage: null
+                        }
+                    },
+                    { title: '', content: '这是第一页的内容...' },
+                    { title: '', content: '这是第二页的内容...' },
                     { title: '封底', content: '--- 完 ---' }
                 ],
                 currentPage: 1
@@ -64851,7 +65070,16 @@ async function generateWalletDataAPI(charId) {
         if (!momentBooks[characterId]) {
             momentBooks[characterId] = {
                 pages: [
-                    { title: '封面', content: `${character.originalName || character.name || '未知'}的瞬间` },
+                    { 
+                        title: `${character.originalName || character.name || '未知'}的瞬间`, 
+                        content: '',
+                        coverStyle: {
+                            showTitle: true,
+                            backgroundColor: '#d0d0d0',
+                            titleColor: '#2a2a2a',
+                            backgroundImage: null
+                        }
+                    },
                     { title: '封底', content: '--- 完 ---' }
                 ],
                 currentPage: 1
@@ -64865,8 +65093,9 @@ async function generateWalletDataAPI(charId) {
             let content = '';
             let isHtml = false;
             
-            if (msg.type === 'text') {
-                content = msg.content || '';
+            // 优先提取content字段（无论消息类型是什么）
+            if (msg.content !== undefined && msg.content !== null) {
+                content = String(msg.content);
                 // 检查是否包含HTML标签
                 if (content.includes('<') && content.includes('>')) {
                     isHtml = true;
@@ -64878,7 +65107,8 @@ async function generateWalletDataAPI(charId) {
             } else if (msg.type === 'file' && msg.fileName) {
                 content = `[文件] ${msg.fileName}`;
             } else {
-                content = JSON.stringify(msg);
+                // 如果都没有content字段，返回空字符串
+                content = '';
             }
             
             if (isHtml) {
@@ -64889,8 +65119,7 @@ async function generateWalletDataAPI(charId) {
         };
         
         // 将所有消息合并到一页（在封底之前插入）
-        const basePageNum = book.pages.length - 1; // 封底之前的页面数
-        const pageTitle = `第${basePageNum + 1}页`;
+        // 不添加"第X页"标题，直接使用空标题
         
         // 将所有消息内容合并，检查是否包含HTML
         const formattedMessages = messages.map(msg => formatMessage(msg));
@@ -64905,7 +65134,7 @@ async function generateWalletDataAPI(charId) {
             allMessagesContent = formattedMessages.join('\n\n---\n\n');
         }
         
-        const newPage = { title: pageTitle, content: allMessagesContent, isHtml: hasHtml };
+        const newPage = { title: '', content: allMessagesContent, isHtml: hasHtml };
         
         // 在封底之前插入新页面
         const lastPage = book.pages.pop(); // 移除封底
@@ -64923,6 +65152,161 @@ async function generateWalletDataAPI(charId) {
         } catch (e) {
             console.warn('保存瞬间书籍失败:', e);
         }
+    }
+    
+    // 打开封面设置弹窗
+    function openMomentCoverSettings() {
+        const characterId = currentMomentCharacterId;
+        if (!characterId || !momentBooks[characterId]) {
+            showCustomAlert('提示', '请先选择一个角色。');
+            return;
+        }
+        
+        const book = momentBooks[characterId];
+        const coverPage = book.pages[0];
+        const coverStyle = coverPage.coverStyle || {
+            showTitle: true,
+            backgroundColor: '#d0d0d0',
+            titleColor: '#2a2a2a',
+            backgroundImage: null,
+            coverImage: null
+        };
+        
+        // 填充表单
+        document.getElementById('cover-show-title').checked = coverStyle.showTitle !== false;
+        document.getElementById('cover-title-text').value = coverPage.title || '';
+        document.getElementById('cover-title-color').value = coverStyle.titleColor || '#2a2a2a';
+        document.getElementById('cover-bg-color').value = coverStyle.backgroundColor || '#d0d0d0';
+        
+        // 显示背景图片预览
+        if (coverStyle.backgroundImage) {
+            document.getElementById('cover-bg-preview-img').src = coverStyle.backgroundImage;
+            document.getElementById('cover-bg-preview').style.display = 'block';
+            document.getElementById('cover-remove-bg-btn').style.display = 'inline-block';
+        } else {
+            document.getElementById('cover-bg-preview').style.display = 'none';
+            document.getElementById('cover-remove-bg-btn').style.display = 'none';
+        }
+        
+        // 显示封面图片预览
+        if (coverStyle.coverImage) {
+            document.getElementById('cover-img-preview-img').src = coverStyle.coverImage;
+            document.getElementById('cover-img-preview').style.display = 'block';
+            document.getElementById('cover-remove-img-btn').style.display = 'inline-block';
+        } else {
+            document.getElementById('cover-img-preview').style.display = 'none';
+            document.getElementById('cover-remove-img-btn').style.display = 'none';
+        }
+        
+        document.getElementById('moment-cover-settings-modal').style.display = 'flex';
+    }
+    
+    // 关闭封面设置弹窗
+    function closeMomentCoverSettings() {
+        document.getElementById('moment-cover-settings-modal').style.display = 'none';
+    }
+    
+    // 保存封面设置
+    function saveMomentCoverSettings() {
+        const characterId = currentMomentCharacterId;
+        if (!characterId || !momentBooks[characterId]) {
+            showCustomAlert('错误', '无法保存设置。');
+            return;
+        }
+        
+        const book = momentBooks[characterId];
+        const coverPage = book.pages[0];
+        
+        // 更新封面数据
+        coverPage.title = document.getElementById('cover-title-text').value || '';
+        coverPage.coverStyle = coverPage.coverStyle || {};
+        coverPage.coverStyle.showTitle = document.getElementById('cover-show-title').checked;
+        coverPage.coverStyle.titleColor = document.getElementById('cover-title-color').value;
+        coverPage.coverStyle.backgroundColor = document.getElementById('cover-bg-color').value;
+        
+        // 保留已上传的图片（如果存在）
+        const bgPreview = document.getElementById('cover-bg-preview-img');
+        if (bgPreview && bgPreview.src && bgPreview.src !== '') {
+            coverPage.coverStyle.backgroundImage = bgPreview.src;
+        }
+        
+        const coverPreview = document.getElementById('cover-img-preview-img');
+        if (coverPreview && coverPreview.src && coverPreview.src !== '') {
+            coverPage.coverStyle.coverImage = coverPreview.src;
+        }
+        
+        // 保存到本地存储
+        try {
+            localStorage.setItem('momentBooks', JSON.stringify(momentBooks));
+        } catch (e) {
+            console.warn('保存瞬间书籍失败:', e);
+        }
+        
+        // 重新渲染书籍
+        renderMomentBook(book, characterId);
+        
+        closeMomentCoverSettings();
+        showCustomAlert('成功', '封面设置已保存。');
+    }
+    
+    // 处理封面图片上传
+    function handleCoverImageUpload(event, isCoverImage = false) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imageUrl = e.target.result;
+            const characterId = currentMomentCharacterId;
+            if (!characterId || !momentBooks[characterId]) return;
+            
+            const book = momentBooks[characterId];
+            const coverPage = book.pages[0];
+            coverPage.coverStyle = coverPage.coverStyle || {};
+            
+            if (isCoverImage) {
+                coverPage.coverStyle.coverImage = imageUrl;
+                document.getElementById('cover-img-preview-img').src = imageUrl;
+                document.getElementById('cover-img-preview').style.display = 'block';
+                document.getElementById('cover-remove-img-btn').style.display = 'inline-block';
+            } else {
+                coverPage.coverStyle.backgroundImage = imageUrl;
+                document.getElementById('cover-bg-preview-img').src = imageUrl;
+                document.getElementById('cover-bg-preview').style.display = 'block';
+                document.getElementById('cover-remove-bg-btn').style.display = 'inline-block';
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    // 移除背景图片
+    function removeCoverBackgroundImage() {
+        const characterId = currentMomentCharacterId;
+        if (characterId && momentBooks[characterId]) {
+            const book = momentBooks[characterId];
+            const coverPage = book.pages[0];
+            if (coverPage.coverStyle) {
+                coverPage.coverStyle.backgroundImage = null;
+            }
+        }
+        document.getElementById('cover-bg-preview').style.display = 'none';
+        document.getElementById('cover-remove-bg-btn').style.display = 'none';
+        document.getElementById('cover-bg-image-input').value = '';
+    }
+    
+    // 移除封面图片
+    function removeCoverImage() {
+        const characterId = currentMomentCharacterId;
+        if (characterId && momentBooks[characterId]) {
+            const book = momentBooks[characterId];
+            const coverPage = book.pages[0];
+            if (coverPage.coverStyle) {
+                coverPage.coverStyle.coverImage = null;
+            }
+        }
+        document.getElementById('cover-img-preview').style.display = 'none';
+        document.getElementById('cover-remove-img-btn').style.display = 'none';
+        document.getElementById('cover-image-input').value = '';
     }
 
     function renderMomentBook(book, characterId) {
@@ -64948,15 +65332,37 @@ async function generateWalletDataAPI(charId) {
             
             // 设置页面内容
             if (index === 0) {
-                // 封面
-                front.innerHTML = `<div class="page-title">${escapeHtml(pageData.title)}</div><div class="page-content">${pageData.isHtml ? pageData.content : escapeHtml(pageData.content)}</div>`;
+                // 封面 - 支持自定义样式
+                const coverStyle = pageData.coverStyle || {};
+                let coverBgStyle = '';
+                
+                // 如果有封面图片，优先显示封面图片
+                if (coverStyle.coverImage) {
+                    coverBgStyle = `background-image: url(${coverStyle.coverImage}); background-size: cover; background-position: center;`;
+                } else if (coverStyle.backgroundImage) {
+                    coverBgStyle = `background-image: url(${coverStyle.backgroundImage}); background-size: cover; background-position: center;`;
+                } else {
+                    coverBgStyle = `background-color: ${coverStyle.backgroundColor || '#d0d0d0'};`;
+                }
+                
+                let coverContent = '';
+                if (coverStyle.showTitle !== false && pageData.title) {
+                    coverContent += `<div class="page-title" style="color: ${coverStyle.titleColor || '#2a2a2a'}; ${coverStyle.titleStyle || ''}">${escapeHtml(pageData.title)}</div>`;
+                }
+                if (pageData.content) {
+                    const contentStyle = coverStyle.contentStyle || '';
+                    coverContent += `<div class="page-content" style="${contentStyle}">${pageData.isHtml ? pageData.content : escapeHtml(pageData.content)}</div>`;
+                }
+                
+                front.style.cssText = coverBgStyle;
+                front.innerHTML = coverContent;
             } else if (index === pages.length - 1) {
                 // 封底
                 back.innerHTML = `<div class="page-content" style="text-align: center; padding-top: 50%;">${escapeHtml(pageData.content)}</div>`;
             } else {
-                // 内页
+                // 内页 - 不显示标题
                 const frontContent = pageData.isHtml ? pageData.content : escapeHtml(pageData.content);
-                front.innerHTML = `<div class="page-title">${escapeHtml(pageData.title)}</div><div class="page-content">${frontContent}</div>`;
+                front.innerHTML = `<div class="page-content">${frontContent}</div>`;
                 if (index > 0) {
                     const prevPage = pages[index - 1];
                     const backContent = prevPage.isHtml ? prevPage.content : escapeHtml(prevPage.content);
@@ -65319,6 +65725,12 @@ async function generateWalletDataAPI(charId) {
         pageVisible = !document.hidden;
         console.log('页面可见性变化:', pageVisible ? '可见' : '隐藏');
     });
+    
+    // 封面设置按钮事件监听
+    const coverSettingsBtn = document.getElementById('moment-cover-settings-btn');
+    if (coverSettingsBtn) {
+        coverSettingsBtn.addEventListener('click', openMomentCoverSettings);
+    }
     
     // 监听输入框聚焦状态（用户正在输入时不发送通知）
     const chatInput = document.getElementById('chat-input');
