@@ -21435,6 +21435,42 @@ ${linkedContents}
         
                 const maxMemory = parseInt(chat.settings.maxMemory) || 10;
                 const historySlice = chat.history.slice(-maxMemory);
+                
+                // 【图片识别与换头像功能】收集用户最近发送的图片
+                const recentUserImages = [];
+                const recentUserMessages = historySlice.filter(msg => msg.role === 'user' && !msg.isHidden);
+                let imageCount = 0;
+                recentUserMessages.forEach((msg) => {
+                    if (msg.type === 'user_photo' && msg.content) {
+                        imageCount++;
+                        recentUserImages.push({
+                            index: imageCount, // 第几张图片（从1开始，按时间顺序）
+                            content: msg.content, // 图片URL或base64
+                            timestamp: msg.timestamp,
+                            description: msg.description || '用户发送的图片'
+                        });
+                    }
+                });
+                
+                // 构建图片上下文信息（如果有图片）
+                let userImagesContext = '';
+                if (recentUserImages.length > 0) {
+                    userImagesContext = `\n\n# 【用户最近发送的图片信息】
+用户最近发送了 ${recentUserImages.length} 张图片，按时间顺序如下：
+${recentUserImages.map((img, idx) => `- 图片${img.index}：${img.description} (时间戳: ${img.timestamp})`).join('\n')}
+
+【重要】当用户要求换情头（情侣头像）时：
+1. 你需要根据你的人设和与用户的关系，决定是否同意换头像
+2. 如果同意，你需要从上述图片中【智能选择】一张最合适的图片作为你的新头像
+3. 选择标准：根据图片内容、风格、与你的角色设定是否匹配等因素综合考虑
+4. 不要只选择最后一张，要真正"识别"和"选择"最合适的
+5. 如果不同意换头像，请说明理由
+
+【换头像指令格式】：
+- 同意并选择图片：\`{"type": "change_avatar", "image_index": 图片编号, "reason": "选择理由"}\`
+- 拒绝换头像：\`{"type": "reject_avatar_change", "reason": "拒绝理由"}\`
+`;
+                }
         
                 let sharedContext = '';
                 const lastAiTurnIndex = chat.history.findLastIndex(msg => msg.role === 'assistant');
@@ -22427,6 +22463,7 @@ ${postsContext}
 -   **用户的头像库**:
     ${chat.settings.myAvatarLibrary && chat.settings.myAvatarLibrary.length > 0 ? chat.settings.myAvatarLibrary.map(avatar => `- ${avatar.name}`).join('\n') : '- (空)'}
 -   **五子棋局势**: ${gomokuContext}
+${userImagesContext}
 
 
 
@@ -22478,6 +22515,10 @@ ${localStorage.getItem('novelai-enabled') === 'true' ? `-   **公开发布NovelA
 -   **改用户昵称**: \`{"type": "change_user_nickname", "new_name": "新称呼"}\`
 -   **换自己头像**: \`{"type": "change_avatar", "name": "头像名"}\` (从你头像库选)
 -   **换用户头像**: \`{"type": "change_user_avatar", "name": "头像名"}\` (从用户头像库选)
+${userImagesContext ? `-   **使用用户发送的图片换头像（换情头）**: 当用户要求换情头时，你可以：
+    - 同意并选择图片：\`{"type": "change_avatar", "image_index": 图片编号, "reason": "选择理由"}\` (image_index 对应上面"用户最近发送的图片信息"中的图片编号)
+    - 拒绝换头像：\`{"type": "reject_avatar_change", "reason": "拒绝理由"}\`
+    - 注意：你需要根据你的人设和与用户的关系，智能决定是否同意换头像，并从多张图片中选择最合适的一张，而不是只选最后一张` : ''}
 -   **回应好友申请**: \`{"type": "friend_request_response", "decision": "accept" or "reject"}\`
 -   **拉黑用户**: \`{"type": "block_user"}\`
 
@@ -22997,25 +23038,80 @@ case 'update_thoughts':
                             continue;
         
                         case 'change_avatar': {
-                            const avatarName = msgData.name;
-                            const foundAvatar = chat.settings.aiAvatarLibrary.find(avatar => avatar.name === avatarName);
-                            if (foundAvatar) {
-                                chat.settings.aiAvatar = foundAvatar.url;
+                            // 检查是否使用用户发送的图片换头像
+                            if (msgData.image_index !== undefined) {
+                                // 使用用户发送的图片换头像
+                                const imageIndex = parseInt(msgData.image_index);
+                                const selectedImage = recentUserImages.find(img => img.index === imageIndex);
                                 
-                                const systemNotice = {
-                                    role: 'system',
-                                    type: 'pat_message',
-                                    content: `[${chat.name} 更换了头像]`,
-                                    timestamp: Date.now()
-                                };
-                                chat.history.push(systemNotice);
-        
-                                await syncCharacterAvatarInGroups(chat);
-                                
-                                if (isViewingThisChat) {
-                                    appendMessage(systemNotice, chat);
-                                    renderChatInterface(chatId);
+                                if (selectedImage) {
+                                    // 使用用户发送的图片作为新头像
+                                    chat.settings.aiAvatar = selectedImage.content;
+                                    
+                                    // 可选：将图片添加到头像库
+                                    if (!chat.settings.aiAvatarLibrary) {
+                                        chat.settings.aiAvatarLibrary = [];
+                                    }
+                                    const avatarName = `用户发送的图片${imageIndex} - ${new Date().toLocaleDateString()}`;
+                                    chat.settings.aiAvatarLibrary.push({
+                                        name: avatarName,
+                                        url: selectedImage.content
+                                    });
+                                    
+                                    const systemNotice = {
+                                        role: 'system',
+                                        type: 'pat_message',
+                                        content: `[${chat.name} 使用了你发送的图片${imageIndex}作为新头像${msgData.reason ? '，理由：' + msgData.reason : ''}]`,
+                                        timestamp: Date.now()
+                                    };
+                                    chat.history.push(systemNotice);
+                                    
+                                    await syncCharacterAvatarInGroups(chat);
+                                    
+                                    if (isViewingThisChat) {
+                                        appendMessage(systemNotice, chat);
+                                        renderChatInterface(chatId);
+                                    }
+                                } else {
+                                    console.warn(`找不到图片索引 ${imageIndex}，可用的图片索引：`, recentUserImages.map(img => img.index));
                                 }
+                            } else {
+                                // 使用头像库中的头像
+                                const avatarName = msgData.name;
+                                const foundAvatar = chat.settings.aiAvatarLibrary.find(avatar => avatar.name === avatarName);
+                                if (foundAvatar) {
+                                    chat.settings.aiAvatar = foundAvatar.url;
+                                    
+                                    const systemNotice = {
+                                        role: 'system',
+                                        type: 'pat_message',
+                                        content: `[${chat.name} 更换了头像]`,
+                                        timestamp: Date.now()
+                                    };
+                                    chat.history.push(systemNotice);
+            
+                                    await syncCharacterAvatarInGroups(chat);
+                                    
+                                    if (isViewingThisChat) {
+                                        appendMessage(systemNotice, chat);
+                                        renderChatInterface(chatId);
+                                    }
+                                }
+                            }
+                            continue;
+                        }
+                        case 'reject_avatar_change': {
+                            // AI 拒绝换头像
+                            const systemNotice = {
+                                role: 'system',
+                                type: 'pat_message',
+                                content: `[${chat.name} 拒绝了换头像的请求${msgData.reason ? '，理由：' + msgData.reason : ''}]`,
+                                timestamp: Date.now()
+                            };
+                            chat.history.push(systemNotice);
+                            
+                            if (isViewingThisChat) {
+                                appendMessage(systemNotice, chat);
                             }
                             continue;
                         }
