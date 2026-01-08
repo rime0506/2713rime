@@ -20711,15 +20711,31 @@ if (lastMessage && (msg.timestamp - lastMessage.timestamp > 600000)) {
                 
                 // 【前台通知】AI 回复首次渲染完成，触发通知检查
                 if (msg.role === 'assistant') {
-                    requestAnimationFrame(() => {
+                    // 延迟一点时间，确保消息完全渲染
+                    setTimeout(() => {
                         requestAnimationFrame(() => {
-                            // 确保 DOM 已完全渲染
-                            const replyText = typeof msg.content === 'string' ? msg.content : (msg.content?.text || '');
-                            if (replyText) {
-                                notifyAIReply(replyText, chat.name || 'AI');
-                            }
+                            requestAnimationFrame(() => {
+                                // 确保 DOM 已完全渲染
+                                // 处理各种消息内容格式
+                                let replyText = '';
+                                if (typeof msg.content === 'string') {
+                                    replyText = msg.content;
+                                } else if (msg.content && typeof msg.content === 'object') {
+                                    replyText = msg.content.text || msg.content.content || JSON.stringify(msg.content);
+                                } else if (msg.meaning) {
+                                    replyText = msg.meaning;
+                                }
+                                
+                                console.log('【前台通知】AI 回复内容提取:', replyText ? replyText.substring(0, 50) + '...' : '空内容');
+                                
+                                if (replyText && replyText.trim()) {
+                                    notifyAIReply(replyText.trim(), chat.name || 'AI');
+                                } else {
+                                    console.log('【前台通知】消息内容为空，跳过通知');
+                                }
+                            });
                         });
-                    });
+                    }, 300); // 延迟 300ms 确保消息完全渲染
                 }
             }
         }
@@ -64663,29 +64679,35 @@ async function generateWalletDataAPI(charId) {
      * @param {string} chatName - 聊天对象名称
      */
     function notifyAIReply(text, chatName = 'AI') {
+        console.log('【前台通知】开始检查通知条件...');
+        console.log('通知权限:', Notification.permission);
+        console.log('页面聚焦:', document.hasFocus());
+        console.log('用户正在输入:', userIsTyping);
+        console.log('页面可见:', pageVisible);
+        
         // 检查通知权限
         if (Notification.permission !== 'granted') {
-            console.log('通知权限未授予，跳过通知');
+            console.log('【前台通知】通知权限未授予，跳过通知');
             return;
         }
         
-        // 检查页面是否聚焦（用户正在查看页面时不发送通知）
-        if (document.hasFocus()) {
-            console.log('页面已聚焦，用户正在查看，跳过通知');
-            return;
-        }
-        
-        // 检查用户是否正在输入
-        if (userIsTyping) {
-            console.log('用户正在输入，跳过通知');
-            return;
-        }
-        
-        // 检查页面可见性
+        // 检查页面可见性（如果页面不可见，不发送通知）
         if (!pageVisible) {
-            console.log('页面不可见，跳过通知');
+            console.log('【前台通知】页面不可见，跳过通知');
             return;
         }
+        
+        // 检查用户是否正在输入（如果用户正在输入，延迟发送通知）
+        if (userIsTyping) {
+            console.log('【前台通知】用户正在输入，延迟 1 秒后重试');
+            setTimeout(() => {
+                notifyAIReply(text, chatName);
+            }, 1000);
+            return;
+        }
+        
+        // 注意：移除了 document.hasFocus() 检查
+        // 因为即使页面聚焦，用户也可能在做其他事情，应该收到通知
         
         // 创建通知
         try {
@@ -64713,9 +64735,9 @@ async function generateWalletDataAPI(charId) {
                 notification.close();
             }, 5000);
             
-            console.log('前台通知已发送');
+            console.log('【前台通知】✅ 通知已成功发送');
         } catch (error) {
-            console.error('发送通知失败:', error);
+            console.error('【前台通知】❌ 发送通知失败:', error);
         }
     }
     
