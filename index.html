@@ -10673,6 +10673,8 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
               60-300。值越大，费用越低，但角色反应越慢。 </p> </label> <input type="number" id="background-interval-input" min="30" value="60" style="width: 80px; text-align: center;"> </div>
         <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;"> <label for="block-cooldown-input" style="margin-bottom: 0;"data-lang-key="apiBlockCooldownLabel"> AI被拉黑后冷静期 (小时) <p style="font-size: 12px; font-weight: normal; color: #999; margin-top: 5px;">
               被拉黑超过这个时间后，AI才有几率重新申请好友。 </p> </label> <input type="number" id="block-cooldown-input" min="0.1" step="0.1" value="1" style="width: 80px; text-align: center;"> </div>
+        <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;"> <label for="ai-block-cooldown-input" style="margin-bottom: 0;"> AI拉黑用户后冷静期 (小时) <p style="font-size: 12px; font-weight: normal; color: #999; margin-top: 5px;">
+              AI拉黑用户超过这个时间后，AI才有几率主动将用户移出黑名单。 </p> </label> <input type="number" id="ai-block-cooldown-input" min="0.1" step="0.1" value="1" style="width: 80px; text-align: center;"> </div>
         <hr style="margin: 30px 0; opacity: 0.3;">
         <h3 style="border-bottom: 1px solid #eee; padding-bottom: 10px;"data-lang-key="apiTtsSettings">语音消息设置 (Minimax TTS)</h3>
         <p style="font-size: 14px; color: #666; background-color: #f0f0f0; padding: 10px; border-radius: 8px;"> 在 AI 回复的文字前加上 <code style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 4px;">[V]</code> 前缀，即可让该条消息自动渲染为可播放的语音。</p>
@@ -18769,6 +18771,7 @@ function parseAiResponse(content) {
             document.getElementById('background-activity-switch').checked = state.globalSettings.enableBackgroundActivity || false;
             document.getElementById('background-interval-input').value = state.globalSettings.backgroundActivityInterval || 60;
             document.getElementById('block-cooldown-input').value = state.globalSettings.blockCooldownHours || 1;
+            document.getElementById('ai-block-cooldown-input').value = state.globalSettings.aiBlockCooldownHours || 1;
             document.getElementById('enable-ai-drawing-switch').checked = state.globalSettings.enableAiDrawing; 
             document.getElementById('chat-render-window-input').value = state.globalSettings.chatRenderWindow || 50;   
             document.getElementById('chat-list-render-window-input').value = state.globalSettings.chatListRenderWindow || 30;
@@ -19515,9 +19518,27 @@ function createChatListItem(chat) {
                             `;
                             break;
                         case 'blocked_by_ai':
+                            const isSimulationRunningForAi = simulationIntervalId !== null;
+                            const blockedByAiTimestamp = chat.relationship.blockedByAiTimestamp || chat.relationship.blockedTimestamp;
+                            const aiBlockCooldownHours = state.globalSettings.aiBlockCooldownHours || 1;
+                            const aiBlockCooldownMilliseconds = aiBlockCooldownHours * 60 * 60 * 1000;
+                            const timeSinceAiBlock = blockedByAiTimestamp ? (Date.now() - blockedByAiTimestamp) : 0;
+                            const isAiBlockCooldownOver = timeSinceAiBlock > aiBlockCooldownMilliseconds;
+                            const timeRemainingMinutesForAi = Math.max(0, Math.ceil((aiBlockCooldownMilliseconds - timeSinceAiBlock) / (1000 * 60)));
+            
                             lockHtml = `
-                                <span class="lock-text">你被对方拉黑了。</span>
+                                <span class="lock-text">你被"${chat.name}"拉黑了。</span>
                                 <button id="apply-friend-btn" class="lock-action-btn">重新申请加为好友</button>
+                                <div style="margin-top: 20px; padding: 10px; border: 1px dashed #ccc; border-radius: 8px; font-size: 11px; text-align: left; color: #666; background: rgba(0,0,0,0.02);">
+                                    <strong style="color: #333;">【开发者诊断面板】</strong><br>
+                                    - 后台活动总开关: ${state.globalSettings.enableBackgroundActivity ? '<span style="color: green;">已开启</span>' : '<span style="color: red;">已关闭</span>'}<br>
+                                    - 系统心跳计时器: ${isSimulationRunningForAi ? '<span style="color: green;">运行中</span>' : '<span style="color: red;">未运行</span>'}<br>
+                                    - 当前角色状态: <strong>${chat.relationship.status}</strong><br>
+                                    - AI拉黑冷静期(小时): <strong>${aiBlockCooldownHours}</strong><br>
+                                    - 冷静期是否结束: ${isAiBlockCooldownOver ? '<span style="color: green;">是</span>' : `<span style="color: orange;">否 (还剩约 ${timeRemainingMinutesForAi} 分钟)</span>`}<br>
+                                    - 触发条件: ${isAiBlockCooldownOver && state.globalSettings.enableBackgroundActivity ? '<span style="color: green;">已满足，等待下次系统心跳</span>' : '<span style="color: red;">未满足</span>'}
+                                </div>
+                                <button id="force-check-ai-unblock-btn" class="lock-action-btn secondary" style="margin-top: 10px;">强制检测AI拉黑状态</button>
                             `;
                             break;
                         case 'pending_user_approval':
@@ -21455,21 +21476,44 @@ ${linkedContents}
                 const maxMemory = parseInt(chat.settings.maxMemory) || 10;
                 const historySlice = chat.history.slice(-maxMemory);
                 
-                // 【图片识别与换头像功能】收集用户最近发送的图片
+                // 【修正版：图片识别与换头像功能】
                 recentUserImages = []; // 重置数组
-                const userMessagesForImages = historySlice.filter(msg => msg.role === 'user' && !msg.isHidden);
+                // 1. 扩大搜索范围：搜索最近50条消息，防止图片因对话过长而被遗忘
+                // 不受 chat.settings.maxMemory (通常为10) 的限制
+                const historyForImages = chat.history.slice(-50);
+                const userMessagesForImages = historyForImages.filter(msg => msg.role === 'user' && !msg.isHidden);
+                
                 let imageCount = 0;
                 userMessagesForImages.forEach((msg) => {
-                    if (msg.type === 'user_photo' && msg.content) {
+                    // 情况 A: 真实上传的图片 (数据结构是数组，包含 image_url)
+                    if (Array.isArray(msg.content)) {
+                        const imgPart = msg.content.find(part => part.type === 'image_url');
+                        if (imgPart && imgPart.image_url && imgPart.image_url.url) {
+                            imageCount++;
+                            recentUserImages.push({
+                                index: imageCount,
+                                content: imgPart.image_url.url, // 这里才是真正的 Base64 或 URL
+                                timestamp: msg.timestamp,
+                                description: '用户发送的一张图片'
+                            });
+                            console.log('【图片收集】✅ 找到真实上传的图片（数组格式），索引：', imageCount, 'URL：', imgPart.image_url.url.substring(0, 50) + '...');
+                        }
+                    }
+                    // 情况 B: 只有当 user_photo 的内容明确是 URL/Base64 时才由它换头像
+                    // (普通的 user_photo 只是文字描述，设为头像会导致图片破裂)
+                    else if (msg.type === 'user_photo' && msg.content && (msg.content.startsWith('http') || msg.content.startsWith('data:image'))) {
                         imageCount++;
                         recentUserImages.push({
-                            index: imageCount, // 第几张图片（从1开始，按时间顺序）
-                            content: msg.content, // 图片URL或base64
+                            index: imageCount,
+                            content: msg.content,
                             timestamp: msg.timestamp,
-                            description: msg.description || '用户发送的图片'
+                            description: msg.description || '用户发送的图片链接'
                         });
+                        console.log('【图片收集】✅ 找到 user_photo 类型的图片（URL/Base64），索引：', imageCount);
                     }
                 });
+                
+                console.log('【图片收集】总共收集到', recentUserImages.length, '张可用图片');
                 
                 // 构建图片上下文信息（如果有图片）
                 let userImagesContext = '';
@@ -22553,7 +22597,8 @@ ${userImagesContext ? `-   **换自己头像（使用用户发送的图片 - 换
     - **如果拒绝**：\`{"type": "reject_avatar_change", "reason": "拒绝理由"}\`` : ''}
 -   **换用户头像**: \`{"type": "change_user_avatar", "name": "头像名"}\` (从用户头像库选)
 -   **回应好友申请**: \`{"type": "friend_request_response", "decision": "accept" or "reject"}\`
--   **拉黑用户**: \`{"type": "block_user"}\`
+-   **拉黑用户**: \`{"type": "block_user", "reason": "拉黑理由（可选）"}\`
+-   **将用户移出黑名单**: \`{"type": "unblock_user"}\` (当你决定原谅用户，将用户移出黑名单时使用)
 
 ### 特殊功能指令
 -   **记录回忆**: \`{"type": "create_memory", "description": "记录这件有意义的事。"}\`
@@ -22571,22 +22616,44 @@ ${userImagesContext ? `-   **换自己头像（使用用户发送的图片 - 换
 
 现在，请根据以上规则和下面的对话历史，继续进行对话。`;
             
-                // 【图片识别与换头像功能】在私聊分支也收集用户最近发送的图片
+                // 【修正版：图片识别与换头像功能】在私聊分支也收集用户最近发送的图片
                 if (recentUserImages.length === 0) {
-                    // 如果群聊分支没有收集，在私聊分支收集
-                    const userMessagesForImages = historySlice.filter(msg => msg.role === 'user' && !msg.isHidden);
+                    // 1. 扩大搜索范围：搜索最近50条消息，防止图片因对话过长而被遗忘
+                    // 不受 chat.settings.maxMemory (通常为10) 的限制
+                    const historyForImages = chat.history.slice(-50);
+                    const userMessagesForImages = historyForImages.filter(msg => msg.role === 'user' && !msg.isHidden);
+                    
                     let imageCount = 0;
                     userMessagesForImages.forEach((msg) => {
-                        if (msg.type === 'user_photo' && msg.content) {
+                        // 情况 A: 真实上传的图片 (数据结构是数组，包含 image_url)
+                        if (Array.isArray(msg.content)) {
+                            const imgPart = msg.content.find(part => part.type === 'image_url');
+                            if (imgPart && imgPart.image_url && imgPart.image_url.url) {
+                                imageCount++;
+                                recentUserImages.push({
+                                    index: imageCount,
+                                    content: imgPart.image_url.url, // 这里才是真正的 Base64 或 URL
+                                    timestamp: msg.timestamp,
+                                    description: '用户发送的一张图片'
+                                });
+                                console.log('【图片收集-私聊】✅ 找到真实上传的图片（数组格式），索引：', imageCount, 'URL：', imgPart.image_url.url.substring(0, 50) + '...');
+                            }
+                        }
+                        // 情况 B: 只有当 user_photo 的内容明确是 URL/Base64 时才由它换头像
+                        // (普通的 user_photo 只是文字描述，设为头像会导致图片破裂)
+                        else if (msg.type === 'user_photo' && msg.content && (msg.content.startsWith('http') || msg.content.startsWith('data:image'))) {
                             imageCount++;
                             recentUserImages.push({
                                 index: imageCount,
                                 content: msg.content,
                                 timestamp: msg.timestamp,
-                                description: msg.description || '用户发送的图片'
+                                description: msg.description || '用户发送的图片链接'
                             });
+                            console.log('【图片收集-私聊】✅ 找到 user_photo 类型的图片（URL/Base64），索引：', imageCount);
                         }
                     });
+                    
+                    console.log('【图片收集-私聊】总共收集到', recentUserImages.length, '张可用图片');
                 }
             
 messagesPayload = historySlice.map(msg => {
@@ -23818,20 +23885,62 @@ case 'qzone_comment': { // 使用块级作用域
                             continue;
                         case 'block_user':
                             if (!chat.isGroup) {
+                                // 记录拉黑时间戳，用于冷静期计算
+                                if (!chat.relationship) {
+                                    chat.relationship = { status: 'blocked_by_ai', blockedTimestamp: null, applicationReason: '' };
+                                }
                                 chat.relationship.status = 'blocked_by_ai';
+                                chat.relationship.blockedTimestamp = Date.now(); // 记录拉黑时间
+                                
+                                // 显示拉黑弹窗（类似用户拉黑 AI 的弹窗）
+                                const blockReason = msgData.reason || '根据我的判断，我需要暂时拉黑你。';
+                                const systemNotice = {
+                                    role: 'system',
+                                    type: 'pat_message',
+                                    content: `[${chat.name} 已将你拉黑。理由：${blockReason}]`,
+                                    timestamp: Date.now()
+                                };
+                                chat.history.push(systemNotice);
+                                
                                 const hiddenMessage = {
                                     role: 'system',
-                                    content: `[系统提示：你刚刚主动拉黑了用户。]`,
-                                    timestamp: Date.now(),
+                                    content: `[系统提示：你刚刚主动拉黑了用户。拉黑时间：${new Date().toLocaleString()}]`,
+                                    timestamp: Date.now() + 1,
                                     isHidden: true
                                 };
                                 chat.history.push(hiddenMessage);
+                                
                                 await db.chats.put(chat);
+                                
                                 if (isViewingThisChat) {
+                                    appendMessage(systemNotice, chat);
                                     renderChatInterface(chatId);
                                 }
                                 renderChatList();
                                 break; 
+                            }
+                            continue;
+                        case 'unblock_user':
+                            // AI 主动将用户移出黑名单
+                            if (!chat.isGroup && chat.relationship?.status === 'blocked_by_ai') {
+                                chat.relationship.status = 'friend';
+                                chat.relationship.blockedTimestamp = null;
+                                
+                                const systemNotice = {
+                                    role: 'system',
+                                    type: 'pat_message',
+                                    content: `[${chat.name} 已将你移出黑名单，你们现在可以正常聊天了。]`,
+                                    timestamp: Date.now()
+                                };
+                                chat.history.push(systemNotice);
+                                
+                                await db.chats.put(chat);
+                                
+                                if (isViewingThisChat) {
+                                    appendMessage(systemNotice, chat);
+                                    renderChatInterface(chatId);
+                                }
+                                renderChatList();
                             }
                             continue;
                         case 'friend_request_response':
@@ -25525,6 +25634,18 @@ async function runBackgroundSimulationTick() {
             if (blockedDuration > cooldownMilliseconds) {
                 chat.relationship.status = 'pending_system_reflection';
                 triggerAiFriendApplication(chat.id);
+            }
+        }
+        // AI 拉黑用户的冷静期处理
+        else if (chat.relationship?.status === 'blocked_by_ai') {
+            const blockedTimestamp = chat.relationship.blockedTimestamp;
+            if (!blockedTimestamp) return;
+            const blockedDuration = Date.now() - blockedTimestamp;
+            const aiBlockCooldownHours = state.globalSettings.aiBlockCooldownHours || 1;
+            const cooldownMilliseconds = aiBlockCooldownHours * 60 * 60 * 1000;
+            if (blockedDuration > cooldownMilliseconds) {
+                // 冷静期已过，触发 AI 判断是否放用户出黑名单
+                triggerAiUnblockCheck(chat.id);
             }
         }
         else if (chat.relationship?.status === 'friend' && chat.id !== state.activeChatId) {
@@ -29778,12 +29899,260 @@ let selectedFrames = new Set();
                     chat.relationship.blockedTimestamp = Date.now(); 
                 }
             } catch (error) {
-                await showCustomAlert("执行出错", `为“${chat.name}”申请好友时发生错误：\n\n${error.message}\n\n将重置冷静期。`);
+                await showCustomAlert("执行出错", `为"${chat.name}"申请好友时发生错误：\n\n${error.message}\n\n将重置冷静期。`);
                 chat.relationship.status = 'blocked_by_user';
-                chat.relationship.blockedTimestamp = Date.now(); 
+                chat.relationship.blockedTimestamp = Date.now();
             } finally {
                 await db.chats.put(chat);
-                renderChatInterface(chatId);
+            }
+        }
+        
+        // AI 判断是否将用户移出黑名单
+        async function triggerAiUnblockCheck(chatId) {
+            const chat = state.chats[chatId];
+            if (!chat || chat.relationship?.status !== 'blocked_by_ai') return;
+        
+            const { proxyUrl, apiKey, model } = state.apiConfig;
+            if (!proxyUrl || !apiKey || !model) {
+                console.warn('API设置不完整，无法执行AI解封检测');
+                return;
+            }
+        
+            const contextSummary = chat.history
+                .slice(-10)
+                .filter(msg => !msg.isHidden)
+                .map(msg => {
+                    const sender = msg.role === 'user' ? (chat.settings.myNickname || '我') : (msg.senderName || chat.name);
+                    return `${sender}: ${String(msg.content).substring(0, 100)}`;
+                })
+                .join('\n');
+        
+            let worldBookContent = '';
+            if (chat.settings.linkedWorldBookIds && chat.settings.linkedWorldBookIds.length > 0) {
+                const linkedContents = chat.settings.linkedWorldBookIds.map(bookId => {
+                    const worldBook = state.worldBooks.find(wb => wb.id === bookId);
+                    if (!worldBook || !Array.isArray(worldBook.content)) return '';
+        
+                    const formattedEntries = worldBook.content.map(entry => {
+                        let entryString = `\n### 条目: ${entry.comment || '无备注'}\n`;
+                        if (entry.keys.length > 0) {
+                            entryString += `**关键词:** ${entry.keys.join(', ')}\n`;
+                        }
+                        entryString += `**内容:**\n${entry.content}`;
+                        return entryString;
+                    }).join('\n');
+        
+                    return formattedEntries ? `\n\n## 世界书: ${worldBook.name}\n${formattedEntries}` : '';
+                }).filter(Boolean).join('');
+                
+                if (linkedContents) {
+                    worldBookContent = `\n\n# 核心世界观设定 (必须严格遵守以下所有设定)\n${linkedContents}\n`;
+                }
+            }
+        
+            const blockedTimestamp = chat.relationship.blockedTimestamp;
+            const blockedDuration = Date.now() - blockedTimestamp;
+            const blockedHours = Math.floor(blockedDuration / (1000 * 60 * 60));
+        
+            const systemPrompt = `
+# 你的任务
+你现在是角色"${chat.name}"。你之前主动拉黑了用户（你的聊天对象），已经过去了 ${blockedHours} 小时。
+现在，你需要根据你的人设、与用户的关系历史，以及拉黑的原因，决定是否将用户移出黑名单。
+
+# 你的角色设定
+${chat.settings.aiPersona}
+${worldBookContent}
+
+# 拉黑前的对话历史（最后10条）
+${contextSummary}
+
+# 指令格式
+你的回复【必须】是一个JSON对象，格式如下：
+\`\`\`json
+{
+  "decision": "unblock" 或 "keep_blocked",
+  "reason": "在这里写下你的决定理由。重要：如果决定继续拉黑，reason必须用第一人称的心声视角表达，就像你在自言自语一样（例如：'哼，我还没消气呢'、'算了，再等等看吧'），而不是第三视角的描述（不要写'角色还没消气'这样的描述）。如果决定解封，可以用正常说明。",
+  "heartfelt_voice": "一句话概括你此刻最核心、最私密的想法（无论决定解封还是继续拉黑，都要有你的心声）。"
+}
+\`\`\`
+
+# 重要提示
+- 根据你的人设和性格，做出符合角色的决定
+- 如果决定解封，请使用指令：\`{"type": "unblock_user"}\`
+- 如果决定继续拉黑，reason必须用第一人称心声视角表达，要像角色在自言自语，符合角色的说话风格
+`;
+        
+            try {
+                const messagesForApi = [
+                    {role: 'system', content: systemPrompt},
+                    {role: 'user', content: "请根据以上设定，判断是否将用户移出黑名单。"} 
+                ];
+        
+                let isGemini = proxyUrl === GEMINI_API_URL;
+                let geminiConfig = toGeminiRequestData(model, apiKey, systemPrompt, messagesForApi);
+        
+                const response = isGemini ? await fetch(geminiConfig.url, geminiConfig.data) : await fetch(`${proxyUrl}/v1/chat/completions`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}`},
+                    body: JSON.stringify({
+                        model: model,
+                        messages: messagesForApi, 
+                        temperature: state.globalSettings.apiTemperature || 0.9,
+                    })
+                });
+        
+                if (!response.ok) {
+                    let errorMessage = `API 请求失败: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage += ` - ${errorData.error?.message || errorData.message || '未知错误'}`;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorMessage += ` - ${errorText.substring(0, 200)}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+        
+                // 检查响应内容类型
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`API返回了非JSON格式的内容: ${text.substring(0, 200)}`);
+                }
+        
+                const data = await response.json();
+                let rawContent = isGemini ? data.candidates[0].content.parts[0].text : data.choices[0].message.content;
+                
+                if (!rawContent) {
+                    throw new Error('API返回的内容为空');
+                }
+                
+                // 更完善的JSON内容清理
+                // 移除markdown代码块标记（支持多种格式）
+                rawContent = rawContent
+                    .replace(/^```json\s*/i, '')
+                    .replace(/^```\s*/i, '')
+                    .replace(/```\s*$/g, '')
+                    .replace(/^`/g, '')
+                    .replace(/`$/g, '')
+                    .trim();
+                
+                // 尝试提取JSON对象（如果内容中包含其他文本）
+                let jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    rawContent = jsonMatch[0];
+                }
+                
+                const cleanedContent = rawContent.trim();
+                let responseObj;
+                try {
+                    responseObj = JSON.parse(cleanedContent);
+                } catch (parseError) {
+                    console.error('JSON解析失败，原始内容:', cleanedContent);
+                    throw new Error(`JSON解析失败: ${parseError.message}。原始内容: ${cleanedContent.substring(0, 200)}`);
+                }
+        
+                if (responseObj.decision === 'unblock') {
+                    // AI 决定解封，触发 unblock_user 指令处理
+                    chat.relationship.status = 'friend';
+                    chat.relationship.blockedTimestamp = null;
+                    
+                    // 更新心声
+                    if (responseObj.heartfelt_voice) {
+                        chat.heartfeltVoice = String(responseObj.heartfelt_voice);
+                    }
+                    
+                    // 保存心声到历史记录
+                    if (!Array.isArray(chat.thoughtsHistory)) {
+                        chat.thoughtsHistory = [];
+                    }
+                    chat.thoughtsHistory.push({
+                        heartfeltVoice: chat.heartfeltVoice,
+                        randomJottings: chat.randomJottings || '...',
+                        timestamp: Date.now()
+                    });
+                    if (chat.thoughtsHistory.length > 50) {
+                        chat.thoughtsHistory.shift();
+                    }
+                    
+                    const systemNotice = {
+                        role: 'system',
+                        type: 'pat_message',
+                        content: `[${chat.name} 已将你移出黑名单，你们现在可以正常聊天了。${responseObj.reason ? '理由：' + responseObj.reason : ''}]`,
+                        timestamp: Date.now()
+                    };
+                    chat.history.push(systemNotice);
+                    
+                    await db.chats.put(chat);
+                    
+                    const isViewingThisChat = document.getElementById('chat-interface-screen').classList.contains('active') && state.activeChatId === chatId;
+                    if (isViewingThisChat) {
+                        appendMessage(systemNotice, chat);
+                        renderChatInterface(chatId);
+                    }
+                    renderChatList();
+                    
+                    // 更新心声显示
+                    const heartfeltVoiceEl = document.getElementById('profile-heartfelt-voice');
+                    if (heartfeltVoiceEl) {
+                        heartfeltVoiceEl.textContent = chat.heartfeltVoice;
+                    }
+                    
+                    console.log(`【AI解封】"${chat.name}" 决定将用户移出黑名单`);
+                } else {
+                    // AI 决定继续拉黑，重置冷静期
+                    chat.relationship.blockedTimestamp = Date.now();
+                    
+                    // 更新心声
+                    if (responseObj.heartfelt_voice) {
+                        chat.heartfeltVoice = String(responseObj.heartfelt_voice);
+                    }
+                    
+                    // 保存心声到历史记录
+                    if (!Array.isArray(chat.thoughtsHistory)) {
+                        chat.thoughtsHistory = [];
+                    }
+                    chat.thoughtsHistory.push({
+                        heartfeltVoice: chat.heartfeltVoice,
+                        randomJottings: chat.randomJottings || '...',
+                        timestamp: Date.now()
+                    });
+                    if (chat.thoughtsHistory.length > 50) {
+                        chat.thoughtsHistory.shift();
+                    }
+                    
+                    // 添加系统通知
+                    const systemNotice = {
+                        role: 'system',
+                        type: 'pat_message',
+                        content: `[${chat.name} 决定继续将你留在黑名单中。${responseObj.reason ? '理由：' + responseObj.reason : ''}]`,
+                        timestamp: Date.now()
+                    };
+                    chat.history.push(systemNotice);
+                    
+                    await db.chats.put(chat);
+                    
+                    // 如果正在查看这个聊天，更新界面
+                    const isViewingThisChat = document.getElementById('chat-interface-screen').classList.contains('active') && state.activeChatId === chatId;
+                    if (isViewingThisChat) {
+                        appendMessage(systemNotice, chat);
+                        renderChatInterface(chatId);
+                    }
+                    renderChatList();
+                    
+                    // 更新心声显示
+                    const heartfeltVoiceEl = document.getElementById('profile-heartfelt-voice');
+                    if (heartfeltVoiceEl) {
+                        heartfeltVoiceEl.textContent = chat.heartfeltVoice;
+                    }
+                    
+                    console.log(`【AI解封】"${chat.name}" 决定继续拉黑用户，理由：${responseObj.reason || '无'}`);
+                }
+            } catch (error) {
+                console.error(`【AI解封】为"${chat.name}"执行解封检测时发生错误：`, error);
+                // 出错时重置冷静期，避免频繁重试
+                chat.relationship.blockedTimestamp = Date.now();
+                await db.chats.put(chat);
             }
         }
           
@@ -32151,9 +32520,7 @@ ${formattedHistory}
         
         
         
-        
-        
-        let activeTransferTimestamp = null; 
+         
         
         /**
          * 显示处理转账的操作菜单
@@ -36127,7 +36494,8 @@ ${chat.settings.aiPersona}
 -   **换自己头像**: \`{"type": "change_avatar", "name": "头像名"}\` (从你头像库选)
 -   **换用户头像**: \`{"type": "change_user_avatar", "name": "头像名"}\` (从用户头像库选)
 -   **回应好友申请**: \`{"type": "friend_request_response", "decision": "accept" or "reject"}\`
--   **拉黑用户**: \`{"type": "block_user"}\`
+-   **拉黑用户**: \`{"type": "block_user", "reason": "拉黑理由（可选）"}\`
+-   **将用户移出黑名单**: \`{"type": "unblock_user"}\` (当你决定原谅用户，将用户移出黑名单时使用)
 
 ### 特殊功能指令
 -   **记录回忆**: \`{"type": "create_memory", "description": "记录这件有意义的事。"}\`
@@ -48218,6 +48586,10 @@ state.apiConfig.minimaxModel = document.getElementById('minimax-model-select').v
             state.globalSettings.enableBackgroundActivity = backgroundSwitch.checked;
             state.globalSettings.backgroundActivityInterval = parseInt(intervalInput.value) || 60;
             state.globalSettings.blockCooldownHours = parseFloat(cooldownInput.value) || 1;
+            const aiBlockCooldownInput = document.getElementById('ai-block-cooldown-input');
+            if (aiBlockCooldownInput) {
+                state.globalSettings.aiBlockCooldownHours = parseFloat(aiBlockCooldownInput.value) || 1;
+            }
             state.globalSettings.enableAiDrawing = document.getElementById('enable-ai-drawing-switch').checked;
            state.globalSettings.chatRenderWindow = parseInt(document.getElementById('chat-render-window-input').value) || 50;
             state.globalSettings.chatListRenderWindow = parseInt(document.getElementById('chat-list-render-window-input').value) || 30;
@@ -51424,6 +51796,37 @@ if (deleteBtn) {
         });
         
         
+        // 强制检测 AI 拉黑状态按钮
+        document.getElementById('force-check-ai-block-btn')?.addEventListener('click', async () => {
+            const activeChatId = state.activeChatId;
+            if (!activeChatId) {
+                await showCustomAlert('提示', '请先选择一个聊天');
+                return;
+            }
+            
+            const chat = state.chats[activeChatId];
+            if (chat.isGroup) {
+                await showCustomAlert('提示', '群聊不支持此功能');
+                return;
+            }
+            
+            if (chat.relationship?.status !== 'blocked_by_ai') {
+                await showCustomAlert('提示', '当前聊天状态不是"被AI拉黑"，无需检测');
+                return;
+            }
+            
+            const confirmed = await showCustomConfirm(
+                '强制检测',
+                `确定要立即触发检测吗？系统将根据"${chat.name}"的人设判断是否将你移出黑名单。`,
+                { confirmButtonClass: 'btn-primary' }
+            );
+            
+            if (confirmed) {
+                await showCustomAlert('检测中', `正在为"${chat.name}"执行解封检测...`);
+                await triggerAiUnblockCheck(activeChatId);
+            }
+        });
+        
         document.getElementById('block-chat-btn').addEventListener('click', async () => {
             if (!state.activeChatId || state.chats[state.activeChatId].isGroup) return;
         
@@ -51451,7 +51854,10 @@ if (deleteBtn) {
                 await db.chats.put(chat);
                 
                 
-                document.getElementById('chat-settings-modal').classList.remove('visible');
+                const settingsModal = document.getElementById('chat-settings-modal');
+                if (settingsModal) {
+                    settingsModal.classList.remove('visible');
+                }
                 renderChatInterface(state.activeChatId);
                 
                 renderChatList();
@@ -51466,6 +51872,19 @@ if (deleteBtn) {
                 alert("正在手动触发好友申请流程，请稍后...\n如果API调用成功，将弹出提示。如果失败，也会有错误提示。如果长时间无反应，说明AI可能决定暂时不申请。");
                 await triggerAiFriendApplication(chat.id);
                 renderChatInterface(chat.id); 
+                return;
+            }
+        
+            if (e.target.id === 'force-check-ai-unblock-btn') {
+                const confirmed = await showCustomConfirm(
+                    '强制检测',
+                    `确定要立即触发检测吗？系统将根据"${chat.name}"的人设判断是否将你移出黑名单。`,
+                    { confirmButtonClass: 'btn-primary' }
+                );
+                if (confirmed) {
+                    await triggerAiUnblockCheck(chat.id, true);
+                    renderChatInterface(chat.id);
+                }
                 return;
             }
         
@@ -55331,6 +55750,66 @@ ${userPersona.trim()}
                                     currentState.rooms[roomId] = importedState.rooms[roomId];
                                 }
                                 // 如果已存在，不覆盖，保持原有房间数据
+                            });
+                        }
+                        
+                        // 合并 patterns（纹理数据）- 壁纸和地板的纹理
+                        if (importedState.patterns) {
+                            if (!currentState.patterns) {
+                                currentState.patterns = { wall: [], floor: [] };
+                            }
+                            // 合并壁纸纹理
+                            if (importedState.patterns.wall && Array.isArray(importedState.patterns.wall)) {
+                                importedState.patterns.wall.forEach(pattern => {
+                                    // 检查是否已存在（根据id）
+                                    const exists = currentState.patterns.wall.some(p => p.id === pattern.id);
+                                    if (!exists) {
+                                        currentState.patterns.wall.push(pattern);
+                                    }
+                                });
+                            }
+                            // 合并地板纹理
+                            if (importedState.patterns.floor && Array.isArray(importedState.patterns.floor)) {
+                                importedState.patterns.floor.forEach(pattern => {
+                                    // 检查是否已存在（根据id）
+                                    const exists = currentState.patterns.floor.some(p => p.id === pattern.id);
+                                    if (!exists) {
+                                        currentState.patterns.floor.push(pattern);
+                                    }
+                                });
+                            }
+                        }
+                        
+                        // 检查导入的customItems中是否有壁纸或地板，将它们添加到patterns
+                        if (importedState.customItems) {
+                            if (!currentState.patterns) {
+                                currentState.patterns = { wall: [], floor: [] };
+                            }
+                            
+                            Object.keys(importedState.customItems).forEach(itemId => {
+                                const item = importedState.customItems[itemId];
+                                // 检查是否是壁纸或地板类型
+                                const isWallpaper = item.type === 'wall' || item.category === 'wallpaper';
+                                const isFlooring = item.type === 'floor' || item.category === 'flooring';
+                                
+                                if (isWallpaper || isFlooring) {
+                                    const patternType = isWallpaper ? 'wall' : 'floor';
+                                    const patterns = currentState.patterns[patternType];
+                                    
+                                    // 检查是否已存在（根据id）
+                                    const exists = patterns.some(p => p.id === itemId);
+                                    if (!exists && item.svg) {
+                                        // 将SVG转换为data URI
+                                        const svgData = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(item.svg)));
+                                        
+                                        patterns.push({
+                                            id: itemId,
+                                            name: item.name || `纹理_${itemId}`,
+                                            src: svgData,
+                                            svg: item.svg
+                                        });
+                                    }
+                                }
                             });
                         }
                         
