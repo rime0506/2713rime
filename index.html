@@ -2598,7 +2598,6 @@
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 100%;
-            color: var(--text-primary);
         }
         #chat-header-status {
             display: flex;
@@ -2620,7 +2619,6 @@
         }
         .status-text {
             font-weight: 500;
-            color: var(--text-secondary);
         }
         .memory-card {
             background-color: #fffaf0; 
@@ -2692,142 +2690,6 @@
             border-top: 1px solid rgba(255,255,255,0.2);
             padding-top: 10px;
         }
-        
-        /* 瞬间书本样式 */
-        .moments-book-container {
-            perspective: 2000px;
-            width: 100%;
-            max-width: 320px;
-        }
-        .moments-book {
-            position: relative;
-            width: 100%;
-            height: 440px;
-            transform-style: preserve-3d;
-            box-shadow: 20px 20px 40px rgba(0,0,0,0.4);
-            transform: rotateX(5deg);
-        }
-        .moments-page {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            transform-origin: left center;
-            transform-style: preserve-3d;
-            cursor: pointer;
-        }
-        .moments-page:last-child {
-            cursor: default;
-            pointer-events: none;
-        }
-        .moments-front, .moments-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            backface-visibility: hidden;
-            padding: 25px 20px;
-            box-sizing: border-box;
-            background-color: #f0f0f0;
-            overflow-y: auto;
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch;
-        }
-        .moments-front {
-            border-radius: 0 15px 15px 0;
-            background: linear-gradient(to right, #e8e8e8 0%, #f0f0f0 10%, #f0f0f0 95%, #e8e8e8 100%);
-            box-shadow: inset 8px 0 15px -5px rgba(0,0,0,0.1), 1px 0 3px rgba(0,0,0,0.05);
-            z-index: 2;
-        }
-        .moments-back {
-            background: linear-gradient(to left, #e8e8e8 0%, #f0f0f0 10%, #f0f0f0 95%, #e8e8e8 100%);
-            transform: rotateY(180deg);
-            border-radius: 15px 0 0 15px;
-            box-shadow: inset -8px 0 15px -5px rgba(0,0,0,0.1), -1px 0 3px rgba(0,0,0,0.05);
-            z-index: 1;
-        }
-        .moments-page:first-child .moments-front {
-            background: #d0d0d0;
-            border: 1px solid #c0c0c0;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.1), inset 8px 0 15px -5px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .moments-page:last-child .moments-back {
-            background: #d0d0d0;
-            border: 1px solid #c0c0c0;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.1), inset -8px 0 15px -5px rgba(0,0,0,0.1);
-        }
-        .moments-page.flipped {
-            transform: rotateY(-180deg);
-        }
-        .moments-cover-title {
-            font-size: 24px;
-            font-weight: 600;
-            color: #4a4a4a;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .moments-cover-avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .moments-message-item {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: rgba(255,255,255,0.5);
-            border-radius: 8px;
-            border-left: 3px solid #ffd700;
-        }
-        .moments-message-date {
-            font-size: 11px;
-            color: #888;
-            margin-bottom: 8px;
-        }
-        .moments-message-content {
-            font-size: 14px;
-            color: #333;
-            line-height: 1.6;
-            word-wrap: break-word;
-        }
-        .moments-character-item {
-            display: flex;
-            align-items: center;
-            padding: 15px 20px;
-            cursor: pointer;
-            border-bottom: 1px solid var(--border-color);
-            transition: background-color 0.2s;
-        }
-        .moments-character-item:hover {
-            background-color: #f5f5f5;
-        }
-        .moments-character-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            margin-right: 15px;
-            object-fit: cover;
-        }
-        .moments-character-name {
-            font-size: 16px;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-        .moments-character-count {
-            margin-left: auto;
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-        
         #chat-lock-overlay {
             position: absolute;
             bottom: 0;
@@ -4895,6 +4757,93 @@
         #cart-footer .select-all-label { display: flex; align-items: center; gap: 5px; }
         #cart-footer .cart-summary { text-align: right; }
         #cart-footer .cart-subtext { font-size: 11px; color: #999; }
+        /* 瞬间书籍样式 */
+        #moment-screen {
+            background-color: #4a5568;
+        }
+        #moment-screen .book-container {
+            perspective: 2000px;
+        }
+        #moment-screen .book {
+            position: relative;
+            width: 320px;
+            height: 440px;
+            transform-style: preserve-3d;
+            box-shadow: 20px 20px 40px rgba(0,0,0,0.4);
+            transform: rotateX(5deg);
+        }
+        #moment-screen .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform-origin: left center;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+        #moment-screen .page:last-child {
+            cursor: default;
+            pointer-events: none;
+        }
+        #moment-screen .front, #moment-screen .back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            backface-visibility: hidden;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: #f0f0f0;
+            overflow-y: auto;
+        }
+        #moment-screen .front {
+            border-radius: 0 15px 15px 0;
+            background: linear-gradient(to right, #e8e8e8 0%, #f0f0f0 10%, #f0f0f0 95%, #e8e8e8 100%);
+            box-shadow: inset 8px 0 15px -5px rgba(0,0,0,0.1), 1px 0 3px rgba(0,0,0,0.05);
+            z-index: 2;
+        }
+        #moment-screen .back {
+            background: linear-gradient(to left, #e8e8e8 0%, #f0f0f0 10%, #f0f0f0 95%, #e8e8e8 100%);
+            transform: rotateY(180deg);
+            border-radius: 15px 0 0 15px;
+            box-shadow: inset -8px 0 15px -5px rgba(0,0,0,0.1), -1px 0 3px rgba(0,0,0,0.05);
+            z-index: 1;
+        }
+        #moment-screen .page:first-child .front {
+            background: #d0d0d0;
+            border: 1px solid #c0c0c0;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1), inset 8px 0 15px -5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        #moment-screen .page:last-child .back {
+            background: #d0d0d0;
+            border: 1px solid #c0c0c0;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1), inset -8px 0 15px -5px rgba(0,0,0,0.1);
+        }
+        #moment-screen .page.flipped {
+            transform: rotateY(-180deg);
+        }
+        #moment-screen .page-content {
+            color: #4a4a4a;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        #moment-screen .page-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #2a2a2a;
+        }
         #checkout-btn {
             padding: 10px 25px; border: none; border-radius: 20px;
             background: linear-gradient(90deg, #ff9800, #ff5722);
@@ -9665,7 +9614,7 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
 .cabin-ai-btn-large:active {
     opacity: 0.9;
 }
-</style>
+}</style>
   <link rel="apple-touch-icon" href="https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1758510900942_qdqqd_djw0z2.jpeg">
   <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -9754,12 +9703,7 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
               </div>
             </div>
             <div id="page-2-app-container">
-              <div>
-                <div class="large-widget" onclick="handleWidgetImageChange('large-widget-img')"> <img class="large-widget-img" id="large-widget-img" src="https://i.imgur.com/Bv63o3h.jpg" alt="Colorful Widget"> </div>
-                <div class="small-widget" onclick="showScreen('moments-screen')" style="margin-top: 15px;">
-                  <div class="small-widget-icon-wrapper"> <img class="small-widget-img" id="icon-img-moments" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='55' height='55'%3E%3Crect width='55' height='55' fill='%23ffd700' rx='14'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-size='28' fill='%23fff'%3E📖%3C/text%3E%3C/svg%3E" alt="瞬间"> </div> <span class="small-widget-label">瞬间</span>
-                </div>
-              </div>
+              <div class="large-widget" onclick="handleWidgetImageChange('large-widget-img')"> <img class="large-widget-img" id="large-widget-img" src="https://i.imgur.com/Bv63o3h.jpg" alt="Colorful Widget"> </div>
               <div class="app-subgrid">
                 <div class="small-widget" onclick="openPresetScreen()">
                   <div class="small-widget-icon-wrapper"> <img class="small-widget-img" id="icon-img-preset" src="https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1758510900942_qdqqd_djw0z2.jpeg" alt="预设"> </div> <span class="small-widget-label"data-lang-key="homeAppPreset">预设</span>
@@ -9774,7 +9718,21 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
                   <div class="small-widget-icon-wrapper"> <img class="small-widget-img" id="icon-img-x" src="https://i.postimg.cc/Y9d3BztC/1.png" alt="X"> </div> <span class="small-widget-label"data-lang-key="homeAppX">X</span>
                 </div>
               </div>
-              <div class="app-subgrid">
+              <div class="app-subgrid" style="grid-column: 1;">
+                <div class="small-widget">
+                  <div class="small-widget-icon-wrapper"> <img class="small-widget-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='55' height='55'%3E%3Crect width='55' height='55' fill='%23e0e0e0' rx='14'/%3E%3C/svg%3E" alt="占位"> </div> <span class="small-widget-label">占位</span>
+                </div>
+                <div class="small-widget">
+                  <div class="small-widget-icon-wrapper"> <img class="small-widget-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='55' height='55'%3E%3Crect width='55' height='55' fill='%23e0e0e0' rx='14'/%3E%3C/svg%3E" alt="占位"> </div> <span class="small-widget-label">占位</span>
+                </div>
+                <div class="small-widget">
+                  <div class="small-widget-icon-wrapper"> <img class="small-widget-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='55' height='55'%3E%3Crect width='55' height='55' fill='%23e0e0e0' rx='14'/%3E%3C/svg%3E" alt="占位"> </div> <span class="small-widget-label">占位</span>
+                </div>
+                <div class="small-widget" onclick="showScreen('moment-screen')">
+                  <div class="small-widget-icon-wrapper"> <img class="small-widget-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='55' height='55'%3E%3Crect width='55' height='55' fill='%23e0e0e0' rx='14'/%3E%3C/svg%3E" alt="瞬间"> </div> <span class="small-widget-label">瞬间</span>
+                </div>
+              </div>
+              <div class="app-subgrid" style="grid-column: 2;">
                 <div class="small-widget" onclick="showScreen('wallet-screen')">
                   <div class="small-widget-icon-wrapper"> <img class="small-widget-img" id="icon-img-wallet" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='55' height='55'%3E%3Crect width='55' height='55' fill='%23e0e0e0' rx='14'/%3E%3C/svg%3E" alt="钱包"> </div> <span class="small-widget-label">钱包</span>
             </div>
@@ -11012,7 +10970,7 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
                 src="https://i.postimg.cc/bvPq64cv/CCA834-BA-5-A90-408-D-94-FA-7-EE156-B6-A765.png" alt="设置"></span> </div>
         </div>
         <div class="selection-controls"> <span id="selection-cancel-btn"data-lang-key="chatSelectionCancel">取消</span> <span id="selection-count"></span>
-          <div class="header-actions"> <span id="selection-screenshot-btn" class="action-btn"data-lang-key="chatSelectionScreenshot">长截图</span> <span id="selection-favorite-btn" class="action-btn"data-lang-key="chatSelectionFavorite">收藏</span> <span id="selection-moments-btn" class="action-btn">添加到瞬间</span> <span id="selection-share-btn" class="action-btn"data-lang-key="chatSelectionShare">分享</span> <span id="selection-soft-delete-btn" class="action-btn"data-lang-key="chatSelectionSoftDelete">删除(通知AI)</span>
+          <div class="header-actions"> <span id="selection-screenshot-btn" class="action-btn"data-lang-key="chatSelectionScreenshot">长截图</span> <span id="selection-favorite-btn" class="action-btn"data-lang-key="chatSelectionFavorite">收藏</span> <span id="selection-share-btn" class="action-btn"data-lang-key="chatSelectionShare">分享</span> <span id="selection-add-to-moment-btn" class="action-btn">添加到瞬间</span> <span id="selection-soft-delete-btn" class="action-btn"data-lang-key="chatSelectionSoftDelete">删除(通知AI)</span>
             <span id="selection-erase-btn" class="action-btn" style="color: #ff3b30;"data-lang-key="chatSelectionHardDelete">彻底删除</span> </div>
         </div>
       </div>
@@ -11513,123 +11471,6 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         </div>
       </div>
     </div>
-    
-    <!-- 瞬间 - 角色列表页面 -->
-    <div id="moments-screen" class="screen">
-      <div class="header">
-        <span class="back-btn" onclick="showScreen('home-screen')">‹</span>
-        <span>瞬间</span>
-        <span style="width: 30px;"></span>
-      </div>
-      <div class="list-container" style="padding: 0;">
-        <div id="moments-character-list"></div>
-      </div>
-    </div>
-    
-    <!-- 瞬间 - 书本展示页面 -->
-    <div id="moments-book-screen" class="screen">
-      <div class="header">
-        <span class="back-btn" onclick="showScreen('moments-screen')">‹</span>
-        <span id="moments-book-title">瞬间</span>
-        <div class="header-actions">
-          <span class="action-btn" id="moments-cover-edit-btn" title="编辑封面">⚙️</span>
-        </div>
-      </div>
-      <div style="flex: 1; overflow: hidden; display: flex; justify-content: center; align-items: center; background-color: #4a5568; padding: 20px;">
-        <div class="moments-book-container">
-          <div class="moments-book" id="moments-book">
-            <!-- 书页将通过JavaScript动态生成 -->
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 瞬间封面设置弹窗 -->
-    <div id="moments-cover-modal" class="modal">
-      <div class="modal-content" style="height: 85%; max-width: 500px;">
-        <div class="modal-header">
-          <span>编辑封面</span>
-        </div>
-        <div class="modal-body" style="overflow-y: auto;">
-          <div class="form-group">
-            <label style="display: flex; align-items: center; justify-content: space-between;">
-              <span>显示标题</span>
-              <label class="toggle-switch">
-                <input type="checkbox" id="moments-cover-show-title" checked>
-                <span class="slider"></span>
-              </label>
-            </label>
-          </div>
-          
-          <div class="form-group">
-            <label style="display: flex; align-items: center; justify-content: space-between;">
-              <span>显示头像</span>
-              <label class="toggle-switch">
-                <input type="checkbox" id="moments-cover-show-avatar" checked>
-                <span class="slider"></span>
-              </label>
-            </label>
-          </div>
-          
-          <div class="form-group">
-            <label style="display: flex; align-items: center; justify-content: space-between;">
-              <span>显示统计信息（专属瞬间+条数）</span>
-              <label class="toggle-switch">
-                <input type="checkbox" id="moments-cover-show-stats" checked>
-                <span class="slider"></span>
-              </label>
-            </label>
-          </div>
-          
-          <div class="form-group">
-            <label>封面样式</label>
-            <select id="moments-cover-style" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px;">
-              <option value="default">默认样式</option>
-              <option value="classic">经典样式</option>
-              <option value="modern">现代样式</option>
-              <option value="vintage">复古样式</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label>背景颜色</label>
-            <div style="display: flex; gap: 10px; align-items: center;">
-              <input type="color" id="moments-cover-bg-color" value="#d0d0d0" style="width: 80px; height: 40px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer;">
-              <input type="text" id="moments-cover-bg-color-text" value="#d0d0d0" style="flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px;" placeholder="#d0d0d0">
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label>背景壁纸</label>
-            <div id="moments-cover-bg-preview" style="width: 100%; height: 150px; border: 2px dashed var(--border-color); border-radius: 8px; margin-bottom: 10px; background-size: cover; background-position: center; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); cursor: pointer;" onclick="document.getElementById('moments-cover-bg-upload').click()">
-              <span>点击上传背景壁纸</span>
-            </div>
-            <div style="display: flex; gap: 10px;">
-              <button type="button" class="form-button-secondary" onclick="document.getElementById('moments-cover-bg-upload').click()" style="flex: 1;">上传壁纸</button>
-              <button type="button" class="form-button-secondary" id="moments-cover-bg-remove-btn" style="flex: 1;">清除壁纸</button>
-            </div>
-            <input type="file" id="moments-cover-bg-upload" accept="image/*" hidden>
-          </div>
-          
-          <div class="form-group">
-            <label>封面图片</label>
-            <div id="moments-cover-image-preview" style="width: 100%; height: 200px; border: 2px dashed var(--border-color); border-radius: 8px; margin-bottom: 10px; background-size: cover; background-position: center; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); cursor: pointer;" onclick="document.getElementById('moments-cover-image-upload').click()">
-              <span>点击上传封面图片</span>
-            </div>
-            <div style="display: flex; gap: 10px;">
-              <button type="button" class="form-button-secondary" onclick="document.getElementById('moments-cover-image-upload').click()" style="flex: 1;">上传封面</button>
-              <button type="button" class="form-button-secondary" id="moments-cover-image-remove-btn" style="flex: 1;">清除封面</button>
-            </div>
-            <input type="file" id="moments-cover-image-upload" accept="image/*" hidden>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="cancel" id="moments-cover-cancel-btn">取消</button>
-          <button class="save" id="moments-cover-save-btn">保存</button>
-        </div>
-      </div>
-    </div>
-    
     <style>
     /* Farm Game Styles - Pixel & Pastel */
     #farm-screen {
@@ -11867,49 +11708,8 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         grid-template-columns: repeat(3, 1fr);
         grid-template-rows: repeat(3, 1fr);
         gap: 4px;
-        padding: 40px; /* 增大padding让草地更大 */
+        padding: 15px;
         border-radius: 8px;
-        position: relative;
-        border: 8px solid #66bb6a; /* 农田边框 */
-        box-shadow: 
-            inset 0 0 0 4px #4caf50,
-            0 0 0 4px #81c784,
-            0 4px 8px rgba(0,0,0,0.1);
-    }
-
-    /* 农田装饰元素 */
-    .farm-decoration {
-        position: absolute;
-        pointer-events: none;
-        image-rendering: pixelated;
-    }
-
-    /* 农田栅栏 */
-    .farm-fence {
-        position: absolute;
-        background: #8d6e63;
-        border: 2px solid #5d4037;
-    }
-
-    .farm-fence.horizontal {
-        width: 100%;
-        height: 8px;
-        left: 0;
-    }
-
-    .farm-fence.vertical {
-        width: 8px;
-        height: 100%;
-        top: 0;
-    }
-
-    /* 农田角落装饰 */
-    .farm-corner {
-        position: absolute;
-        width: 16px;
-        height: 16px;
-        background: #795548;
-        border: 2px solid #5d4037;
     }
     
     .game-container .tile {
@@ -11965,9 +11765,9 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         transform: translateY(0);
     }
 
-    /* 池塘页面样式 - 像素块风格 */
+    /* 池塘页面样式 - 像素风格 */
     #pond-screen {
-        background: #a8e6cf; /* 清新的绿色背景 */
+        background: #e3f2fd; /* 浅蓝色背景 */
         font-family: 'Courier New', Courier, monospace;
         image-rendering: pixelated;
     }
@@ -11988,9 +11788,9 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         background: #fff;
         padding: 10px 25px;
         border-radius: 15px;
-        border: 4px solid #81c784; /* 绿色边框 */
-        box-shadow: 4px 4px 0 rgba(129, 199, 132, 0.4);
-        color: #2e7d32;
+        border: 4px solid #64b5f6; /* 蓝色边框 */
+        box-shadow: 4px 4px 0 rgba(100, 181, 246, 0.4);
+        color: #1976d2;
     }
 
     .pond-stat {
@@ -11999,191 +11799,87 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         gap: 8px;
         font-weight: bold;
         font-size: 16px;
-        color: #66bb6a;
+        color: #42a5f5;
         text-shadow: 1px 1px 0 #fff;
     }
 
     .pond-area {
         width: 90%;
         max-width: 400px;
-        height: 350px;
-        background: #4dd0e1; /* 青蓝色池塘 */
-        border: 8px solid #26a69a;
-        border-radius: 0;
+        height: 300px;
+        background: linear-gradient(to bottom, #4fc3f7 0%, #29b6f6 50%, #0288d1 100%);
+        border: 6px solid #0277bd;
+        border-radius: 20px;
         position: relative;
         overflow: hidden;
-        box-shadow: 
-            inset 0 0 0 4px #00897b,
-            inset 0 0 0 8px #26a69a,
-            0 8px 0 #00695c;
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
         margin-bottom: 20px;
-        image-rendering: pixelated;
     }
 
     .water-surface {
         width: 100%;
         height: 100%;
         position: relative;
-        background: linear-gradient(to bottom, #4dd0e1 0%, #26a69a 100%);
-        animation: water-shimmer 4s infinite;
+        background-image: 
+            repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(255,255,255,0.1) 8px, rgba(255,255,255,0.1) 16px),
+            repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(255,255,255,0.1) 8px, rgba(255,255,255,0.1) 16px);
+        animation: water-ripple 3s infinite;
     }
 
-    @keyframes water-shimmer {
-        0%, 100% { 
-            opacity: 1;
-        }
-        50% { 
-            opacity: 0.95;
-        }
+    @keyframes water-ripple {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-2px); }
     }
 
-    /* 荷叶装饰 */
-    .lily-pad {
-        position: absolute;
-        width: 48px;
-        height: 48px;
-        background: #66bb6a;
-        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-        border: 3px solid #4caf50;
-        z-index: 1;
-        image-rendering: pixelated;
-    }
-
-    .lily-pad::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 8px;
-        height: 8px;
-        background: #81c784;
-        border-radius: 50%;
-    }
-
-    /* 水草装饰 */
-    .water-plant {
-        position: absolute;
-        bottom: 0;
-        width: 16px;
-        height: 60px;
-        background: #2e7d32;
-        border-left: 2px solid #1b5e20;
-        border-right: 2px solid #1b5e20;
-        z-index: 1;
-        image-rendering: pixelated;
-    }
-
-    .water-plant::before {
-        content: '';
-        position: absolute;
-        top: -8px;
-        left: -4px;
-        width: 24px;
-        height: 8px;
-        background: #388e3c;
-        border-radius: 0 0 50% 50%;
-    }
-
-    /* 鱼 - 可点击 */
     .fish {
         position: absolute;
-        width: 40px;
-        height: 32px;
+        width: 32px;
+        height: 24px;
         image-rendering: pixelated;
+        animation: fish-swim 3s infinite;
         cursor: pointer;
-        z-index: 10;
-        transition: transform 0.1s;
     }
 
-    .fish:hover {
-        transform: scale(1.2);
-        filter: brightness(1.2);
+    @keyframes fish-swim {
+        0% { transform: translateX(0) translateY(0); }
+        25% { transform: translateX(20px) translateY(-10px); }
+        50% { transform: translateX(40px) translateY(0); }
+        75% { transform: translateX(20px) translateY(10px); }
+        100% { transform: translateX(0) translateY(0); }
     }
 
-    .fish:active {
-        transform: scale(0.9);
-    }
-
-    /* 鱼游动动画 - 更快速随机 */
-    @keyframes fish-swim-fast {
-        0% { transform: translate(0, 0) scaleX(1); }
-        25% { transform: translate(60px, -30px) scaleX(1); }
-        50% { transform: translate(120px, 20px) scaleX(-1); }
-        75% { transform: translate(60px, 40px) scaleX(-1); }
-        100% { transform: translate(0, 0) scaleX(1); }
-    }
-
-    @keyframes fish-swim-medium {
-        0% { transform: translate(0, 0) scaleX(1); }
-        33% { transform: translate(-80px, 30px) scaleX(-1); }
-        66% { transform: translate(-40px, -20px) scaleX(-1); }
-        100% { transform: translate(0, 0) scaleX(1); }
-    }
-
-    @keyframes fish-swim-slow {
-        0% { transform: translate(0, 0) scaleX(1); }
-        50% { transform: translate(100px, 50px) scaleX(1); }
-        100% { transform: translate(0, 0) scaleX(1); }
-    }
-
-    /* 鱼被捕获效果 */
-    .fish.caught {
-        animation: fish-caught 0.5s ease-out forwards;
-        z-index: 20;
-    }
-
-    @keyframes fish-caught {
-        0% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.5) translateY(-20px); opacity: 0.8; }
-        100% { transform: scale(0) translateY(-40px); opacity: 0; }
-    }
-
-    .fishing-status {
-        width: 90%;
-        max-width: 400px;
-        margin-bottom: 15px;
-        background: #fff;
-        padding: 15px;
-        border: 4px solid #81c784;
-        border-radius: 8px;
-        box-shadow: 3px 3px 0 #66bb6a;
-    }
-
-    .fishing-status .status-text {
-        text-align: center;
-        font-weight: bold;
-        font-size: 16px;
-        color: #2e7d32;
-        margin-bottom: 10px;
-    }
-
-    .timer-bar {
-        width: 100%;
-        height: 20px;
-        background: #e0e0e0;
-        border: 2px solid #9e9e9e;
-        border-radius: 0;
-        overflow: hidden;
-        image-rendering: pixelated;
-    }
-
-    .timer-fill {
+    .fishing-line {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 2px;
         height: 100%;
-        background: #4caf50;
-        width: 100%;
-        transition: width 0.1s linear;
-        box-shadow: inset 0 0 0 2px #66bb6a;
+        background: #424242;
+        transform: translateX(-50%);
+        z-index: 10;
+        animation: line-bounce 0.5s infinite;
     }
 
-    .timer-fill.warning {
-        background: #ff9800;
-        box-shadow: inset 0 0 0 2px #f57c00;
+    @keyframes line-bounce {
+        0%, 100% { transform: translateX(-50%) translateY(0); }
+        50% { transform: translateX(-50%) translateY(5px); }
     }
 
-    .timer-fill.danger {
-        background: #f44336;
-        box-shadow: inset 0 0 0 2px #d32f2f;
+    .hook {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 16px;
+        height: 16px;
+        background: #424242;
+        clip-path: polygon(0 0, 100% 0, 100% 70%, 60% 100%, 40% 100%, 0 70%);
+        animation: hook-swing 1s infinite;
+    }
+
+    @keyframes hook-swing {
+        0%, 100% { transform: translateX(-50%) rotate(-5deg); }
+        50% { transform: translateX(-50%) rotate(5deg); }
     }
 
     .pond-controls {
@@ -12723,38 +12419,15 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         <span style="width: 30px;"></span>
       </div>
       <div class="farm-container">
-        <!-- 角色选择器 -->
-        <div class="character-selector" style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap;">
-          <label style="font-weight: bold; color: #2e7d32;">选择角色：</label>
-          <select id="farm-character-select" onchange="switchCharacterFarm(this.value)" style="padding: 8px 15px; border: 2px solid #4caf50; border-radius: 8px; background: white; font-size: 14px; cursor: pointer; min-width: 150px;">
-            <option value="default">我的农场</option>
-          </select>
-          <button class="farm-action-btn" onclick="stealFromOtherFarm()" style="background: #ff9800; font-size: 12px; padding: 8px 12px;">🥷 偷菜</button>
-        </div>
         <!-- 操作按钮区域 -->
-        <div class="farm-actions" id="farm-actions">
-          <button class="farm-action-btn" id="backpack-btn" onclick="showBackpack()">🎒 背包</button>
-          <button class="farm-action-btn" id="shop-btn" onclick="showShop()">🛒 商城</button>
-          <button class="farm-action-btn" id="pond-btn" onclick="showScreen('pond-screen')">🐟 池塘</button>
-          <button class="farm-action-btn" id="log-btn" onclick="showCharacterLog()" style="background: #9c27b0; display: none;">📋 操作日志</button>
-          <button class="farm-action-btn" id="generate-btn" onclick="generateCharacterFarmAction()" style="background: #ff5722; display: none;">✨ 生成活动</button>
+        <div class="farm-actions">
+          <button class="farm-action-btn" onclick="showBackpack()">🎒 背包</button>
+          <button class="farm-action-btn" onclick="showShop()">🛒 商城</button>
+          <button class="farm-action-btn" onclick="showScreen('pond-screen')">🐟 池塘</button>
         </div>
         <!-- 田地网格 -->
-        <div class="game-container-wrapper" style="position: relative; display: inline-block; margin: 20px 0;">
-          <!-- 农田装饰：栅栏 -->
-          <div class="farm-fence horizontal" style="top: -8px;"></div>
-          <div class="farm-fence horizontal" style="bottom: -8px;"></div>
-          <div class="farm-fence vertical" style="left: -8px;"></div>
-          <div class="farm-fence vertical" style="right: -8px;"></div>
-          <!-- 农田角落装饰 -->
-          <div class="farm-corner" style="top: -8px; left: -8px;"></div>
-          <div class="farm-corner" style="top: -8px; right: -8px;"></div>
-          <div class="farm-corner" style="bottom: -8px; left: -8px;"></div>
-          <div class="farm-corner" style="bottom: -8px; right: -8px;"></div>
-          <!-- 田地网格 -->
-          <div class="game-container" id="gameContainer">
-            <!-- 9个格子将通过JavaScript动态生成 -->
-          </div>
+        <div class="game-container" id="gameContainer">
+          <!-- 9个格子将通过JavaScript动态生成 -->
         </div>
       </div>
       
@@ -12790,32 +12463,6 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
           </div>
         </div>
       </div>
-      
-      <!-- 角色操作日志弹窗 -->
-      <div class="backpack-modal" id="character-log-modal" style="display: none;">
-        <div class="modal-content" style="max-width: 600px;">
-          <div class="modal-header">
-            <h3 id="log-modal-title">操作日志</h3>
-            <button class="close-modal-btn" onclick="closeCharacterLog()">×</button>
-          </div>
-          <div class="log-content" id="log-content" style="padding: 15px; max-height: 500px; overflow-y: auto;">
-            <!-- 日志内容 -->
-          </div>
-        </div>
-      </div>
-      
-      <!-- 角色操作日志弹窗 -->
-      <div class="backpack-modal" id="character-log-modal" style="display: none;">
-        <div class="modal-content" style="max-width: 600px;">
-          <div class="modal-header">
-            <h3 id="log-modal-title">操作日志</h3>
-            <button class="close-modal-btn" onclick="closeCharacterLog()">×</button>
-          </div>
-          <div class="log-content" id="log-content" style="padding: 15px; max-height: 500px; overflow-y: auto;">
-            <!-- 日志内容 -->
-          </div>
-        </div>
-      </div>
     </div>
     <!-- 池塘页面 -->
     <div id="pond-screen" class="screen">
@@ -12838,24 +12485,11 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         
         <!-- 池塘区域 -->
         <div class="pond-area" id="pond-area">
-          <div class="water-surface" id="water-surface">
-            <!-- 装饰：荷叶 -->
-            <div class="lily-pad" style="top: 20px; left: 30px;"></div>
-            <div class="lily-pad" style="top: 60px; right: 40px;"></div>
-            <div class="lily-pad" style="bottom: 80px; left: 50%;"></div>
-            <!-- 装饰：水草 -->
-            <div class="water-plant" style="left: 20px;"></div>
-            <div class="water-plant" style="right: 30px;"></div>
-            <div class="water-plant" style="left: 60%; height: 40px;"></div>
+          <div class="water-surface">
             <!-- 鱼会在这里显示 -->
           </div>
-        </div>
-        
-        <!-- 游戏状态提示 -->
-        <div class="fishing-status" id="fishing-status" style="display: none;">
-          <div class="status-text">点击游动的鱼来钓鱼！</div>
-          <div class="timer-bar">
-            <div class="timer-fill" id="timer-fill"></div>
+          <div class="fishing-line" id="fishing-line" style="display: none;">
+            <div class="hook"></div>
           </div>
         </div>
         
@@ -13200,6 +12834,24 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         <div class="cart-summary">
           <div id="cart-total">合计: ¥0.00</div> <span class="cart-subtext">不含运费</span>
         </div> <button id="checkout-btn">结算(0)</button>
+      </div>
+    </div>
+    <div id="moment-screen" class="screen">
+      <div class="header">
+        <span class="back-btn" onclick="showScreen('home-screen')">‹</span>
+        <span>瞬间</span>
+        <div class="header-actions">
+          <select id="moment-character-select" style="padding: 5px 10px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--secondary-bg); color: var(--text-primary); font-size: 14px; cursor: pointer;">
+            <option value="">选择角色</option>
+          </select>
+        </div>
+      </div>
+      <div id="moment-content" style="flex: 1; display: flex; justify-content: center; align-items: center; background-color: #4a5568; overflow: hidden; position: relative;">
+        <div class="book-container" id="moment-book-container" style="perspective: 2000px;">
+          <div class="book" id="moment-book">
+            <!-- 书籍页面将动态生成 -->
+          </div>
+        </div>
       </div>
     </div>
     <div id="product-editor-modal" class="modal">
@@ -15967,7 +15619,7 @@ function showCustomAlert(title, message) {
                 
         
         
-        db.version(43).stores({ 
+        db.version(40).stores({ 
             doubanPosts: '++id, timestamp',
            chats: '&id, isGroup, groupId, isPinned, memos, diary, appUsageLog, lastIntelligentSummaryTimestamp',
            apiConfig: '&id, minimaxGroupId, minimaxApiKey',
@@ -15988,8 +15640,6 @@ function showCustomAlert(title, message) {
             shoppingProducts: '++id, name, description',
             shoppingCategories: '++id, name',
             apiPresets: '++id, name',
-            moments: '++id, chatId, timestamp, messageId, batchId',
-            momentsCovers: '&chatId, showTitle, showAvatar, showStats, backgroundColor, backgroundImage, coverStyle, coverImage',
             renderingRules: '++id, name, chatId',
             appearancePresets: '++id, name, type',
             stickerCategories: '++id, name',
@@ -16040,13 +15690,9 @@ window.db = db;
                      if (screenId === 'douban-screen') renderDoubanScreen();
                     if (screenId === 'wallet-screen') renderWalletScreen();
                     if (screenId === 'pizza-game-screen') initPizzaGame();
-                    if (screenId === 'farm-screen') {
-                        initFarmGame();
-                        loadCharacterListToFarm();
-                        updateStealButton();
-                    }
+                    if (screenId === 'farm-screen') initFarmGame();
                     if (screenId === 'pond-screen') initPondGame();
-                    if (screenId === 'moments-screen') renderMomentsScreen();
+                    if (screenId === 'moment-screen') initMomentScreen();
                     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
                     const screenToShow = document.getElementById(screenId);
                     if (screenToShow) screenToShow.classList.add('active');
@@ -21038,11 +20684,6 @@ if (lastMessage && (msg.timestamp - lastMessage.timestamp > 600000)) {
     
     if (msg.role === 'assistant' && !isInitialLoad) {
         playNotificationSound();
-        
-        // 有概率触发角色农场操作（30%概率，仅单聊）
-        if (!chat.isGroup && chat.id && typeof maybeTriggerFarmActionAfterChat === 'function') {
-            maybeTriggerFarmActionAfterChat(chat.id);
-        }
     }
     
             if (!isInitialLoad) {
@@ -21385,11 +21026,6 @@ ${stickerContext}
         
         await db.chats.put(chat);
         renderChatList();
-        
-        // 有概率触发角色农场操作（30%概率，仅单聊）
-        if (!chat.isGroup && chat.id) {
-            maybeTriggerFarmActionAfterChat(chat.id);
-        }
 
     } catch (error) {
         console.error("旁观模式推进剧情失败:", error);
@@ -29805,335 +29441,6 @@ let selectedFrames = new Set();
             });
         }
           
-        // ========== 瞬间功能 ==========
-        
-        // 渲染瞬间角色列表
-        async function renderMomentsScreen() {
-            const listEl = document.getElementById('moments-character-list');
-            listEl.innerHTML = '';
-            
-            // 获取所有聊天角色（非群聊）
-            const characters = Object.values(state.chats).filter(chat => !chat.isGroup);
-            
-            if (characters.length === 0) {
-                listEl.innerHTML = '<p style="text-align:center; color: var(--text-secondary); padding: 50px 0;">还没有角色呢~</p>';
-                return;
-            }
-            
-            // 获取每个角色的瞬间数量
-            for (const char of characters) {
-                const momentsCount = await db.moments.where('chatId').equals(char.id).count();
-                
-                const item = document.createElement('div');
-                item.className = 'moments-character-item';
-                item.innerHTML = `
-                    <img class="moments-character-avatar" src="${char.avatar || 'https://i.postimg.cc/VkQfgzGJ/1.jpg'}" alt="${char.name}">
-                    <div class="moments-character-name">${char.name}</div>
-                    <div class="moments-character-count">${momentsCount} 条</div>
-                `;
-                item.onclick = () => openMomentsBook(char.id);
-                listEl.appendChild(item);
-            }
-        }
-        
-        // 当前打开的瞬间书本的chatId
-        let currentMomentsChatId = null;
-        
-        // 打开某个角色的瞬间书本
-        async function openMomentsBook(chatId) {
-            const chat = state.chats[chatId];
-            if (!chat) return;
-            
-            currentMomentsChatId = chatId;
-            document.getElementById('moments-book-title').textContent = `${chat.name}的瞬间`;
-            
-            // 获取该角色的所有瞬间
-            const moments = await db.moments.where('chatId').equals(chatId).reverse().sortBy('timestamp');
-            
-            // 获取封面设置
-            const coverSettings = await db.momentsCovers.get(chatId);
-            
-            // 渲染书本
-            await renderMomentsBook(chat, moments, coverSettings);
-            
-            showScreen('moments-book-screen');
-        }
-        
-        // 渲染书本内容
-        async function renderMomentsBook(chat, moments, coverSettings = null) {
-            const bookEl = document.getElementById('moments-book');
-            bookEl.innerHTML = '';
-            
-            // 如果没有封面设置，尝试从数据库加载
-            if (!coverSettings && currentMomentsChatId) {
-                coverSettings = await db.momentsCovers.get(currentMomentsChatId);
-            }
-            
-            // 默认封面设置
-            const defaultSettings = {
-                showTitle: true,
-                showAvatar: true,
-                showStats: true,
-                backgroundColor: '#d0d0d0',
-                backgroundImage: '',
-                coverStyle: 'default',
-                coverImage: ''
-            };
-            const settings = coverSettings ? { ...defaultSettings, ...coverSettings } : defaultSettings;
-            
-            // 封面页
-            const coverPage = document.createElement('div');
-            coverPage.className = 'moments-page';
-            coverPage.dataset.page = '1';
-            
-            // 构建封面样式
-            let coverStyle = '';
-            if (settings.backgroundImage) {
-                coverStyle += `background-image: url('${settings.backgroundImage}'); background-size: cover; background-position: center;`;
-            } else {
-                coverStyle += `background-color: ${settings.backgroundColor};`;
-            }
-            
-            // 获取正确的头像
-            const defaultAvatar = 'https://i.postimg.cc/VkQfgzGJ/1.jpg';
-            const chatAvatar = chat.settings?.aiAvatar || chat.avatar || defaultAvatar;
-            
-            // 如果有封面图片，使用封面图片，否则使用默认布局
-            let coverContent = '';
-            if (settings.coverImage) {
-                coverContent = `<img src="${settings.coverImage}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 0 15px 15px 0;">`;
-            } else {
-                let titleHtml = '';
-                if (settings.showTitle) {
-                    titleHtml = `<div class="moments-cover-title">${chat.name}</div>`;
-                }
-                
-                let avatarHtml = '';
-                if (settings.showAvatar) {
-                    avatarHtml = `<img class="moments-cover-avatar" src="${chatAvatar}" alt="${chat.name}">`;
-                }
-                
-                let statsHtml = '';
-                if (settings.showStats) {
-                    statsHtml = `
-                        <div style="text-align: center; color: #666; font-size: 14px;">的专属瞬间</div>
-                        <div style="text-align: center; color: #999; font-size: 12px; margin-top: 10px;">共 ${moments.length} 条记录</div>
-                    `;
-                }
-                
-                coverContent = `
-                    ${titleHtml}
-                    ${avatarHtml}
-                    ${statsHtml}
-                `;
-            }
-            
-            coverPage.innerHTML = `
-                <div class="moments-front" style="${coverStyle}">
-                    ${coverContent}
-                </div>
-                <div class="moments-back"></div>
-            `;
-            bookEl.appendChild(coverPage);
-            
-            // 按批次ID分组（如果没有batchId，则每条消息单独一组）
-            const batches = {};
-            moments.forEach(moment => {
-                const batchId = moment.batchId || moment.timestamp; // 兼容旧数据
-                if (!batches[batchId]) {
-                    batches[batchId] = [];
-                }
-                batches[batchId].push(moment);
-            });
-            
-            // 按批次时间排序（最早的在前）
-            const sortedBatches = Object.values(batches).sort((a, b) => {
-                const aTime = Math.min(...a.map(m => m.timestamp));
-                const bTime = Math.min(...b.map(m => m.timestamp));
-                return aTime - bTime;
-            });
-            
-            // 每个批次一页
-            let pageIndex = 2;
-            sortedBatches.forEach(batchMessages => {
-                const page = document.createElement('div');
-                page.className = 'moments-page';
-                page.dataset.page = pageIndex;
-                
-                // 按时间排序批次内的消息
-                batchMessages.sort((a, b) => a.timestamp - b.timestamp);
-                
-                let frontContent = '';
-                for (const moment of batchMessages) {
-                    const date = new Date(moment.timestamp);
-                    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-                    
-                    frontContent += `
-                        <div class="moments-message-item">
-                            <div class="moments-message-date">${dateStr}</div>
-                            <div class="moments-message-content">${moment.content || ''}</div>
-                        </div>
-                    `;
-                }
-                
-                page.innerHTML = `
-                    <div class="moments-front">${frontContent}</div>
-                    <div class="moments-back"></div>
-                `;
-                bookEl.appendChild(page);
-                pageIndex++;
-            });
-            
-            // 封底页
-            const backCoverPage = document.createElement('div');
-            backCoverPage.className = 'moments-page';
-            backCoverPage.dataset.page = pageIndex;
-            backCoverPage.innerHTML = `
-                <div class="moments-front"></div>
-                <div class="moments-back"></div>
-            `;
-            bookEl.appendChild(backCoverPage);
-            
-            // 初始化页面层级
-            const pages = bookEl.querySelectorAll('.moments-page');
-            pages.forEach((page, index) => {
-                page.style.zIndex = pages.length - index;
-            });
-            
-            // 设置翻页事件
-            initMomentsBookFlip();
-        }
-        
-        // 初始化书本翻页功能
-        let currentMomentsPage = 1;
-        let startX = 0;
-        
-        function initMomentsBookFlip() {
-            const bookEl = document.getElementById('moments-book');
-            const pages = bookEl.querySelectorAll('.moments-page');
-            currentMomentsPage = 1;
-            
-            // 触摸事件
-            bookEl.addEventListener('touchstart', (e) => {
-                startX = e.touches[0].clientX;
-            });
-            
-            bookEl.addEventListener('touchend', (e) => {
-                const endX = e.changedTouches[0].clientX;
-                const diffX = endX - startX;
-                
-                // 右滑：翻回上一页
-                if (diffX > 50 && currentMomentsPage > 1) {
-                    const prevPage = pages[currentMomentsPage - 2];
-                    if (prevPage.classList.contains('flipped')) {
-                        prevPage.classList.remove('flipped');
-                        prevPage.style.zIndex = pages.length - (currentMomentsPage - 2);
-                        currentMomentsPage--;
-                    }
-                }
-                
-                // 左滑：翻到下一页
-                if (diffX < -50 && currentMomentsPage < pages.length) {
-                    const nextPage = pages[currentMomentsPage - 1];
-                    if (!nextPage.classList.contains('flipped')) {
-                        nextPage.classList.add('flipped');
-                        nextPage.style.zIndex = currentMomentsPage;
-                        currentMomentsPage++;
-                    }
-                }
-            });
-            
-            // 鼠标事件（PC兼容）
-            bookEl.addEventListener('mousedown', (e) => {
-                startX = e.clientX;
-            });
-            
-            bookEl.addEventListener('mouseup', (e) => {
-                const endX = e.clientX;
-                const diffX = endX - startX;
-                
-                if (diffX > 50 && currentMomentsPage > 1) {
-                    const prevPage = pages[currentMomentsPage - 2];
-                    if (prevPage.classList.contains('flipped')) {
-                        prevPage.classList.remove('flipped');
-                        prevPage.style.zIndex = pages.length - (currentMomentsPage - 2);
-                        currentMomentsPage--;
-                    }
-                }
-                
-                if (diffX < -50 && currentMomentsPage < pages.length) {
-                    const nextPage = pages[currentMomentsPage - 1];
-                    if (!nextPage.classList.contains('flipped')) {
-                        nextPage.classList.add('flipped');
-                        nextPage.style.zIndex = currentMomentsPage;
-                        currentMomentsPage++;
-                    }
-                }
-            });
-        }
-        
-        // 添加消息到瞬间
-        async function addMessagesToMoments() {
-            if (!state.activeChatId) return;
-            
-            if (selectedMessages.size === 0) {
-                alert('请先选择要添加的聊天记录！');
-                return;
-            }
-            
-            const chat = state.chats[state.activeChatId];
-            if (!chat) return;
-            
-            const timestampsToAdd = [...selectedMessages];
-            let addedCount = 0;
-            
-            // 为本次添加的所有消息生成一个批次ID
-            const batchId = Date.now();
-            
-            for (const timestamp of timestampsToAdd) {
-                // 从 history 中查找消息（因为消息存储在 history 中）
-                const message = chat.history.find(msg => msg.timestamp === timestamp);
-                
-                if (message) {
-                    // 提取消息内容（处理字符串和数组格式）
-                    let contentText = '';
-                    if (typeof message.content === 'string') {
-                        contentText = message.content;
-                    } else if (Array.isArray(message.content)) {
-                        // 如果是数组，提取文本部分
-                        contentText = message.content
-                            .filter(item => item.type === 'text')
-                            .map(item => item.text || '')
-                            .join(' ');
-                    } else {
-                        contentText = String(message.content || '');
-                    }
-                    
-                    // 检查是否已存在（使用 timestamp 作为唯一标识）
-                    const existing = await db.moments.where({chatId: state.activeChatId, timestamp: timestamp}).first();
-                    if (!existing) {
-                        await db.moments.add({
-                            chatId: state.activeChatId,
-                            timestamp: timestamp,
-                            content: contentText,
-                            role: message.role || 'user',
-                            batchId: batchId
-                        });
-                        addedCount++;
-                    }
-                }
-            }
-            
-            if (addedCount > 0) {
-                alert(`成功添加 ${addedCount} 条记录到瞬间！`);
-            } else {
-                alert('这些记录已经存在于瞬间中！');
-            }
-            
-            // 取消选择模式
-            document.getElementById('selection-cancel-btn').click();
-        }
-        
         
         
         async function triggerAiFriendApplication(chatId) {
@@ -51854,162 +51161,7 @@ if (deleteBtn) {
         
         document.getElementById('memories-back-btn').addEventListener('click', () => switchToChatListView('messages-view'));
         
-        // 瞬间相关事件监听
-        document.getElementById('selection-moments-btn')?.addEventListener('click', addMessagesToMoments);
-        
-        // 瞬间封面设置相关事件
-        document.getElementById('moments-cover-edit-btn')?.addEventListener('click', async () => {
-            if (!currentMomentsChatId) return;
-            
-            const coverSettings = await db.momentsCovers.get(currentMomentsChatId);
-            const defaultSettings = {
-                showTitle: true,
-                showAvatar: true,
-                showStats: true,
-                backgroundColor: '#d0d0d0',
-                backgroundImage: '',
-                coverStyle: 'default',
-                coverImage: ''
-            };
-            const settings = coverSettings ? { ...defaultSettings, ...coverSettings } : defaultSettings;
-            
-            // 填充表单
-            document.getElementById('moments-cover-show-title').checked = settings.showTitle;
-            document.getElementById('moments-cover-show-avatar').checked = settings.showAvatar !== false;
-            document.getElementById('moments-cover-show-stats').checked = settings.showStats !== false;
-            document.getElementById('moments-cover-style').value = settings.coverStyle;
-            document.getElementById('moments-cover-bg-color').value = settings.backgroundColor;
-            document.getElementById('moments-cover-bg-color-text').value = settings.backgroundColor;
-            
-            // 预览背景
-            const bgPreview = document.getElementById('moments-cover-bg-preview');
-            if (settings.backgroundImage) {
-                bgPreview.style.backgroundImage = `url('${settings.backgroundImage}')`;
-                bgPreview.innerHTML = '';
-            } else {
-                bgPreview.style.backgroundImage = '';
-                bgPreview.innerHTML = '<span>点击上传背景壁纸</span>';
-            }
-            
-            // 预览封面图片
-            const coverPreview = document.getElementById('moments-cover-image-preview');
-            if (settings.coverImage) {
-                coverPreview.style.backgroundImage = `url('${settings.coverImage}')`;
-                coverPreview.innerHTML = '';
-            } else {
-                coverPreview.style.backgroundImage = '';
-                coverPreview.innerHTML = '<span>点击上传封面图片</span>';
-            }
-            
-            document.getElementById('moments-cover-modal').style.display = 'flex';
-        });
-        
-        // 颜色选择器同步
-        document.getElementById('moments-cover-bg-color')?.addEventListener('input', (e) => {
-            document.getElementById('moments-cover-bg-color-text').value = e.target.value;
-        });
-        
-        document.getElementById('moments-cover-bg-color-text')?.addEventListener('input', (e) => {
-            const color = e.target.value;
-            if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
-                document.getElementById('moments-cover-bg-color').value = color;
-            }
-        });
-        
-        // 上传背景壁纸
-        document.getElementById('moments-cover-bg-upload')?.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const bgPreview = document.getElementById('moments-cover-bg-preview');
-                    bgPreview.style.backgroundImage = `url('${event.target.result}')`;
-                    bgPreview.innerHTML = '';
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-        
-        // 清除背景壁纸
-        document.getElementById('moments-cover-bg-remove-btn')?.addEventListener('click', () => {
-            document.getElementById('moments-cover-bg-upload').value = '';
-            const bgPreview = document.getElementById('moments-cover-bg-preview');
-            bgPreview.style.backgroundImage = '';
-            bgPreview.innerHTML = '<span>点击上传背景壁纸</span>';
-        });
-        
-        // 上传封面图片
-        document.getElementById('moments-cover-image-upload')?.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const coverPreview = document.getElementById('moments-cover-image-preview');
-                    coverPreview.style.backgroundImage = `url('${event.target.result}')`;
-                    coverPreview.innerHTML = '';
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-        
-        // 清除封面图片
-        document.getElementById('moments-cover-image-remove-btn')?.addEventListener('click', () => {
-            document.getElementById('moments-cover-image-upload').value = '';
-            const coverPreview = document.getElementById('moments-cover-image-preview');
-            coverPreview.style.backgroundImage = '';
-            coverPreview.innerHTML = '<span>点击上传封面图片</span>';
-        });
-        
-        // 保存封面设置
-        document.getElementById('moments-cover-save-btn')?.addEventListener('click', async () => {
-            if (!currentMomentsChatId) return;
-            
-            const showTitle = document.getElementById('moments-cover-show-title').checked;
-            const showAvatar = document.getElementById('moments-cover-show-avatar').checked;
-            const showStats = document.getElementById('moments-cover-show-stats').checked;
-            const coverStyle = document.getElementById('moments-cover-style').value;
-            const backgroundColor = document.getElementById('moments-cover-bg-color').value;
-            
-            // 获取背景图片
-            let backgroundImage = '';
-            const bgPreview = document.getElementById('moments-cover-bg-preview');
-            if (bgPreview.style.backgroundImage && bgPreview.style.backgroundImage !== 'none') {
-                backgroundImage = bgPreview.style.backgroundImage.slice(5, -2); // 移除 url('') 包装
-            }
-            
-            // 获取封面图片
-            let coverImage = '';
-            const coverPreview = document.getElementById('moments-cover-image-preview');
-            if (coverPreview.style.backgroundImage && coverPreview.style.backgroundImage !== 'none') {
-                coverImage = coverPreview.style.backgroundImage.slice(5, -2);
-            }
-            
-            // 保存到数据库
-            await db.momentsCovers.put({
-                chatId: currentMomentsChatId,
-                showTitle: showTitle,
-                showAvatar: showAvatar,
-                showStats: showStats,
-                backgroundColor: backgroundColor,
-                backgroundImage: backgroundImage,
-                coverStyle: coverStyle,
-                coverImage: coverImage
-            });
-            
-            // 重新渲染书本
-            const chat = state.chats[currentMomentsChatId];
-            const moments = await db.moments.where('chatId').equals(currentMomentsChatId).reverse().sortBy('timestamp');
-            await renderMomentsBook(chat, moments);
-            
-            // 关闭弹窗
-            document.getElementById('moments-cover-modal').style.display = 'none';
-            alert('封面设置已保存！');
-        });
-        
-        // 取消封面设置
-        document.getElementById('moments-cover-cancel-btn')?.addEventListener('click', () => {
-            document.getElementById('moments-cover-modal').style.display = 'none';
-        });
+          
         
         
         document.getElementById('confirm-create-countdown-btn').addEventListener('click', async () => {
@@ -52438,6 +51590,47 @@ document.getElementById('close-call-transcript-btn').addEventListener('click', (
             if (selectedMessages.size > 0) {
                 openShareTargetPicker(); 
             }
+        });
+        document.getElementById('selection-add-to-moment-btn').addEventListener('click', async () => {
+            if (selectedMessages.size === 0) {
+                await showCustomAlert('提示', '请先选择要添加的消息。');
+                return;
+            }
+            
+            const chat = state.chats[state.activeChatId];
+            if (!chat) {
+                await showCustomAlert('错误', '无法获取当前聊天信息。');
+                return;
+            }
+            
+            // 检查是否是群聊，群聊不支持
+            if (chat.isGroup) {
+                await showCustomAlert('提示', '群聊暂不支持添加到瞬间功能。');
+                return;
+            }
+            
+            const characterId = state.activeChatId;
+            const timestampsToAdd = [...selectedMessages].sort((a, b) => a - b);
+            
+            // 获取选中的消息内容
+            const messagesToAdd = [];
+            for (const timestamp of timestampsToAdd) {
+                const message = chat.history.find(msg => msg.timestamp === timestamp);
+                if (message) {
+                    messagesToAdd.push(message);
+                }
+            }
+            
+            if (messagesToAdd.length === 0) {
+                await showCustomAlert('提示', '未找到选中的消息。');
+                return;
+            }
+            
+            // 添加到角色的书籍中
+            await addMessagesToMomentBook(characterId, messagesToAdd);
+            
+            await showCustomAlert('成功', `已成功将 ${messagesToAdd.length} 条消息添加到瞬间。`);
+            exitSelectionMode();
         });
         document.getElementById('selection-screenshot-btn').addEventListener('click', handleLongScreenshot);
         
@@ -63204,7 +62397,7 @@ async function generateWalletDataAPI(charId) {
                 name: '猫猫番茄',
                 cost: 10,
                 sell: 25,
-                growthTime: 30000, /* 从5秒增加到30秒 */ 
+                growthTime: 5000, 
                 stages: [
                     // Stage 0: Sprout
                     `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
@@ -63247,7 +62440,7 @@ async function generateWalletDataAPI(charId) {
                 name: '兔兔萝卜',
                 cost: 25,
                 sell: 60,
-                growthTime: 60000, /* 从12秒增加到60秒 */
+                growthTime: 12000,
                 stages: [
                     // Stage 0
                     `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
@@ -63289,7 +62482,7 @@ async function generateWalletDataAPI(charId) {
                 name: '熊熊土豆',
                 cost: 50,
                 sell: 130,
-                growthTime: 120000, /* 从25秒增加到120秒（2分钟） */
+                growthTime: 25000,
                 stages: [
                    // Stage 0
                    `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
@@ -63319,8 +62512,8 @@ async function generateWalletDataAPI(charId) {
             }
         },
 
-        init: function(characterId) {
-            this.loadState(characterId);
+        init: function() {
+            this.loadState();
             this.renderGrid();
             this.renderSeeds();
             this.updateStats();
@@ -63329,12 +62522,9 @@ async function generateWalletDataAPI(charId) {
             }
         },
 
-        loadState: function(characterId) {
+        loadState: function() {
             try {
-                // 如果没有传入characterId，使用默认的'default'
-                this.currentCharacterId = characterId || 'default';
-                const farmKey = `farmGameState_${this.currentCharacterId}`;
-                const saved = localStorage.getItem(farmKey);
+                const saved = localStorage.getItem('farmGameState');
                 if (saved) {
                     const data = JSON.parse(saved);
                     if (data.plots) {
@@ -63349,20 +62539,12 @@ async function generateWalletDataAPI(charId) {
                     if (data.money !== undefined) this.state.money = data.money;
                     if (data.level !== undefined) this.state.level = data.level;
                     if (data.selectedSeed) this.state.selectedSeed = data.selectedSeed;
-                } else {
-                    // 如果是新角色，初始化默认状态
-                    this.state.plots = Array(12).fill(null).map(() => ({ state: 'unplowed', crop: null, stage: 0, plantTime: 0, watered: false }));
-                    this.state.money = 100;
-                    this.state.level = 1;
-                    this.state.selectedSeed = 'cat_tomato';
                 }
             } catch (e) { console.error('Farm load error', e); }
         },
 
         saveState: function() {
-            const characterId = this.currentCharacterId || 'default';
-            const farmKey = `farmGameState_${characterId}`;
-            localStorage.setItem(farmKey, JSON.stringify(this.state));
+            localStorage.setItem('farmGameState', JSON.stringify(this.state));
         },
 
         updateStats: function() {
@@ -63413,14 +62595,7 @@ async function generateWalletDataAPI(charId) {
                     div.className += ' ready wet';
                 }
                 
-                // 只有在自己的农场才能点击
-                if (this.currentCharacterId === 'default' || !this.currentCharacterId) {
-                    div.onclick = () => this.handlePlotClick(index);
-                } else {
-                    div.style.pointerEvents = 'none';
-                    div.style.opacity = '0.8';
-                    div.style.cursor = 'not-allowed';
-                }
+                div.onclick = () => this.handlePlotClick(index);
 
                 // 显示作物
                 if (plot.state === 'growing' || plot.state === 'ready') {
@@ -63634,26 +62809,14 @@ async function generateWalletDataAPI(charId) {
                 name: '普通鱼',
                 rarity: 'common',
                 sellPrice: 10,
-                icon: `<svg viewBox="0 0 40 32" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-                    <!-- 鱼身 -->
-                    <rect x="8" y="12" width="24" height="12" fill="#4fc3f7"/>
-                    <rect x="6" y="14" width="2" height="8" fill="#29b6f6"/>
-                    <rect x="32" y="14" width="2" height="8" fill="#29b6f6"/>
-                    <!-- 鱼尾 -->
-                    <rect x="4" y="16" width="4" height="4" fill="#0277bd"/>
-                    <rect x="32" y="16" width="4" height="4" fill="#0277bd"/>
-                    <!-- 眼睛 -->
-                    <rect x="12" y="14" width="4" height="4" fill="#01579b"/>
-                    <rect x="24" y="14" width="4" height="4" fill="#01579b"/>
-                    <rect x="14" y="16" width="2" height="2" fill="#ffffff"/>
-                    <rect x="26" y="16" width="2" height="2" fill="#ffffff"/>
-                    <!-- 鱼鳍 -->
-                    <rect x="10" y="10" width="2" height="4" fill="#0288d1"/>
-                    <rect x="28" y="10" width="2" height="4" fill="#0288d1"/>
-                    <rect x="18" y="24" width="4" height="2" fill="#0288d1"/>
-                    <!-- 鱼鳞 -->
-                    <rect x="16" y="18" width="2" height="2" fill="#81d4fa"/>
-                    <rect x="22" y="18" width="2" height="2" fill="#81d4fa"/>
+                icon: `<svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+                    <rect x="4" y="8" width="24" height="8" fill="#4fc3f7"/>
+                    <rect x="2" y="10" width="2" height="4" fill="#29b6f6"/>
+                    <rect x="28" y="10" width="2" height="4" fill="#29b6f6"/>
+                    <rect x="8" y="6" width="2" height="2" fill="#01579b"/>
+                    <rect x="22" y="6" width="2" height="2" fill="#01579b"/>
+                    <rect x="14" y="10" width="4" height="2" fill="#0277bd"/>
+                    <rect x="12" y="12" width="8" height="2" fill="#0288d1"/>
                 </svg>`
             },
             'rare_fish': {
@@ -63661,26 +62824,15 @@ async function generateWalletDataAPI(charId) {
                 name: '稀有鱼',
                 rarity: 'rare',
                 sellPrice: 30,
-                icon: `<svg viewBox="0 0 40 32" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-                    <!-- 鱼身 -->
-                    <rect x="8" y="12" width="24" height="12" fill="#ff9800"/>
-                    <rect x="6" y="14" width="2" height="8" fill="#f57c00"/>
-                    <rect x="32" y="14" width="2" height="8" fill="#f57c00"/>
-                    <!-- 鱼尾 -->
-                    <rect x="4" y="16" width="4" height="4" fill="#e65100"/>
-                    <rect x="32" y="16" width="4" height="4" fill="#e65100"/>
-                    <!-- 眼睛 -->
-                    <rect x="12" y="14" width="4" height="4" fill="#bf360c"/>
-                    <rect x="24" y="14" width="4" height="4" fill="#bf360c"/>
-                    <rect x="14" y="16" width="2" height="2" fill="#ffffff"/>
-                    <rect x="26" y="16" width="2" height="2" fill="#ffffff"/>
-                    <!-- 鱼鳍 -->
-                    <rect x="10" y="10" width="2" height="4" fill="#ff6f00"/>
-                    <rect x="28" y="10" width="2" height="4" fill="#ff6f00"/>
-                    <rect x="18" y="24" width="4" height="2" fill="#ff8f00"/>
-                    <!-- 条纹 -->
-                    <rect x="12" y="18" width="16" height="2" fill="#ffb74d"/>
-                    <rect x="14" y="20" width="12" height="2" fill="#ffcc80"/>
+                icon: `<svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+                    <rect x="4" y="8" width="24" height="8" fill="#ff9800"/>
+                    <rect x="2" y="10" width="2" height="4" fill="#f57c00"/>
+                    <rect x="28" y="10" width="2" height="4" fill="#f57c00"/>
+                    <rect x="8" y="6" width="2" height="2" fill="#e65100"/>
+                    <rect x="22" y="6" width="2" height="2" fill="#e65100"/>
+                    <rect x="14" y="10" width="4" height="2" fill="#ff6f00"/>
+                    <rect x="10" y="12" width="12" height="2" fill="#ff8f00"/>
+                    <rect x="12" y="14" width="8" height="1" fill="#ffb74d"/>
                 </svg>`
             },
             'golden_fish': {
@@ -63688,28 +62840,17 @@ async function generateWalletDataAPI(charId) {
                 name: '黄金鱼',
                 rarity: 'legendary',
                 sellPrice: 100,
-                icon: `<svg viewBox="0 0 40 32" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-                    <!-- 鱼身 -->
-                    <rect x="8" y="12" width="24" height="12" fill="#ffd700"/>
-                    <rect x="6" y="14" width="2" height="8" fill="#ffc107"/>
-                    <rect x="32" y="14" width="2" height="8" fill="#ffc107"/>
-                    <!-- 鱼尾 -->
-                    <rect x="4" y="16" width="4" height="4" fill="#ff8f00"/>
-                    <rect x="32" y="16" width="4" height="4" fill="#ff8f00"/>
-                    <!-- 眼睛 -->
-                    <rect x="12" y="14" width="4" height="4" fill="#e65100"/>
-                    <rect x="24" y="14" width="4" height="4" fill="#e65100"/>
-                    <rect x="14" y="16" width="2" height="2" fill="#ffffff"/>
-                    <rect x="26" y="16" width="2" height="2" fill="#ffffff"/>
-                    <!-- 鱼鳍 -->
-                    <rect x="10" y="10" width="2" height="4" fill="#ffb300"/>
-                    <rect x="28" y="10" width="2" height="4" fill="#ffb300"/>
-                    <rect x="18" y="24" width="4" height="2" fill="#ffc400"/>
-                    <!-- 闪光 -->
-                    <rect x="16" y="16" width="2" height="2" fill="#fff176"/>
-                    <rect x="22" y="16" width="2" height="2" fill="#fff176"/>
-                    <rect x="14" y="20" width="12" height="2" fill="#fff59d"/>
-                    <rect x="18" y="18" width="4" height="2" fill="#ffeb3b"/>
+                icon: `<svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+                    <rect x="4" y="8" width="24" height="8" fill="#ffd700"/>
+                    <rect x="2" y="10" width="2" height="4" fill="#ffc107"/>
+                    <rect x="28" y="10" width="2" height="4" fill="#ffc107"/>
+                    <rect x="8" y="6" width="2" height="2" fill="#ff8f00"/>
+                    <rect x="22" y="6" width="2" height="2" fill="#ff8f00"/>
+                    <rect x="14" y="10" width="4" height="2" fill="#ffb300"/>
+                    <rect x="10" y="12" width="12" height="2" fill="#ffc400"/>
+                    <rect x="12" y="14" width="8" height="1" fill="#fff176"/>
+                    <rect x="6" y="9" width="1" height="1" fill="#fff59d"/>
+                    <rect x="25" y="9" width="1" height="1" fill="#fff59d"/>
                 </svg>`
             }
         },
@@ -63751,167 +62892,134 @@ async function generateWalletDataAPI(charId) {
             if (this.state.isFishing) return;
             
             this.state.isFishing = true;
-            this.state.fishingStartTime = Date.now();
-            this.state.fishingDuration = 15000; // 15秒钓鱼时间
-            
             const fishBtn = document.getElementById('fish-btn');
-            const statusDiv = document.getElementById('fishing-status');
-            const timerFill = document.getElementById('timer-fill');
+            const fishingLine = document.getElementById('fishing-line');
+            const pondArea = document.getElementById('pond-area');
             
             if(fishBtn) fishBtn.disabled = true;
-            if(statusDiv) statusDiv.style.display = 'block';
-            if(timerFill) {
-                timerFill.style.width = '100%';
-                timerFill.className = 'timer-fill';
-            }
+            if(fishingLine) fishingLine.style.display = 'block';
             
             // 创建游动的鱼
             this.createSwimmingFish();
             
-            // 开始计时器
-            this.startTimer();
-            
-            // 15秒后自动结束
-            this.state.fishingTimer = setTimeout(() => {
-                this.endFishing();
-            }, this.state.fishingDuration);
-        },
-
-        startTimer: function() {
-            if (!this.state.isFishing) return;
-            
-            const timerFill = document.getElementById('timer-fill');
-            if(!timerFill) return;
-            
-            const elapsed = Date.now() - this.state.fishingStartTime;
-            const remaining = Math.max(0, this.state.fishingDuration - elapsed);
-            const percentage = (remaining / this.state.fishingDuration) * 100;
-            
-            timerFill.style.width = percentage + '%';
-            
-            // 改变颜色
-            if (percentage < 20) {
-                timerFill.className = 'timer-fill danger';
-            } else if (percentage < 50) {
-                timerFill.className = 'timer-fill warning';
-            } else {
-                timerFill.className = 'timer-fill';
-            }
-            
-            if (remaining > 0) {
-                requestAnimationFrame(() => this.startTimer());
-            }
+            // 等待2-5秒后可以点击钓鱼
+            const waitTime = 2000 + Math.random() * 3000;
+            setTimeout(() => {
+                if (this.state.isFishing) {
+                    if(fishBtn) {
+                        fishBtn.disabled = false;
+                        fishBtn.textContent = '🎣 点击钓鱼！';
+                        fishBtn.onclick = () => this.catchFish();
+                    }
+                    
+                    // 添加点击区域提示
+                    if(pondArea) {
+                        pondArea.style.cursor = 'pointer';
+                        pondArea.onclick = () => this.catchFish();
+                    }
+                    
+                    // 5秒后自动结束
+                    this.state.fishingTimer = setTimeout(() => {
+                        this.endFishing();
+                    }, 5000);
+                }
+            }, waitTime);
         },
 
         createSwimmingFish: function() {
-            const waterSurface = document.getElementById('water-surface');
+            const waterSurface = document.querySelector('.water-surface');
             if(!waterSurface) return;
             
             // 清除之前的鱼
             waterSurface.querySelectorAll('.fish').forEach(f => f.remove());
             
-            // 创建4-6条鱼，速度不同
-            const fishCount = 4 + Math.floor(Math.random() * 3);
-            const animations = ['fish-swim-fast', 'fish-swim-medium', 'fish-swim-slow'];
-            
+            // 创建3-5条鱼
+            const fishCount = 3 + Math.floor(Math.random() * 3);
             for(let i = 0; i < fishCount; i++) {
                 const fish = document.createElement('div');
                 fish.className = 'fish';
                 
-                // 随机选择鱼的类型（普通60%，稀有30%，黄金10%）
-                let fishType;
-                const rand = Math.random();
-                if (rand < 0.1) {
-                    fishType = this.fishTypes.golden_fish;
-                } else if (rand < 0.4) {
-                    fishType = this.fishTypes.rare_fish;
-                } else {
-                    fishType = this.fishTypes.common_fish;
-                }
-                
-                fish.innerHTML = fishType.icon;
-                fish.dataset.fishType = fishType.id;
-                fish.dataset.rarity = fishType.rarity;
+                // 随机选择鱼的类型
+                const fishTypes = Object.values(this.fishTypes);
+                const randomFish = fishTypes[Math.floor(Math.random() * fishTypes.length)];
+                fish.innerHTML = randomFish.icon;
+                fish.dataset.fishType = randomFish.id;
                 
                 // 随机位置
-                const left = 10 + Math.random() * 80;
-                const top = 15 + Math.random() * 70;
+                const left = 20 + Math.random() * 60;
+                const top = 20 + Math.random() * 60;
                 fish.style.left = left + '%';
                 fish.style.top = top + '%';
                 
-                // 随机动画和速度
-                const animType = animations[Math.floor(Math.random() * animations.length)];
-                const duration = 2 + Math.random() * 3; // 2-5秒
-                fish.style.animation = `${animType} ${duration}s infinite`;
-                fish.style.animationDelay = Math.random() * 2 + 's';
-                
-                // 点击事件 - 捕获鱼
-                fish.onclick = (e) => {
-                    e.stopPropagation();
-                    this.catchFish(fish);
-                };
+                // 随机动画延迟
+                fish.style.animationDelay = Math.random() * 3 + 's';
+                fish.style.animationDuration = (2 + Math.random() * 2) + 's';
                 
                 waterSurface.appendChild(fish);
             }
         },
 
-        catchFish: function(fishElement) {
-            if (!this.state.isFishing || !fishElement) return;
+        catchFish: function() {
+            if (!this.state.isFishing) return;
             
-            // 防止重复点击
-            if (fishElement.classList.contains('caught')) return;
+            const waterSurface = document.querySelector('.water-surface');
+            if(!waterSurface) return;
             
-            const fishTypeId = fishElement.dataset.fishType;
-            const fishType = this.fishTypes[fishTypeId];
+            // 随机决定是否钓到鱼（70%概率）
+            const caught = Math.random() < 0.7;
             
-            if (!fishType) return;
-            
-            // 添加捕获动画
-            fishElement.classList.add('caught');
-            
-            // 添加到鱼篓
-            if (!this.state.fishBag[fishType.id]) {
-                this.state.fishBag[fishType.id] = 0;
-            }
-            this.state.fishBag[fishType.id]++;
-            this.state.fishCount++;
-            
-            // 显示捕获效果
-            const pondArea = document.getElementById('pond-area');
-            if(pondArea) {
-                const rect = fishElement.getBoundingClientRect();
-                const pondRect = pondArea.getBoundingClientRect();
-                const x = rect.left - pondRect.left + rect.width / 2;
-                const y = rect.top - pondRect.top + rect.height / 2;
-                
-                this.showCatchEffectAt(x, y, `🎣 +${fishType.name}`);
-            }
-            
-            // 更新显示
-            this.updateStats();
-            this.renderFishBag();
-            this.saveState();
-            
-            // 移除鱼元素
-            setTimeout(() => {
-                if(fishElement.parentNode) {
-                    fishElement.remove();
+            if (caught) {
+                // 随机选择鱼的类型（普通70%，稀有25%，黄金5%）
+                let fishType;
+                const rand = Math.random();
+                if (rand < 0.05) {
+                    fishType = this.fishTypes.golden_fish;
+                } else if (rand < 0.3) {
+                    fishType = this.fishTypes.rare_fish;
+                } else {
+                    fishType = this.fishTypes.common_fish;
                 }
-            }, 500);
+                
+                // 添加到鱼篓
+                if (!this.state.fishBag[fishType.id]) {
+                    this.state.fishBag[fishType.id] = 0;
+                }
+                this.state.fishBag[fishType.id]++;
+                this.state.fishCount++;
+                
+                // 显示捕获效果
+                this.showCatchEffect('🎣 钓到了！');
+                
+                // 更新显示
+                this.updateStats();
+                this.renderFishBag();
+                this.saveState();
+            } else {
+                this.showCatchEffect('😢 没钓到...');
+            }
+            
+            // 结束钓鱼
+            this.endFishing();
         },
 
         endFishing: function() {
             this.state.isFishing = false;
             const fishBtn = document.getElementById('fish-btn');
-            const statusDiv = document.getElementById('fishing-status');
-            const waterSurface = document.getElementById('water-surface');
+            const fishingLine = document.getElementById('fishing-line');
+            const pondArea = document.getElementById('pond-area');
+            const waterSurface = document.querySelector('.water-surface');
             
             if(fishBtn) {
                 fishBtn.disabled = false;
                 fishBtn.textContent = '🎣 开始钓鱼';
+                fishBtn.onclick = () => this.startFishing();
             }
             
-            if(statusDiv) statusDiv.style.display = 'none';
+            if(fishingLine) fishingLine.style.display = 'none';
+            if(pondArea) {
+                pondArea.style.cursor = 'default';
+                pondArea.onclick = null;
+            }
             
             if(waterSurface) {
                 waterSurface.querySelectorAll('.fish').forEach(f => f.remove());
@@ -63923,21 +63031,18 @@ async function generateWalletDataAPI(charId) {
             }
         },
 
-        showCatchEffectAt: function(x, y, text) {
+        showCatchEffect: function(text) {
             const pondArea = document.getElementById('pond-area');
             if(!pondArea) return;
             
             const effect = document.createElement('div');
             effect.className = 'catch-effect';
             effect.textContent = text;
-            effect.style.left = x + 'px';
-            effect.style.top = y + 'px';
-            effect.style.position = 'absolute';
             pondArea.appendChild(effect);
             
             setTimeout(() => {
                 effect.remove();
-            }, 1000);
+            }, 500);
         },
 
         renderFishBag: function() {
@@ -64451,15 +63556,9 @@ async function generateWalletDataAPI(charId) {
         }
     });
 
-    function initFarmGame(characterId) {
-        // 初始化farmGame（12块地系统）
-        farmGame.init(characterId);
-        
-        // 初始化种田游戏（9块地系统）
+    function initFarmGame() {
+        // 初始化种田游戏
         farmingGame.init();
-        
-        // 加载角色列表到选择器
-        loadCharacterListToFarm();
         
         // 添加点击事件：点击草地开垦
         const container = document.getElementById('gameContainer');
@@ -64478,839 +63577,6 @@ async function generateWalletDataAPI(charId) {
             });
         }
     }
-
-    // 加载角色列表到农场选择器
-    function loadCharacterListToFarm() {
-        const select = document.getElementById('farm-character-select');
-        if (!select) return;
-        
-        // 保存当前选中的值
-        const currentValue = select.value;
-        
-        // 清空现有选项（除了"我的农场"）
-        while (select.options.length > 1) {
-            select.remove(1);
-        }
-        
-        // 获取所有聊天/角色（从state.chats或localStorage）
-        try {
-            let chats = [];
-            // 尝试从全局state获取
-            if (typeof window !== 'undefined' && window.state && window.state.chats) {
-                chats = Object.values(window.state.chats);
-            } else if (typeof state !== 'undefined' && state.chats) {
-                chats = Object.values(state.chats);
-            } else {
-                // 从localStorage获取
-                const chatsData = localStorage.getItem('chats');
-                if (chatsData) {
-                    const parsed = JSON.parse(chatsData);
-                    if (Array.isArray(parsed)) {
-                        chats = parsed;
-                    } else if (typeof parsed === 'object') {
-                        chats = Object.values(parsed);
-                    }
-                }
-            }
-            
-            // 添加所有非群聊的角色
-            const addedIds = new Set();
-            chats.forEach(chat => {
-                if (chat && chat.id && !chat.isGroup && !addedIds.has(chat.id)) {
-                    const option = document.createElement('option');
-                    option.value = chat.id;
-                    option.textContent = chat.name || chat.originalName || chat.id;
-                    select.appendChild(option);
-                    addedIds.add(chat.id);
-                }
-            });
-            
-            // 恢复之前选中的值
-            if (currentValue && Array.from(select.options).some(opt => opt.value === currentValue)) {
-                select.value = currentValue;
-            }
-        } catch (e) {
-            console.error('Error loading characters:', e);
-        }
-    }
-
-    // 切换角色农场
-    function switchCharacterFarm(characterId) {
-        farmGame.init(characterId);
-        // 更新按钮状态
-        updateStealButton();
-        updateActionButtons(characterId);
-    }
-
-    // 更新操作按钮状态（角色农场时禁用操作）
-    function updateActionButtons(characterId) {
-        const isCharacterFarm = characterId && characterId !== 'default';
-        const backpackBtn = document.getElementById('backpack-btn');
-        const shopBtn = document.getElementById('shop-btn');
-        const pondBtn = document.getElementById('pond-btn');
-        const logBtn = document.getElementById('log-btn');
-        
-        if (isCharacterFarm) {
-            // 角色农场：禁用操作，显示日志按钮和生成按钮
-            if (backpackBtn) backpackBtn.disabled = true;
-            if (shopBtn) shopBtn.disabled = true;
-            if (pondBtn) pondBtn.disabled = true;
-            if (logBtn) logBtn.style.display = 'inline-block';
-            const generateBtn = document.getElementById('generate-btn');
-            if (generateBtn) generateBtn.style.display = 'inline-block';
-            
-            // 禁用田地点击
-            const plots = document.querySelectorAll('.farm-plot');
-            plots.forEach(plot => {
-                plot.style.pointerEvents = 'none';
-                plot.style.opacity = '0.8';
-            });
-        } else {
-            // 自己的农场：启用所有操作
-            if (backpackBtn) backpackBtn.disabled = false;
-            if (shopBtn) shopBtn.disabled = false;
-            if (pondBtn) pondBtn.disabled = false;
-            if (logBtn) logBtn.style.display = 'none';
-            const generateBtn = document.getElementById('generate-btn');
-            if (generateBtn) generateBtn.style.display = 'none';
-            
-            // 启用田地点击
-            const plots = document.querySelectorAll('.farm-plot');
-            plots.forEach(plot => {
-                plot.style.pointerEvents = 'auto';
-                plot.style.opacity = '1';
-            });
-        }
-    }
-
-    // 更新偷菜按钮状态
-    function updateStealButton() {
-        const select = document.getElementById('farm-character-select');
-        const stealBtn = document.querySelector('.farm-action-btn[onclick="stealFromOtherFarm()"]');
-        if (!select || !stealBtn) return;
-        
-        const currentId = select.value;
-        if (currentId === 'default') {
-            stealBtn.style.display = 'none';
-        } else {
-            stealBtn.style.display = 'inline-block';
-        }
-    }
-
-    // 偷菜功能
-    function stealFromOtherFarm() {
-        const select = document.getElementById('farm-character-select');
-        if (!select) return;
-        
-        const targetCharacterId = select.value;
-        if (targetCharacterId === 'default') {
-            alert('不能偷自己的菜！');
-            return;
-        }
-        
-        // 加载目标角色的农场数据
-        try {
-            const farmKey = `farmGameState_${targetCharacterId}`;
-            const saved = localStorage.getItem(farmKey);
-            if (!saved) {
-                alert('该角色还没有农场！');
-                return;
-            }
-            
-            const targetFarm = JSON.parse(saved);
-            if (!targetFarm.plots) {
-                alert('该角色的农场是空的！');
-                return;
-            }
-            
-            // 查找成熟的作物
-            const readyPlots = [];
-            targetFarm.plots.forEach((plot, index) => {
-                if (plot && plot.state === 'ready' && plot.crop) {
-                    readyPlots.push({ index, plot, crop: farmGame.crops[plot.crop] });
-                }
-            });
-            
-            if (readyPlots.length === 0) {
-                alert('该角色的农场没有成熟的作物可以偷！');
-                return;
-            }
-            
-            // 显示偷菜界面
-            showStealFarmModal(targetCharacterId, readyPlots, targetFarm);
-            
-        } catch (e) {
-            console.error('Error loading target farm:', e);
-            alert('加载农场数据失败！');
-        }
-    }
-
-    // 显示偷菜弹窗
-    function showStealFarmModal(characterId, readyPlots, targetFarm) {
-        // 获取角色名称
-        let characterName = characterId;
-        try {
-            if (typeof state !== 'undefined' && state.chats && state.chats[characterId]) {
-                characterName = state.chats[characterId].name || state.chats[characterId].originalName || characterId;
-            }
-        } catch (e) {}
-        
-        // 创建弹窗
-        const modal = document.createElement('div');
-        modal.className = 'backpack-modal';
-        modal.style.display = 'flex';
-        modal.innerHTML = `
-            <div class="modal-content" style="max-width: 500px;">
-                <div class="modal-header">
-                    <h3>🥷 偷菜 - ${characterName}的农场</h3>
-                    <button class="close-modal-btn" onclick="this.closest('.backpack-modal').remove()">×</button>
-                </div>
-                <div style="padding: 15px; max-height: 400px; overflow-y: auto;">
-                    <p style="margin-bottom: 15px; color: #666;">发现 ${readyPlots.length} 个成熟的作物！</p>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;">
-                        ${readyPlots.map(({ index, plot, crop }) => `
-                            <div style="text-align: center; padding: 10px; border: 2px solid #4caf50; border-radius: 8px; cursor: pointer; transition: all 0.2s;" 
-                                 onmouseover="this.style.background='#e8f5e9'" 
-                                 onmouseout="this.style.background='white'"
-                                 onclick="stealCrop('${characterId}', ${index}, '${crop.name}')">
-                                <div style="width: 60px; height: 60px; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center;">
-                                    ${crop.stages[3]}
-                                </div>
-                                <div style="font-weight: bold; font-size: 12px; color: #2e7d32;">${crop.name}</div>
-                                <div style="font-size: 10px; color: #666; margin-top: 3px;">价值 🪙${crop.sell}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <button onclick="stealAllCrops('${characterId}')" style="width: 100%; margin-top: 15px; padding: 12px; background: #ff9800; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
-                        🥷 一键偷取所有
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        // 点击背景关闭
-        modal.onclick = (e) => {
-            if (e.target === modal) {
-                modal.remove();
-            }
-        };
-    }
-
-    // 偷取单个作物
-    function stealCrop(characterId, plotIndex, cropName) {
-        try {
-            // 加载目标农场
-            const farmKey = `farmGameState_${characterId}`;
-            const saved = localStorage.getItem(farmKey);
-            if (!saved) return;
-            
-            const targetFarm = JSON.parse(saved);
-            const plot = targetFarm.plots[plotIndex];
-            
-            if (!plot || plot.state !== 'ready' || !plot.crop) {
-                alert('这个作物已经被收走了！');
-                return;
-            }
-            
-            const crop = farmGame.crops[plot.crop];
-            if (!crop) return;
-            
-            // 添加到自己的农场（默认角色）
-            const myFarmKey = 'farmGameState_default';
-            let myFarm = { money: 100, level: 1, plots: Array(12).fill(null).map(() => ({ state: 'unplowed', crop: null, stage: 0, plantTime: 0, watered: false })) };
-            try {
-                const mySaved = localStorage.getItem(myFarmKey);
-                if (mySaved) {
-                    myFarm = JSON.parse(mySaved);
-                }
-            } catch (e) {}
-            
-            // 增加金币（偷来的作物价值减半）
-            const stolenValue = Math.floor(crop.sell * 0.5);
-            myFarm.money = (myFarm.money || 100) + stolenValue;
-            
-            // 保存自己的农场
-            localStorage.setItem(myFarmKey, JSON.stringify(myFarm));
-            
-            // 从目标农场移除作物
-            plot.state = 'unplowed';
-            plot.crop = null;
-            plot.stage = 0;
-            plot.plantTime = 0;
-            plot.watered = false;
-            localStorage.setItem(farmKey, JSON.stringify(targetFarm));
-            
-            // 关闭弹窗并刷新
-            document.querySelectorAll('.backpack-modal').forEach(m => m.remove());
-            alert(`成功偷取 ${cropName}！获得 🪙${stolenValue}（价值减半）`);
-            
-            // 如果当前显示的是默认农场，刷新显示
-            const select = document.getElementById('farm-character-select');
-            if (select && select.value === 'default') {
-                farmGame.init('default');
-            }
-            
-        } catch (e) {
-            console.error('Error stealing crop:', e);
-            alert('偷菜失败！');
-        }
-    }
-
-    // 一键偷取所有
-    function stealAllCrops(characterId) {
-        try {
-            const farmKey = `farmGameState_${characterId}`;
-            const saved = localStorage.getItem(farmKey);
-            if (!saved) return;
-            
-            const targetFarm = JSON.parse(saved);
-            let totalValue = 0;
-            let stolenCount = 0;
-            
-            targetFarm.plots.forEach((plot, index) => {
-                if (plot && plot.state === 'ready' && plot.crop) {
-                    const crop = farmGame.crops[plot.crop];
-                    if (crop) {
-                        const stolenValue = Math.floor(crop.sell * 0.5);
-                        totalValue += stolenValue;
-                        stolenCount++;
-                        
-                        // 清空地块
-                        plot.state = 'unplowed';
-                        plot.crop = null;
-                        plot.stage = 0;
-                        plot.plantTime = 0;
-                        plot.watered = false;
-                    }
-                }
-            });
-            
-            if (stolenCount === 0) {
-                alert('没有可偷的作物了！');
-                return;
-            }
-            
-            // 添加到自己的农场
-            const myFarmKey = 'farmGameState_default';
-            let myFarm = { money: 100, level: 1, plots: Array(12).fill(null).map(() => ({ state: 'unplowed', crop: null, stage: 0, plantTime: 0, watered: false })) };
-            try {
-                const mySaved = localStorage.getItem(myFarmKey);
-                if (mySaved) {
-                    myFarm = JSON.parse(mySaved);
-                }
-            } catch (e) {}
-            
-            myFarm.money = (myFarm.money || 100) + totalValue;
-            localStorage.setItem(myFarmKey, JSON.stringify(myFarm));
-            localStorage.setItem(farmKey, JSON.stringify(targetFarm));
-            
-            // 关闭弹窗
-            document.querySelectorAll('.backpack-modal').forEach(m => m.remove());
-            alert(`成功偷取 ${stolenCount} 个作物！获得 🪙${totalValue}（价值减半）`);
-            
-            // 刷新显示
-            const select = document.getElementById('farm-character-select');
-            if (select && select.value === 'default') {
-                farmGame.init('default');
-            }
-            
-        } catch (e) {
-            console.error('Error stealing all crops:', e);
-            alert('偷菜失败！');
-        }
-    }
-
-    // ========== 角色操作日志系统 ==========
-    
-    // 记录角色操作日志
-    function logCharacterAction(characterId, action, details) {
-        if (!characterId || characterId === 'default') return;
-        
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-        const logKey = `farmLog_${characterId}_${today}`;
-        
-        try {
-            let logs = JSON.parse(localStorage.getItem(logKey) || '[]');
-            logs.push({
-                time: new Date().toLocaleTimeString('zh-CN'),
-                action: action,
-                details: details
-            });
-            
-            // 只保留最近100条日志
-            if (logs.length > 100) {
-                logs = logs.slice(-100);
-            }
-            
-            localStorage.setItem(logKey, JSON.stringify(logs));
-        } catch (e) {
-            console.error('Error logging action:', e);
-        }
-    }
-
-    // 显示角色操作日志
-    function showCharacterLog() {
-        const select = document.getElementById('farm-character-select');
-        if (!select) return;
-        
-        const characterId = select.value;
-        if (characterId === 'default') {
-            alert('这是你的农场，没有操作日志！');
-            return;
-        }
-        
-        // 获取角色名称
-        let characterName = characterId;
-        try {
-            if (typeof window !== 'undefined' && window.state && window.state.chats && window.state.chats[characterId]) {
-                characterName = window.state.chats[characterId].name || window.state.chats[characterId].originalName || characterId;
-            } else if (typeof state !== 'undefined' && state.chats && state.chats[characterId]) {
-                characterName = state.chats[characterId].name || state.chats[characterId].originalName || characterId;
-            }
-        } catch (e) {}
-        
-        const today = new Date().toISOString().split('T')[0];
-        const logKey = `farmLog_${characterId}_${today}`;
-        const logs = JSON.parse(localStorage.getItem(logKey) || '[]');
-        
-        const modal = document.getElementById('character-log-modal');
-        const title = document.getElementById('log-modal-title');
-        const content = document.getElementById('log-content');
-        
-        if (modal && title && content) {
-            title.textContent = `${characterName}的操作日志 - ${today}`;
-            
-            if (logs.length === 0) {
-                content.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">今天还没有操作记录</div>';
-            } else {
-                content.innerHTML = logs.reverse().map(log => `
-                    <div style="padding: 10px; margin-bottom: 10px; border-left: 3px solid #4caf50; background: #f5f5f5; border-radius: 4px;">
-                        <div style="font-size: 11px; color: #666; margin-bottom: 5px;">${log.time}</div>
-                        <div style="font-weight: bold; color: #2e7d32; margin-bottom: 3px;">${log.action}</div>
-                        <div style="font-size: 12px; color: #555;">${log.details || ''}</div>
-                    </div>
-                `).join('');
-            }
-            
-            modal.style.display = 'flex';
-        }
-    }
-
-    // 关闭日志弹窗
-    function closeCharacterLog() {
-        const modal = document.getElementById('character-log-modal');
-        if (modal) modal.style.display = 'none';
-    }
-
-    // ========== AI自动操作系统 ==========
-    
-    // 让角色自动执行农场操作
-    async function autoCharacterFarmAction(characterId) {
-        if (!characterId || characterId === 'default') return;
-        
-        // 检查API配置
-        let apiConfig = {};
-        try {
-            if (typeof window !== 'undefined' && window.state && window.state.apiConfig) {
-                apiConfig = window.state.apiConfig;
-            } else if (typeof state !== 'undefined' && state.apiConfig) {
-                apiConfig = state.apiConfig;
-            }
-        } catch (e) {}
-        
-        if (!apiConfig.proxyUrl || !apiConfig.apiKey || !apiConfig.model) {
-            console.log('API未配置，无法执行AI操作');
-            return;
-        }
-        
-        // 获取角色信息
-        let character = null;
-        try {
-            if (typeof window !== 'undefined' && window.state && window.state.chats && window.state.chats[characterId]) {
-                character = window.state.chats[characterId];
-            } else if (typeof state !== 'undefined' && state.chats && state.chats[characterId]) {
-                character = state.chats[characterId];
-            }
-        } catch (e) {}
-        
-        if (!character) {
-            console.log('角色不存在');
-            return;
-        }
-        
-        // 加载角色农场状态
-        const farmKey = `farmGameState_${characterId}`;
-        let farmData = { money: 100, level: 1, plots: Array(12).fill(null).map(() => ({ state: 'unplowed', crop: null, stage: 0, plantTime: 0, watered: false })) };
-        try {
-            const saved = localStorage.getItem(farmKey);
-            if (saved) {
-                farmData = JSON.parse(saved);
-            }
-        } catch (e) {}
-        
-        // 构建农场状态描述
-        const farmStatus = {
-            money: farmData.money || 100,
-            level: farmData.level || 1,
-            plots: farmData.plots.map((plot, index) => {
-                if (!plot) return { index, state: 'unplowed' };
-                const crop = plot.crop ? farmGame.crops[plot.crop] : null;
-                return {
-                    index,
-                    state: plot.state,
-                    crop: crop ? crop.name : null,
-                    stage: plot.stage || 0,
-                    isReady: plot.state === 'ready'
-                };
-            })
-        };
-        
-        // 调用AI决定操作
-        try {
-            const response = await fetch(`${apiConfig.proxyUrl}/v1/chat/completions`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiConfig.apiKey}`
-                },
-                body: JSON.stringify({
-                    model: apiConfig.model,
-                    messages: [
-                        {
-                            role: 'system',
-                            content: `你是一个农场管理AI。根据角色人设和当前农场状态，决定下一步操作。
-
-可用操作：
-1. plant - 种植作物（需要指定plotIndex和cropId: 'cat_tomato', 'bunny_carrot', 'bear_potato'）
-2. water - 浇水（需要指定plotIndex）
-3. harvest - 收获（需要指定plotIndex）
-4. buy_seed - 购买种子（需要指定cropId和数量）
-5. fish - 去池塘钓鱼
-6. steal - 偷其他角色的菜（需要指定targetCharacterId和plotIndex，根据角色人设决定是否偷菜）
-
-作物信息：
-- cat_tomato（猫猫番茄）：成本10，售价25，生长时间30秒
-- bunny_carrot（兔兔萝卜）：成本25，售价60，生长时间60秒
-- bear_potato（熊熊土豆）：成本50，售价130，生长时间120秒
-
-请根据角色人设和当前状态，返回一个JSON对象：
-{
-  "action": "操作类型",
-  "plotIndex": 地块索引（0-11，如果是种植/浇水/收获/偷菜）,
-  "cropId": "作物ID（如果是种植/购买）",
-  "quantity": 数量（如果是购买）,
-  "targetCharacterId": "目标角色ID（如果是偷菜）",
-  "reason": "操作理由（根据人设说明为什么这样做）"
-}
-
-只返回JSON，不要其他文字。`
-                        },
-                        {
-                            role: 'user',
-                            content: `角色人设：${character.characterProfile || character.originalName || '未知角色'}
-
-当前农场状态：
-- 金币：${farmStatus.money}
-- 等级：${farmStatus.level}
-- 地块状态：
-${farmStatus.plots.map(p => `  地块${p.index}: ${p.state === 'unplowed' ? '未开垦' : p.state === 'plowed' ? '已开垦' : p.state === 'planted' ? '已播种' : p.state === 'growing' ? '成长中' : p.state === 'ready' ? `成熟(${p.crop})` : p.state}`).join('\n')}
-
-其他角色农场信息（可以偷菜）：
-${(() => {
-    try {
-        let chats = [];
-        if (typeof window !== 'undefined' && window.state && window.state.chats) {
-            chats = Object.values(window.state.chats);
-        } else if (typeof state !== 'undefined' && state.chats) {
-            chats = Object.values(state.chats);
-        }
-        
-        const otherFarms = [];
-        chats.forEach(chat => {
-            if (chat && chat.id && !chat.isGroup && chat.id !== characterId) {
-                const otherFarmKey = `farmGameState_${chat.id}`;
-                const otherSaved = localStorage.getItem(otherFarmKey);
-                if (otherSaved) {
-                    try {
-                        const otherFarm = JSON.parse(otherSaved);
-                        const readyPlots = otherFarm.plots ? otherFarm.plots
-                            .map((p, i) => p && p.state === 'ready' && p.crop ? { index: i, crop: farmGame.crops[p.crop]?.name || p.crop } : null)
-                            .filter(p => p !== null) : [];
-                        
-                        if (readyPlots.length > 0) {
-                            otherFarms.push({
-                                id: chat.id,
-                                name: chat.name || chat.originalName || chat.id,
-                                readyPlots: readyPlots
-                            });
-                        }
-                    } catch (e) {}
-                }
-            }
-        });
-        
-        if (otherFarms.length === 0) {
-            return '  暂无其他角色有成熟作物';
-        }
-        
-        return otherFarms.map(farm => 
-            `  ${farm.name}(${farm.id}): ${farm.readyPlots.map(p => `地块${p.index}(${p.crop})`).join(', ')}`
-        ).join('\n');
-    } catch (e) {
-        return '  无法获取其他角色信息';
-    }
-})()}
-
-请根据角色人设决定下一步操作。如果角色人设中显示角色会偷菜或比较调皮，可以考虑偷其他角色的菜。`
-                        }
-                    ],
-                    temperature: 0.7,
-                    max_tokens: 500
-                })
-            });
-            
-            if (!response.ok) {
-                throw new Error(`API错误: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            const content = data.choices[0].message.content.trim();
-            
-            // 提取JSON
-            let actionData = {};
-            try {
-                // 尝试直接解析
-                actionData = JSON.parse(content);
-            } catch (e) {
-                // 尝试提取JSON部分
-                const jsonMatch = content.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    actionData = JSON.parse(jsonMatch[0]);
-                } else {
-                    throw new Error('无法解析AI返回的JSON');
-                }
-            }
-            
-            // 执行操作
-            await executeCharacterAction(characterId, actionData, character);
-            
-        } catch (e) {
-            console.error('AI操作失败:', e);
-            logCharacterAction(characterId, 'AI操作失败', `错误: ${e.message}`);
-        }
-    }
-
-    // 执行角色操作
-    async function executeCharacterAction(characterId, actionData, character) {
-        const farmKey = `farmGameState_${characterId}`;
-        let farmData = JSON.parse(localStorage.getItem(farmKey) || JSON.stringify({ money: 100, level: 1, plots: Array(12).fill(null).map(() => ({ state: 'unplowed', crop: null, stage: 0, plantTime: 0, watered: false })) }));
-        
-        const action = actionData.action;
-        const reason = actionData.reason || '根据角色人设';
-        
-        switch (action) {
-            case 'plant':
-                const plotIndex = actionData.plotIndex;
-                const cropId = actionData.cropId;
-                if (plotIndex >= 0 && plotIndex < 12 && cropId && farmGame.crops[cropId]) {
-                    const plot = farmData.plots[plotIndex];
-                    const crop = farmGame.crops[cropId];
-                    
-                    if (plot && plot.state === 'plowed' && farmData.money >= crop.cost) {
-                        farmData.money -= crop.cost;
-                        plot.state = 'planted';
-                        plot.crop = cropId;
-                        plot.plantTime = Date.now();
-                        plot.watered = false;
-                        
-                        localStorage.setItem(farmKey, JSON.stringify(farmData));
-                        logCharacterAction(characterId, '种植', `在地块${plotIndex}种植了${crop.name}，花费🪙${crop.cost}。${reason}`);
-                    }
-                }
-                break;
-                
-            case 'water':
-                const waterIndex = actionData.plotIndex;
-                if (waterIndex >= 0 && waterIndex < 12) {
-                    const plot = farmData.plots[waterIndex];
-                    if (plot && plot.state === 'planted') {
-                        plot.state = 'growing';
-                        plot.plantTime = Date.now();
-                        plot.watered = true;
-                        
-                        localStorage.setItem(farmKey, JSON.stringify(farmData));
-                        logCharacterAction(characterId, '浇水', `给地块${waterIndex}浇水。${reason}`);
-                    }
-                }
-                break;
-                
-            case 'harvest':
-                const harvestIndex = actionData.plotIndex;
-                if (harvestIndex >= 0 && harvestIndex < 12) {
-                    const plot = farmData.plots[harvestIndex];
-                    if (plot && plot.state === 'ready' && plot.crop) {
-                        const crop = farmGame.crops[plot.crop];
-                        if (crop) {
-                            farmData.money += crop.sell;
-                            plot.state = 'unplowed';
-                            plot.crop = null;
-                            plot.stage = 0;
-                            plot.plantTime = 0;
-                            plot.watered = false;
-                            
-                            localStorage.setItem(farmKey, JSON.stringify(farmData));
-                            logCharacterAction(characterId, '收获', `收获地块${harvestIndex}的${crop.name}，获得🪙${crop.sell}。${reason}`);
-                        }
-                    }
-                }
-                break;
-                
-            case 'buy_seed':
-                // 购买种子逻辑（可以扩展）
-                logCharacterAction(characterId, '购买种子', `购买了${actionData.cropId}种子。${reason}`);
-                break;
-                
-            case 'fish':
-                // 钓鱼逻辑（可以扩展）
-                logCharacterAction(characterId, '钓鱼', `去池塘钓鱼。${reason}`);
-                break;
-                
-            case 'steal':
-                // 角色间互相偷菜
-                const targetId = actionData.targetCharacterId;
-                if (targetId && targetId !== characterId) {
-                    stealCropForCharacter(characterId, targetId, actionData.plotIndex);
-                }
-                break;
-        }
-        
-        // 如果当前显示的是这个角色的农场，刷新显示
-        const select = document.getElementById('farm-character-select');
-        if (select && select.value === characterId) {
-            farmGame.init(characterId);
-        }
-    }
-
-    // 角色间互相偷菜
-    async function stealCropForCharacter(stealerId, targetId, plotIndex) {
-        try {
-            const targetFarmKey = `farmGameState_${targetId}`;
-            const saved = localStorage.getItem(targetFarmKey);
-            if (!saved) return;
-            
-            const targetFarm = JSON.parse(saved);
-            if (!targetFarm.plots || !targetFarm.plots[plotIndex]) return;
-            
-            const plot = targetFarm.plots[plotIndex];
-            if (plot.state !== 'ready' || !plot.crop) return;
-            
-            const crop = farmGame.crops[plot.crop];
-            if (!crop) return;
-            
-            // 获取偷菜者农场
-            const stealerFarmKey = `farmGameState_${stealerId}`;
-            let stealerFarm = JSON.parse(localStorage.getItem(stealerFarmKey) || JSON.stringify({ money: 100, level: 1, plots: Array(12).fill(null).map(() => ({ state: 'unplowed', crop: null, stage: 0, plantTime: 0, watered: false })) }));
-            
-            // 增加金币（价值减半）
-            const stolenValue = Math.floor(crop.sell * 0.5);
-            stealerFarm.money = (stealerFarm.money || 100) + stolenValue;
-            
-            // 从目标农场移除
-            plot.state = 'unplowed';
-            plot.crop = null;
-            plot.stage = 0;
-            plot.plantTime = 0;
-            plot.watered = false;
-            
-            // 保存
-            localStorage.setItem(stealerFarmKey, JSON.stringify(stealerFarm));
-            localStorage.setItem(targetFarmKey, JSON.stringify(targetFarm));
-            
-            // 记录日志
-            let targetName = targetId;
-            try {
-                if (typeof window !== 'undefined' && window.state && window.state.chats && window.state.chats[targetId]) {
-                    targetName = window.state.chats[targetId].name || window.state.chats[targetId].originalName || targetId;
-                }
-            } catch (e) {}
-            
-            logCharacterAction(stealerId, '偷菜', `从${targetName}的农场偷取了${crop.name}，获得🪙${stolenValue}`);
-            
-        } catch (e) {
-            console.error('角色偷菜失败:', e);
-        }
-    }
-
-    // 生成按钮：手动触发角色农场活动
-    async function generateCharacterFarmAction() {
-        const select = document.getElementById('farm-character-select');
-        if (!select) return;
-        
-        const characterId = select.value;
-        if (characterId === 'default') {
-            alert('请先选择一个角色！');
-            return;
-        }
-        
-        const generateBtn = document.getElementById('generate-btn');
-        if (generateBtn) {
-            generateBtn.disabled = true;
-            generateBtn.textContent = '生成中...';
-        }
-        
-        try {
-            await autoCharacterFarmAction(characterId);
-            if (generateBtn) {
-                generateBtn.disabled = false;
-                generateBtn.textContent = '✨ 生成活动';
-            }
-            alert('已生成角色活动！');
-        } catch (e) {
-            console.error('生成活动失败:', e);
-            if (generateBtn) {
-                generateBtn.disabled = false;
-                generateBtn.textContent = '✨ 生成活动';
-            }
-            alert('生成活动失败，请检查API配置');
-        }
-    }
-
-    // 在聊天API调用后，有概率触发角色农场操作
-    function maybeTriggerFarmActionAfterChat(characterId) {
-        if (!characterId) return;
-        
-        // 30%概率触发
-        if (Math.random() < 0.3) {
-            setTimeout(() => {
-                autoCharacterFarmAction(characterId).catch(e => {
-                    console.log('聊天后触发农场操作失败:', e);
-                });
-            }, 1000); // 延迟1秒执行
-        }
-    }
-
-    // 定期执行角色自动操作（每5分钟）
-    setInterval(() => {
-        // 获取所有角色并执行自动操作
-        try {
-            let chats = [];
-            if (typeof window !== 'undefined' && window.state && window.state.chats) {
-                chats = Object.values(window.state.chats);
-            } else if (typeof state !== 'undefined' && state.chats) {
-                chats = Object.values(state.chats);
-            }
-            
-            chats.forEach(chat => {
-                if (chat && chat.id && !chat.isGroup) {
-                    autoCharacterFarmAction(chat.id);
-                }
-            });
-        } catch (e) {
-            console.error('自动操作执行失败:', e);
-        }
-    }, 5 * 60 * 1000); // 5分钟
 
     // ========== 披萨游戏 ==========
     let pizzaGameState = {
@@ -65781,6 +64047,454 @@ ${(() => {
         if (hint) {
             hint.textContent = text;
         }
+    }
+
+    // ========== 瞬间书籍功能 ==========
+    let momentBooks = {}; // 存储每个角色的书籍数据
+    let currentMomentCharacterId = null;
+    let currentMomentPage = 1;
+    
+    // HTML转义函数
+    function escapeHtml(text) {
+        if (typeof text !== 'string') return text;
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // 从本地存储加载书籍数据
+    try {
+        const savedBooks = localStorage.getItem('momentBooks');
+        if (savedBooks) {
+            momentBooks = JSON.parse(savedBooks);
+        }
+    } catch (e) {
+        console.warn('加载瞬间书籍失败:', e);
+    }
+
+    function initMomentScreen() {
+        const characterSelect = document.getElementById('moment-character-select');
+        const bookContainer = document.getElementById('moment-book');
+        
+        // 清空下拉框
+        characterSelect.innerHTML = '<option value="">选择角色</option>';
+        
+        // 获取所有角色（非群聊）
+        const characters = Object.values(state.chats || {}).filter(chat => !chat.isGroup);
+        
+        // 填充角色列表
+        characters.forEach(chat => {
+            const option = document.createElement('option');
+            option.value = chat.id;
+            option.textContent = chat.originalName || chat.name || '未知角色';
+            characterSelect.appendChild(option);
+        });
+        
+        // 如果有当前选中的角色，设置为默认值
+        if (currentMomentCharacterId && characters.find(c => c.id === currentMomentCharacterId)) {
+            characterSelect.value = currentMomentCharacterId;
+            loadMomentBook(currentMomentCharacterId);
+        }
+        
+        // 监听角色切换
+        characterSelect.addEventListener('change', function() {
+            const characterId = this.value;
+            if (characterId) {
+                currentMomentCharacterId = characterId;
+                loadMomentBook(characterId);
+            } else {
+                currentMomentCharacterId = null;
+                bookContainer.innerHTML = '';
+            }
+        });
+    }
+
+    function loadMomentBook(characterId) {
+        const bookContainer = document.getElementById('moment-book');
+        const character = state.chats[characterId];
+        
+        if (!character) return;
+        
+        // 如果该角色还没有书籍，创建新书籍
+        if (!momentBooks[characterId]) {
+            momentBooks[characterId] = {
+                pages: [
+                    { title: '封面', content: `${character.originalName || character.name || '未知'}的瞬间` },
+                    { title: '第一页', content: '这是第一页的内容...' },
+                    { title: '第二页', content: '这是第二页的内容...' },
+                    { title: '封底', content: '--- 完 ---' }
+                ],
+                currentPage: 1
+            };
+        }
+        
+        const book = momentBooks[characterId];
+        currentMomentPage = book.currentPage || 1;
+        
+        // 渲染书籍
+        renderMomentBook(book, characterId);
+    }
+
+    async function addMessagesToMomentBook(characterId, messages) {
+        const character = state.chats[characterId];
+        if (!character) return;
+        
+        // 如果该角色还没有书籍，创建新书籍
+        if (!momentBooks[characterId]) {
+            momentBooks[characterId] = {
+                pages: [
+                    { title: '封面', content: `${character.originalName || character.name || '未知'}的瞬间` },
+                    { title: '封底', content: '--- 完 ---' }
+                ],
+                currentPage: 1
+            };
+        }
+        
+        const book = momentBooks[characterId];
+        
+        // 格式化消息内容（只返回消息内容，不包含发送者和时间）
+        const formatMessage = (msg) => {
+            let content = '';
+            let isHtml = false;
+            
+            if (msg.type === 'text') {
+                content = msg.content || '';
+                // 检查是否包含HTML标签
+                if (content.includes('<') && content.includes('>')) {
+                    isHtml = true;
+                }
+            } else if (msg.type === 'image' && msg.imageUrl) {
+                // 图片消息，返回HTML格式的img标签
+                isHtml = true;
+                content = `<img src="${msg.imageUrl}" style="max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0;" alt="图片" />`;
+            } else if (msg.type === 'file' && msg.fileName) {
+                content = `[文件] ${msg.fileName}`;
+            } else {
+                content = JSON.stringify(msg);
+            }
+            
+            if (isHtml) {
+                return `<div style="margin-bottom: 15px;">${content}</div>`;
+            } else {
+                return content;
+            }
+        };
+        
+        // 将所有消息合并到一页（在封底之前插入）
+        const basePageNum = book.pages.length - 1; // 封底之前的页面数
+        const pageTitle = `第${basePageNum + 1}页`;
+        
+        // 将所有消息内容合并，检查是否包含HTML
+        const formattedMessages = messages.map(msg => formatMessage(msg));
+        const hasHtml = formattedMessages.some(msg => msg.includes('<img') || msg.includes('<div'));
+        
+        let allMessagesContent;
+        if (hasHtml) {
+            // 如果包含HTML，使用HTML格式
+            allMessagesContent = formattedMessages.join('<hr style="margin: 15px 0; border: none; border-top: 1px dashed #ccc;" />');
+        } else {
+            // 纯文本，使用分隔符
+            allMessagesContent = formattedMessages.join('\n\n---\n\n');
+        }
+        
+        const newPage = { title: pageTitle, content: allMessagesContent, isHtml: hasHtml };
+        
+        // 在封底之前插入新页面
+        const lastPage = book.pages.pop(); // 移除封底
+        book.pages.push(newPage); // 添加新页面（包含所有消息）
+        book.pages.push(lastPage); // 重新添加封底
+        
+        // 如果当前正在查看该角色的书籍，重新渲染
+        if (currentMomentCharacterId === characterId && document.getElementById('moment-screen').classList.contains('active')) {
+            renderMomentBook(book, characterId);
+        }
+        
+        // 保存到本地存储（如果需要持久化）
+        try {
+            localStorage.setItem('momentBooks', JSON.stringify(momentBooks));
+        } catch (e) {
+            console.warn('保存瞬间书籍失败:', e);
+        }
+    }
+
+    function renderMomentBook(book, characterId) {
+        const bookContainer = document.getElementById('moment-book');
+        bookContainer.innerHTML = '';
+        
+        const pages = book.pages;
+        
+        // 创建所有页面
+        pages.forEach((pageData, index) => {
+            const page = document.createElement('div');
+            page.className = 'page';
+            page.dataset.page = index + 1;
+            if (index < currentMomentPage - 1) {
+                page.classList.add('flipped');
+            }
+            
+            const front = document.createElement('div');
+            front.className = 'front';
+            
+            const back = document.createElement('div');
+            back.className = 'back';
+            
+            // 设置页面内容
+            if (index === 0) {
+                // 封面
+                front.innerHTML = `<div class="page-title">${escapeHtml(pageData.title)}</div><div class="page-content">${pageData.isHtml ? pageData.content : escapeHtml(pageData.content)}</div>`;
+            } else if (index === pages.length - 1) {
+                // 封底
+                back.innerHTML = `<div class="page-content" style="text-align: center; padding-top: 50%;">${escapeHtml(pageData.content)}</div>`;
+            } else {
+                // 内页
+                const frontContent = pageData.isHtml ? pageData.content : escapeHtml(pageData.content);
+                front.innerHTML = `<div class="page-title">${escapeHtml(pageData.title)}</div><div class="page-content">${frontContent}</div>`;
+                if (index > 0) {
+                    const prevPage = pages[index - 1];
+                    const backContent = prevPage.isHtml ? prevPage.content : escapeHtml(prevPage.content);
+                    back.innerHTML = `<div class="page-content">${backContent}</div>`;
+                }
+            }
+            
+            page.appendChild(front);
+            page.appendChild(back);
+            bookContainer.appendChild(page);
+        });
+        
+        // 设置页面层级（已翻过的页面z-index较小，未翻的页面z-index较大）
+        const allPages = bookContainer.querySelectorAll('.page');
+        const totalPages = allPages.length;
+        allPages.forEach((page, index) => {
+            // 所有页面的z-index都设置为 totalPages - index，确保后面的页面在上层
+            page.style.zIndex = totalPages - index;
+        });
+        
+        // 添加翻页事件
+        setupMomentBookEvents(characterId);
+    }
+
+    function setupMomentBookEvents(characterId) {
+        const bookContainer = document.getElementById('moment-book');
+        let startX = 0;
+        let startY = 0;
+        let isHandling = false;
+        let isScrolling = false;
+        
+        // 获取所有页面的辅助函数
+        const getPages = () => {
+            return document.querySelectorAll('#moment-book .page');
+        };
+        
+        // 更新页面z-index的辅助函数
+        const updatePageZIndex = () => {
+            const pages = getPages();
+            const totalPages = pages.length;
+            pages.forEach((page, index) => {
+                // 所有页面的z-index都设置为 totalPages - index
+                // 这样后面的页面（index大）z-index小，会显示在下面
+                // 前面的页面（index小）z-index大，会显示在上面
+                page.style.zIndex = totalPages - index;
+            });
+        };
+        
+        // 触摸事件
+        const touchStartHandler = function(e) {
+            if (document.getElementById('moment-screen').classList.contains('active')) {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                isHandling = true;
+                isScrolling = false;
+                
+                // 检查是否点击在可滚动的内容区域
+                const target = e.target;
+                const scrollableElement = target.closest('.front, .back');
+                if (scrollableElement) {
+                    const scrollHeight = scrollableElement.scrollHeight;
+                    const clientHeight = scrollableElement.clientHeight;
+                    // 如果内容可以滚动，标记为可能滚动
+                    isScrolling = scrollHeight > clientHeight;
+                }
+            }
+        };
+        
+        const touchMoveHandler = function(e) {
+            if (!isHandling || !document.getElementById('moment-screen').classList.contains('active')) return;
+            
+            const currentX = e.touches[0].clientX;
+            const currentY = e.touches[0].clientY;
+            const diffX = Math.abs(currentX - startX);
+            const diffY = Math.abs(currentY - startY);
+            
+            // 如果主要是垂直移动，标记为滚动
+            if (diffY > diffX && diffY > 10) {
+                isScrolling = true;
+            }
+        };
+        
+        const touchEndHandler = function(e) {
+            if (!isHandling || !document.getElementById('moment-screen').classList.contains('active')) {
+                isHandling = false;
+                return;
+            }
+            
+            // 如果是在滚动，不触发翻页
+            if (isScrolling) {
+                isHandling = false;
+                isScrolling = false;
+                return;
+            }
+            
+            const endX = e.changedTouches[0].clientX;
+            const endY = e.changedTouches[0].clientY;
+            const diffX = endX - startX;
+            const diffY = Math.abs(endY - startY);
+            const book = momentBooks[characterId];
+            if (!book) {
+                isHandling = false;
+                return;
+            }
+            
+            // 只有水平移动明显大于垂直移动时才翻页
+            if (Math.abs(diffX) > 50 && Math.abs(diffX) > diffY * 1.5) {
+                const pages = getPages();
+                const totalPages = pages.length;
+                
+                // 右滑：翻回上一页
+                if (diffX > 50 && currentMomentPage > 1) {
+                    const prevPageIndex = currentMomentPage - 2;
+                    const prevPage = pages[prevPageIndex];
+                    if (prevPage && prevPage.classList.contains('flipped')) {
+                        prevPage.classList.remove('flipped');
+                        currentMomentPage--;
+                        book.currentPage = currentMomentPage;
+                        updatePageZIndex();
+                    }
+                }
+                
+                // 左滑：翻到下一页
+                if (diffX < -50 && currentMomentPage < totalPages) {
+                    const nextPageIndex = currentMomentPage - 1;
+                    const nextPage = pages[nextPageIndex];
+                    if (nextPage && !nextPage.classList.contains('flipped')) {
+                        nextPage.classList.add('flipped');
+                        currentMomentPage++;
+                        book.currentPage = currentMomentPage;
+                        updatePageZIndex();
+                    }
+                }
+            }
+            
+            isHandling = false;
+            isScrolling = false;
+        };
+        
+        // 鼠标事件
+        const mouseDownHandler = function(e) {
+            if (document.getElementById('moment-screen').classList.contains('active')) {
+                // 检查是否点击在可滚动的内容区域
+                const target = e.target;
+                const scrollableElement = target.closest('.front, .back');
+                if (scrollableElement) {
+                    const scrollHeight = scrollableElement.scrollHeight;
+                    const clientHeight = scrollableElement.clientHeight;
+                    isScrolling = scrollHeight > clientHeight;
+                } else {
+                    isScrolling = false;
+                }
+                
+                startX = e.clientX;
+                startY = e.clientY;
+                isHandling = true;
+            }
+        };
+        
+        const mouseMoveHandler = function(e) {
+            if (!isHandling || !document.getElementById('moment-screen').classList.contains('active')) return;
+            
+            const currentX = e.clientX;
+            const currentY = e.clientY;
+            const diffX = Math.abs(currentX - startX);
+            const diffY = Math.abs(currentY - startY);
+            
+            // 如果主要是垂直移动，标记为滚动
+            if (diffY > diffX && diffY > 10) {
+                isScrolling = true;
+            }
+        };
+        
+        const mouseUpHandler = function(e) {
+            if (!isHandling || !document.getElementById('moment-screen').classList.contains('active')) {
+                isHandling = false;
+                return;
+            }
+            
+            // 如果是在滚动，不触发翻页
+            if (isScrolling) {
+                isHandling = false;
+                isScrolling = false;
+                return;
+            }
+            
+            const endX = e.clientX;
+            const endY = e.clientY;
+            const diffX = endX - startX;
+            const diffY = Math.abs(endY - startY);
+            const book = momentBooks[characterId];
+            if (!book) {
+                isHandling = false;
+                return;
+            }
+            
+            // 只有水平移动明显大于垂直移动时才翻页
+            if (Math.abs(diffX) > 50 && Math.abs(diffX) > diffY * 1.5) {
+                const pages = getPages();
+                const totalPages = pages.length;
+                
+                if (diffX > 50 && currentMomentPage > 1) {
+                    const prevPageIndex = currentMomentPage - 2;
+                    const prevPage = pages[prevPageIndex];
+                    if (prevPage && prevPage.classList.contains('flipped')) {
+                        prevPage.classList.remove('flipped');
+                        currentMomentPage--;
+                        book.currentPage = currentMomentPage;
+                        updatePageZIndex();
+                    }
+                }
+                
+                if (diffX < -50 && currentMomentPage < totalPages) {
+                    const nextPageIndex = currentMomentPage - 1;
+                    const nextPage = pages[nextPageIndex];
+                    if (nextPage && !nextPage.classList.contains('flipped')) {
+                        nextPage.classList.add('flipped');
+                        currentMomentPage++;
+                        book.currentPage = currentMomentPage;
+                        updatePageZIndex();
+                    }
+                }
+            }
+            
+            isHandling = false;
+            isScrolling = false;
+        };
+        
+        // 移除旧的事件监听器（如果存在）
+        document.removeEventListener('touchstart', touchStartHandler);
+        document.removeEventListener('touchmove', touchMoveHandler);
+        document.removeEventListener('touchend', touchEndHandler);
+        document.removeEventListener('mousedown', mouseDownHandler);
+        document.removeEventListener('mousemove', mouseMoveHandler);
+        document.removeEventListener('mouseup', mouseUpHandler);
+        
+        // 添加新的事件监听器
+        document.addEventListener('touchstart', touchStartHandler, { passive: true });
+        document.addEventListener('touchmove', touchMoveHandler, { passive: true });
+        document.addEventListener('touchend', touchEndHandler, { passive: true });
+        document.addEventListener('mousedown', mouseDownHandler);
+        document.addEventListener('mousemove', mouseMoveHandler);
+        document.addEventListener('mouseup', mouseUpHandler);
+        
+        // 初始化z-index
+        updatePageZIndex();
     }
      </script>   
         
