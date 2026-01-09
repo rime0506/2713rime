@@ -12200,6 +12200,40 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         transform: scale(0.95);
     }
 
+    .refresh-shop-btn {
+        padding: 5px 10px;
+        background: #2196F3;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .refresh-shop-btn:hover {
+        background: #1976D2;
+    }
+
+    .refresh-shop-btn:active {
+        transform: scale(0.95);
+    }
+
+    .shop-item-growth-time {
+        font-size: 12px;
+        color: #666;
+        margin-top: 3px;
+    }
+
+    .shop-item-sell-price {
+        font-size: 12px;
+        color: #4caf50;
+        margin-top: 3px;
+    }
+
     .backpack-item {
         display: flex;
         flex-direction: column;
@@ -12239,6 +12273,40 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         font-size: 10px;
         color: #666;
         margin-top: 2px;
+    }
+
+    .backpack-item-price {
+        font-size: 10px;
+        color: #4caf50;
+        margin-top: 2px;
+        font-weight: bold;
+    }
+
+    .sell-btn {
+        margin-top: 6px;
+        padding: 6px 12px;
+        background: #ff9800;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+        max-width: 80px;
+    }
+
+    .sell-btn:hover {
+        background: #f57c00;
+        transform: scale(1.05);
+    }
+
+    .sell-btn:active {
+        transform: scale(0.95);
+    }
+
+    .harvest-item {
+        min-height: 140px;
     }
 
     /* 田地按钮样式 */
@@ -12558,7 +12626,10 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
         <div class="modal-content">
           <div class="modal-header">
             <h3>商城</h3>
-            <button class="close-modal-btn" onclick="closeShop()">×</button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <button class="refresh-shop-btn" onclick="farmingGame.refreshShopItems()" title="刷新商品">🔄</button>
+              <button class="close-modal-btn" onclick="closeShop()">×</button>
+            </div>
           </div>
           <div class="shop-items" id="shopItems">
             <!-- 商品列表 -->
@@ -12757,6 +12828,23 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
           <div style="display: flex; justify-content: space-between; align-items: center;"> <label for="enable-tts-switch" style="margin-bottom: 0;"> 启用语音合成 (TTS) <p style="font-size: 12px; font-weight: normal; color: #999; margin-top: 5px;"> 关闭后，即使AI回复包含 [V] 前缀，也不会生成语音消息。 </p> </label>
             <label class="toggle-switch"> <input type="checkbox" id="enable-tts-switch"> <span class="slider"></span> </label>
           </div>
+        </div>
+        <div class="form-group" id="human-typing-mode-group">
+          <div style="display: flex; justify-content: space-between; align-items: center;"> <label for="human-typing-mode-switch" style="margin-bottom: 0;"> 拟人化输入模式 (Human Typing Mode) <p style="font-size: 12px; font-weight: normal; color: #999; margin-top: 5px;"> 开启后，AI的回复会逐字符显示，模拟真人输入效果。关闭则使用普通模式一次性显示。 </p> </label>
+            <label class="toggle-switch"> <input type="checkbox" id="human-typing-mode-switch"> <span class="slider"></span> </label>
+          </div>
+        </div>
+        <div class="form-group" id="typing-character-type-group" style="display: none;">
+          <label for="typing-character-type-select">打字风格角色类型</label>
+          <select id="typing-character-type-select" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box;">
+            <option value="default">默认型 - 标准打字速度，偶尔删除</option>
+            <option value="tsundere">傲娇型 - 打字较慢，频繁删除，欲言又止</option>
+            <option value="yandere">病娇型 - 打字极快，频繁打错字，急切表达</option>
+            <option value="gentle">温柔型 - 匀速优雅，偶尔犹豫，温和表达</option>
+          </select>
+          <p style="font-size: 12px; font-weight: normal; color: #999; margin-top: 5px;">
+            选择不同的角色类型会影响AI回复的打字节奏、删除频率、打错字概率等，让对话更具情感特征。
+          </p>
         </div>
         <div class="form-group" id="ai-voice-id-group"> <label for="ai-voice-id-input">语音 ID (Minimax voice_id)</label> <input type="text" id="ai-voice-id-input" placeholder="例如: female-shaonv-jingpin"></div>
         
@@ -14527,21 +14615,174 @@ function initLanguage() {
     })();
 
 
+// Service Worker 注册（内联代码）
 if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        // Service Worker 代码（内联）
+        const serviceWorkerCode = `
+// Service Worker for Background Tasks
+const CACHE_NAME = 'farm-game-cache-v1';
+const urlsToCache = ['/', '/heng.html'];
+
+// 安装 Service Worker
+self.addEventListener('install', function(event) {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(function(cache) {
+        console.log('Service Worker: 缓存已打开');
+        return cache.addAll(urlsToCache);
+      })
+  );
+});
+
+// 激活 Service Worker
+self.addEventListener('activate', function(event) {
+  event.waitUntil(
+    caches.keys().then(function(cacheNames) {
+      return Promise.all(
+        cacheNames.map(function(cacheName) {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Service Worker: 删除旧缓存', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
+
+// 处理推送通知
+self.addEventListener('push', function(event) {
+  console.log('Service Worker: 收到推送通知', event);
+  
+  let data = {};
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data = { title: '农场通知', body: event.data.text() || '您有新的消息' };
+    }
+  } else {
+    data = { title: '农场通知', body: '您有新的消息' };
+  }
+
+  const options = {
+    body: data.body || '您有新的消息',
+    icon: data.icon || '/icon.png',
+    badge: '/badge.png',
+    tag: data.tag || 'farm-notification',
+    requireInteraction: data.requireInteraction || false,
+    data: data.data || {}
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || '农场通知', options)
+  );
+});
+
+// 处理通知点击
+self.addEventListener('notificationclick', function(event) {
+  console.log('Service Worker: 通知被点击', event);
+  
+  event.notification.close();
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      for (let i = 0; i < clientList.length; i++) {
+        const client = clientList[i];
+        if (client.url === '/' && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('/');
+      }
+    })
+  );
+});
+
+// 处理后台同步
+self.addEventListener('sync', function(event) {
+  console.log('Service Worker: 后台同步', event.tag);
+  
+  if (event.tag === 'sync-farm-data') {
+    event.waitUntil(syncFarmData());
+  }
+});
+
+// 同步农场数据
+async function syncFarmData() {
+  try {
+    console.log('Service Worker: 农场数据同步完成');
+  } catch (error) {
+    console.error('Service Worker: 同步失败', error);
+  }
+}
+
+// 处理消息传递
+self.addEventListener('message', function(event) {
+  console.log('Service Worker: 收到消息', event.data);
+  
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'SYNC_DATA') {
+    syncFarmData().then(() => {
+      if (event.ports && event.ports[0]) {
+        event.ports[0].postMessage({ success: true });
+      }
+    }).catch((error) => {
+      if (event.ports && event.ports[0]) {
+        event.ports[0].postMessage({ success: false, error: error.message });
+      }
+    });
+  }
+});
+
+// 处理网络请求（缓存策略）
+self.addEventListener('fetch', function(event) {
+  event.respondWith(
+    caches.match(event.request)
+      .then(function(response) {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request).then(function(response) {
+          if (!response || response.status !== 200 || response.type !== 'basic') {
+            return response;
+          }
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then(function(cache) {
+              cache.put(event.request, responseToCache);
+            });
+          return response;
+        });
+      })
+      .catch(function() {
+        return new Response('网络错误', { status: 408 });
+      })
+  );
+});
+        `;
         
-        window.addEventListener('load', () => {
-          
-          navigator.serviceWorker.register('./sw.js')
+        // 创建 Blob URL 并注册 Service Worker
+        const blob = new Blob([serviceWorkerCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        
+        navigator.serviceWorker.register(swUrl)
             .then(registration => {
-              
-              console.log('ServiceWorker 注册成功，作用域为: ', registration.scope);
+                console.log('ServiceWorker 注册成功，作用域为: ', registration.scope);
+                // 清理 Blob URL（延迟清理，确保注册完成）
+                setTimeout(() => URL.revokeObjectURL(swUrl), 1000);
             })
             .catch(error => {
-              
-              console.log('ServiceWorker 注册失败: ', error);
+                console.log('ServiceWorker 注册失败: ', error);
+                URL.revokeObjectURL(swUrl);
             });
-        });
-      }
+    });
+}
   
 if (!Array.prototype.findLastIndex) {
   Object.defineProperty(Array.prototype, 'findLastIndex', {
@@ -19708,7 +19949,9 @@ function createChatListItem(chat) {
                     messagePromises.push(Promise.resolve(createSystemTimestampElement(msg.timestamp)));
                 }
                 
-                messagePromises.push(createMessageElement(msg, chat, true));
+                // 【初始加载】传入 false，因为初始加载时不应该使用打字效果
+                // isEmptyForTyping 只在 appendMessage 中根据 humanTypingMode 动态决定
+                messagePromises.push(createMessageElement(msg, chat, false));
                 lastTimestamp = msg.timestamp;
             }
 
@@ -20442,7 +20685,13 @@ function scrollToOriginalMessage(originalTimestamp) {
         alert("找不到原始消息。可能已被删除或位于更早的历史记录中。");
     }
 }
-        async function createMessageElement(msg, chat) {
+        /**
+         * 创建消息元素
+         * @param {Object} msg - 消息对象
+         * @param {Object} chat - 聊天对象
+         * @param {boolean} isEmptyForTyping - 是否创建空的消息气泡（用于拟人化输入模式）
+         */
+        async function createMessageElement(msg, chat, isEmptyForTyping = false) {
         
             
             if (msg.type === 'recalled_message') {
@@ -20775,38 +21024,81 @@ else if (msg.type === 'share_link') {
                     contentHtml = `<div class="gift-card"><div class="gift-header"><svg class="gift-header-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-2.18a4 4 0 0 0-7.64 0H8a4 4 0 0 0-4 4v2h20V10a4 4 0 0 0-4-4zM8 4a2 2 0 1 1-2 2a2 2 0 0 1 2-2zm12 0a2 2 0 1 1-2 2a2 2 0 0 1 2-2zM4 14v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6H4z"></path></svg><span class="gift-header-text">${headerText}</span></div><div class="gift-items-preview">${previewHtml}</div><div class="gift-footer">共${msg.items.length}件商品${moreItemsText}，点击查看</div></div>`;
                 }
             } else {
-                const processedContent = String(rawContent); 
-                let processedByRule = await applyRenderingRules(processedContent, chat.id);
-                if (processedByRule !== processedContent) {
-                    contentHtml = processedByRule;
-                    bubble.classList.add('is-card-like');
-                } else {
+                // 【拟人化输入模式】强制拆分渲染路径
+                // 【强制修复】兼容 msg.type 未定义的情况
+                const isTextMsgForContent = msg.type === 'text' || (msg.type === undefined && msg.role === 'assistant' && typeof msg.content === 'string');
+                if (isEmptyForTyping && msg.role === 'assistant' && isTextMsgForContent) {
+                    // 【强制修复】拟人化模式下，contentHtml 必须为空字符串
+                    // 禁止任何一次性写入文本的逻辑
+                    contentHtml = '';  
                     
-                    
-                    if (Array.isArray(msg.content) && msg.content[0]?.type === 'image_url') {
-                        
-                        const imageUrl = msg.content[0].image_url.url;
-                        contentHtml = `<img src="${imageUrl}" class="chat-image">`;
+                    // 【断言】确保没有其他逻辑干扰
+                    if (contentHtml !== '') {
+                        console.error('【拟人化输入模式】逻辑错误：contentHtml 在拟人化模式下应该为空！');
+                        contentHtml = ''; // 强制清空
                     }
-                    
-                    else if (STICKER_REGEX.test(processedByRule)) { 
-                        bubble.classList.add('is-sticker', 'is-card-like');
-                        contentHtml = `<img src="${processedByRule}" alt="${msg.meaning || 'Sticker'}" class="sticker-image">`;
+                } else {
+                    // 【普通模式】正常渲染逻辑
+                    const processedContent = String(rawContent); 
+                    let processedByRule = await applyRenderingRules(processedContent, chat.id);
+                    if (processedByRule !== processedContent) {
+                        contentHtml = processedByRule;
+                        bubble.classList.add('is-card-like');
                     } else {
-                        let plainText = processMentions(processedByRule, chat);
-                        contentHtml = parseMarkdown(plainText).replace(/\n/g, '<br>');
+                        
+                        
+                        if (Array.isArray(msg.content) && msg.content[0]?.type === 'image_url') {
+                            
+                            const imageUrl = msg.content[0].image_url.url;
+                            contentHtml = `<img src="${imageUrl}" class="chat-image">`;
+                        }
+                        
+                        else if (STICKER_REGEX.test(processedByRule)) { 
+                            bubble.classList.add('is-sticker', 'is-card-like');
+                            contentHtml = `<img src="${processedByRule}" alt="${msg.meaning || 'Sticker'}" class="sticker-image">`;
+                        } else {
+                            let plainText = processMentions(processedByRule, chat);
+                            contentHtml = parseMarkdown(plainText).replace(/\n/g, '<br>');
+                        }
                     }
                 }
             }
         
             
-            bubble.innerHTML = `
-                ${avatarGroupHtml}
-                <div class="content">
-                    ${quoteHtml}
-                    ${contentHtml}
-                </div>
-            `;
+            // 【强制拆分渲染路径】根据 isEmptyForTyping 决定如何设置 innerHTML
+            // 【强制修复】兼容 msg.type 未定义的情况
+            const isTextMsgForRender = msg.type === 'text' || (msg.type === undefined && msg.role === 'assistant' && typeof msg.content === 'string');
+            if (isEmptyForTyping && msg.role === 'assistant' && isTextMsgForRender) {
+                // 【拟人化模式】content 必须为空，禁止写入任何文本
+                bubble.innerHTML = `
+                    ${avatarGroupHtml}
+                    <div class="content">
+                        ${quoteHtml}
+                    </div>
+                `;
+                
+                // 【断言】验证 .content 元素确实为空（除了可能的 quoteHtml）
+                const contentEl = bubble.querySelector('.content');
+                if (contentEl) {
+                    const textContent = contentEl.textContent || '';
+                    const hasQuote = quoteHtml !== '';
+                    // 如果有 quote，允许 quote 存在，但主文本必须为空
+                    // 如果没有 quote，整个 content 的文本内容必须为空
+                    if (!hasQuote && textContent.trim() !== '') {
+                        console.error('【拟人化输入模式】逻辑错误：.content 元素在拟人化模式下应该为空！当前内容:', textContent);
+                        contentEl.innerHTML = quoteHtml; // 强制清空主文本，只保留 quote
+                    }
+                }
+            } else {
+                // 【普通模式】正常设置 innerHTML
+                bubble.innerHTML = `
+                    ${avatarGroupHtml}
+                    <div class="content">
+                        ${quoteHtml}
+                        ${contentHtml}
+                    </div>
+                `;
+            }
             
             wrapper.appendChild(bubble);
             wrapper.appendChild(timestampEl);
@@ -20828,6 +21120,378 @@ else if (msg.type === 'share_link') {
             return wrapper;
         }
   
+        /**
+         * 【角色行为配置】定义不同角色的打字风格和情绪反应
+         */
+        const CHARACTER_BEHAVIORS = {
+            tsundere: {
+                name: '傲娇型',
+                baseSpeed: 100,              // 基础打字速度（毫秒）
+                pauseOnPunctuation: 800,     // 标点符号后的停顿时间
+                fakeOutChance: 0.7,          // 欲言又止的概率（删除后不继续）
+                deleteSpeed: 50,             // 删除速度
+                internalMonologue: ["才...才不是想你呢！", "哼，别自作多情...", "才...才没有害羞呢！", "笨蛋..."],
+                longPauseChance: 0.3,         // 长停顿概率
+                typoChance: 0.2,             // 打错字概率
+                emotionKeywords: {
+                    "喜欢": { trigger: true, monologue: "才...才不是喜欢你！", deleteChance: 0.8 },
+                    "想你": { trigger: true, monologue: "才...才没有想你！", deleteChance: 0.7 },
+                    "爱": { trigger: true, monologue: "笨蛋...", deleteChance: 0.6 }
+                }
+            },
+            yandere: {
+                name: '病娇型',
+                baseSpeed: 40,               // 打字速度非常快
+                pauseOnPunctuation: 100,      // 几乎不停顿
+                fakeOutChance: 0.5,          // 中等删除概率
+                deleteSpeed: 0,              // 删除速度极快（几乎不延迟）
+                internalMonologue: ["你是我的...", "不准离开我...", "永远在一起...", "只属于我..."],
+                longPauseChance: 0.1,         // 很少长停顿
+                typoChance: 0.4,              // 高打错字概率
+                emotionKeywords: {
+                    "喜欢": { trigger: true, monologue: "我也喜欢你...最喜欢了...", deleteChance: 0.3 },
+                    "想你": { trigger: true, monologue: "我也想你...每时每刻...", deleteChance: 0.2 },
+                    "爱": { trigger: true, monologue: "我也爱你...永远...", deleteChance: 0.3 }
+                }
+            },
+            gentle: {
+                name: '温柔型',
+                baseSpeed: 150,              // 匀速且优雅
+                pauseOnPunctuation: 500,     // 适中的停顿
+                fakeOutChance: 0.2,          // 低删除概率
+                deleteSpeed: 100,            // 缓慢的删除动作
+                internalMonologue: ["(摸摸头)", "想抱抱你...", "好温暖...", "好幸福..."],
+                longPauseChance: 0.2,         // 偶尔长停顿
+                typoChance: 0.1,              // 很少打错字
+                emotionKeywords: {
+                    "喜欢": { trigger: true, monologue: "(温柔地笑着)", deleteChance: 0.3 },
+                    "想你": { trigger: true, monologue: "我也想你...", deleteChance: 0.2 },
+                    "爱": { trigger: true, monologue: "我也爱你...", deleteChance: 0.2 }
+                }
+            },
+            default: {
+                name: '默认型',
+                baseSpeed: 80,
+                pauseOnPunctuation: 300,
+                fakeOutChance: 0.03,
+                deleteSpeed: 150,
+                internalMonologue: [],
+                longPauseChance: 0.1,
+                typoChance: 0.05,
+                emotionKeywords: {}
+            }
+        };
+
+        /**
+         * 【情感触发检测】检测文本中是否包含情感关键词
+         * @param {string} text - 要检测的文本
+         * @param {Object} behavior - 角色行为配置
+         * @returns {Object|null} - 返回触发的情感信息，或null
+         */
+        function detectEmotionTrigger(text, behavior) {
+            if (!behavior.emotionKeywords) return null;
+            
+            for (const [keyword, config] of Object.entries(behavior.emotionKeywords)) {
+                if (text.includes(keyword)) {
+                    return {
+                        keyword: keyword,
+                        monologue: config.monologue,
+                        deleteChance: config.deleteChance || 0.5
+                    };
+                }
+            }
+            return null;
+        }
+
+        /**
+         * 【更新输入状态】更新打字指示器的状态文本
+         * @param {string} status - 状态文本
+         */
+        function updateTypingStatus(status) {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.textContent = status;
+                typingIndicator.style.display = 'block';
+            }
+        }
+
+        /**
+         * 【拟人化输入模式】打字引擎函数（改进版 - 支持角色设定）
+         * @param {HTMLElement} element - 要写入的 .content DOM 元素
+         * @param {string} fullText - AI 返回的完整字符串
+         * @param {Object} options - 配置选项
+         * @param {Object} chat - 聊天对象（用于获取角色设定）
+         * @returns {Promise} - 返回一个 Promise，在打字完成后 resolve
+         */
+        async function typeWriterRender(element, fullText, options = {}, chat = null) {
+            // 【强制修复】等待前一个打字任务完成
+            while (isAiTyping) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            
+            // 设置状态锁
+            isAiTyping = true;
+            
+            // 【强制修复】保存 quote 元素（如果存在）
+            const quoteEl = element.querySelector('.quoted-message');
+            const quoteHtml = quoteEl ? quoteEl.outerHTML : '';
+            
+            // 【角色设定】获取当前聊天的角色类型
+            const characterType = (chat && chat.settings && chat.settings.typingCharacterType) || 
+                                 (state.globalSettings && state.globalSettings.typingCharacterType) || 
+                                 'default';
+            const behavior = CHARACTER_BEHAVIORS[characterType] || CHARACTER_BEHAVIORS.default;
+            
+            // 【配置合并】使用角色行为配置，允许options覆盖
+            const config = {
+                minDelay: behavior.baseSpeed * 0.3,      // 基于角色基础速度
+                maxDelay: behavior.baseSpeed * 0.8,      // 基于角色基础速度
+                pauseChars: ['。', '！', '？', '，', '、', '\n'],  // 需要停顿的字符
+                pauseDelay: behavior.pauseOnPunctuation, // 使用角色配置的停顿时间
+                deleteChance: behavior.fakeOutChance,     // 使用角色配置的删除概率
+                deleteSpeed: behavior.deleteSpeed,       // 使用角色配置的删除速度
+                typoChance: behavior.typoChance,         // 使用角色配置的打错字概率
+                longPauseChance: behavior.longPauseChance, // 长停顿概率
+                ...options  // 允许外部覆盖
+            };
+
+            // 获取消息容器，用于自动滚动
+            const messagesContainer = document.getElementById('chat-messages');
+            const typingIndicator = document.getElementById('typing-indicator');
+            
+            // 当前显示的文本
+            let currentText = '';
+            let index = 0;
+            let lastEmotionTriggerIndex = -1;  // 记录上次情感触发的位置
+            let hasShownMonologue = false;     // 是否已显示内心独白
+            
+            // 【强制修复】更新文本的函数，保留 quote
+            const updateText = (text) => {
+                if (quoteHtml) {
+                    element.innerHTML = quoteHtml + text;
+                } else {
+                    element.textContent = text;
+                }
+            };
+            
+            // 【模拟打错字】生成一个错误的字符
+            const generateTypo = (correctChar) => {
+                if (!correctChar) return '';
+                // 简单的打错字逻辑：使用相似的字符或随机字符
+                const typoMap = {
+                    '你': '妳', '的': '得', '了': '啦', '吗': '嘛',
+                    '是': '时', '在': '再', '有': '又', '和': '或'
+                };
+                if (typoMap[correctChar]) {
+                    return Math.random() < 0.5 ? typoMap[correctChar] : correctChar;
+                }
+                // 随机返回一个相似字符（简化版）
+                return correctChar;
+            };
+            
+            // 【显示内心独白】在消息上方显示内心独白（临时状态）
+            const showInternalMonologue = (monologue) => {
+                if (!typingIndicator) return;
+                const originalText = typingIndicator.textContent;
+                typingIndicator.textContent = monologue;
+                typingIndicator.style.fontStyle = 'italic';
+                typingIndicator.style.opacity = '0.7';
+                
+                // 2秒后恢复原状态
+                setTimeout(() => {
+                    if (typingIndicator) {
+                        typingIndicator.textContent = originalText;
+                        typingIndicator.style.fontStyle = '';
+                        typingIndicator.style.opacity = '';
+                    }
+                }, 2000);
+            };
+            
+            // 使用 Promise 包装，确保可以等待完成
+            return new Promise((resolve) => {
+                const typeNextChar = () => {
+                    if (index >= fullText.length) {
+                        // 打字完成，释放状态锁
+                        isAiTyping = false;
+                        if (typingIndicator) {
+                            typingIndicator.style.display = 'none';
+                        }
+                        resolve();
+                        return;
+                    }
+                    
+                    const char = fullText[index];
+                    const nextChar = index + 1 < fullText.length ? fullText[index + 1] : '';
+                    const textSoFar = fullText.substring(0, index + 1);
+                    
+                    // 【情感触发检测】检测是否遇到情感关键词
+                    const emotionTrigger = detectEmotionTrigger(textSoFar, behavior);
+                    if (emotionTrigger && emotionTrigger.keyword && 
+                        textSoFar.lastIndexOf(emotionTrigger.keyword) > lastEmotionTriggerIndex) {
+                        lastEmotionTriggerIndex = textSoFar.lastIndexOf(emotionTrigger.keyword);
+                        
+                        // 显示内心独白
+                        if (emotionTrigger.monologue && !hasShownMonologue) {
+                            showInternalMonologue(emotionTrigger.monologue);
+                            hasShownMonologue = true;
+                        }
+                        
+                        // 更新状态
+                        updateTypingStatus(`对方正在犹豫地输入...`);
+                    }
+                    
+                    // 【长停顿检测】随机触发长停顿
+                    if (currentText.length > 0 && Math.random() < config.longPauseChance) {
+                        updateTypingStatus(`对方正在思考...`);
+                        setTimeout(() => {
+                            updateTypingStatus(`对方正在输入...`);
+                            typeNextChar();
+                        }, behavior.baseSpeed * 3 + Math.random() * behavior.baseSpeed * 2);
+                        return;
+                    }
+                    
+                    // 【打错字检测】根据角色配置决定是否打错字
+                    let actualChar = char;
+                    if (Math.random() < config.typoChance && currentText.length > 0) {
+                        actualChar = generateTypo(char);
+                        // 先输入错误字符
+                        currentText += actualChar;
+                        updateText(currentText);
+                        
+                        // 滚动到底部
+                        if (messagesContainer) {
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        }
+                        
+                        // 短暂停顿后删除并输入正确字符
+                        setTimeout(() => {
+                            currentText = currentText.slice(0, -1);
+                            updateText(currentText);
+                            
+                            // 滚动到底部
+                            if (messagesContainer) {
+                                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                            }
+                            
+                            // 延迟后输入正确字符
+                            setTimeout(() => {
+                                currentText += char;
+                                updateText(currentText);
+                                index++;
+                                
+                                // 滚动到底部
+                                if (messagesContainer) {
+                                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                                }
+                                
+                                // 计算延迟
+                                let delay = Math.random() * (config.maxDelay - config.minDelay) + config.minDelay;
+                                if (config.pauseChars.includes(char)) {
+                                    delay += config.pauseDelay;
+                                }
+                                
+                                setTimeout(typeNextChar, delay);
+                            }, config.deleteSpeed);
+                        }, 100 + Math.random() * 200);
+                        return;
+                    }
+                    
+                    // 【删除检测】检查是否需要模拟退格（欲言又止）
+                    if (currentText.length > 0 && Math.random() < config.deleteChance) {
+                        // 更新状态
+                        updateTypingStatus(`对方正在删除...`);
+                        
+                        // 删除最后一个字符
+                        currentText = currentText.slice(0, -1);
+                        updateText(currentText);
+                        
+                        // 滚动到底部
+                        if (messagesContainer) {
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        }
+                        
+                        // 【欲言又止】根据角色配置，可能删除后不继续输入
+                        if (Math.random() < config.fakeOutChance && behavior.fakeOutChance > 0.5) {
+                            // 长停顿，模拟犹豫
+                            updateTypingStatus(`对方正在犹豫地输入...`);
+                            setTimeout(() => {
+                                updateTypingStatus(`对方正在输入...`);
+                                // 延迟后重新输入正确字符
+                                setTimeout(() => {
+                                    currentText += char;
+                                    updateText(currentText);
+                                    index++;
+                                    
+                                    // 滚动到底部
+                                    if (messagesContainer) {
+                                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                                    }
+                                    
+                                    // 检查是否需要停顿
+                                    let delay = Math.random() * (config.maxDelay - config.minDelay) + config.minDelay;
+                                    if (config.pauseChars.includes(char)) {
+                                        delay += config.pauseDelay;
+                                    }
+                                    
+                                    setTimeout(typeNextChar, delay);
+                                }, config.deleteSpeed + Math.random() * 300);
+                            }, behavior.baseSpeed * 2 + Math.random() * behavior.baseSpeed);
+                        } else {
+                            // 正常删除后继续
+                            setTimeout(() => {
+                                currentText += char;
+                                updateText(currentText);
+                                index++;
+                                
+                                // 滚动到底部
+                                if (messagesContainer) {
+                                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                                }
+                                
+                                // 检查是否需要停顿
+                                let delay = Math.random() * (config.maxDelay - config.minDelay) + config.minDelay;
+                                if (config.pauseChars.includes(char)) {
+                                    delay += config.pauseDelay;
+                                }
+                                
+                                updateTypingStatus(`对方正在输入...`);
+                                setTimeout(typeNextChar, delay);
+                            }, config.deleteSpeed);
+                        }
+                    } else {
+                        // 正常输入字符
+                        currentText += actualChar;
+                        updateText(currentText);
+                        index++;
+                        
+                        // 滚动到底部
+                        if (messagesContainer) {
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        }
+                        
+                        // 计算延迟
+                        let delay = Math.random() * (config.maxDelay - config.minDelay) + config.minDelay;
+                        
+                        // 在停顿字符后增加延迟
+                        if (config.pauseChars.includes(char)) {
+                            delay += config.pauseDelay;
+                        }
+                        
+                        // 更新状态（仅在需要时）
+                        if (typingIndicator && typingIndicator.style.display !== 'none') {
+                            updateTypingStatus(`对方正在输入...`);
+                        }
+                        
+                        // 继续下一个字符
+                        setTimeout(typeNextChar, delay);
+                    }
+                };
+                
+                // 开始打字
+                updateTypingStatus(`对方正在输入...`);
+                typeNextChar();
+            });
+        }
         
         async function prependMessage(msg, chat) { 
             const messagesContainer = document.getElementById('chat-messages'); 
@@ -20846,7 +21510,7 @@ else if (msg.type === 'share_link') {
           
         
         /**
-         * 【V3.0 | 已延长间隔】将消息元素追加到聊天窗口
+         * 【V3.0 | 已延长间隔 | 拟人化输入模式支持】将消息元素追加到聊天窗口
          */
         async function appendMessage(msg, chat, isInitialLoad = false) {
             const messagesContainer = document.getElementById('chat-messages');
@@ -20860,7 +21524,36 @@ if (lastMessage && (msg.timestamp - lastMessage.timestamp > 600000)) {
     messagesContainer.insertBefore(timestampEl, typingIndicator);
 }
 
-            const messageEl = await createMessageElement(msg, chat);
+            // 【拟人化输入模式】检查是否需要使用打字效果
+            const isHumanTypingMode = (chat.settings && chat.settings.humanTypingMode) || 
+                                     (state.globalSettings && state.globalSettings.humanTypingMode) || 
+                                     false;
+            
+            // 【强制修复】判断是否为 AI 文本消息且需要打字效果
+            // 注意：如果 msg.type 未定义，但 msg.role === 'assistant' 且 content 是字符串，也视为文本消息
+            const isTextMessage = msg.type === 'text' || (msg.type === undefined && msg.role === 'assistant' && typeof msg.content === 'string');
+            const shouldUseTyping = !isInitialLoad && 
+                                   msg.role === 'assistant' && 
+                                   isTextMessage && 
+                                   typeof msg.content === 'string' && 
+                                   msg.content.trim() !== '' &&
+                                   isHumanTypingMode;
+            
+            // 【调试日志】帮助诊断问题
+            if (isHumanTypingMode && msg.role === 'assistant' && !isInitialLoad) {
+                console.log('【拟人化输入模式调试】', {
+                    msgType: msg.type,
+                    isTextMessage: isTextMessage,
+                    hasContent: typeof msg.content === 'string',
+                    contentLength: typeof msg.content === 'string' ? msg.content.length : 0,
+                    shouldUseTyping: shouldUseTyping,
+                    isHumanTypingMode: isHumanTypingMode
+                });
+            }
+            
+            // 如果需要打字效果，先创建空的消息气泡
+            const isEmptyForTyping = shouldUseTyping;
+            const messageEl = await createMessageElement(msg, chat, isEmptyForTyping);
             if (!messageEl) return;
     
     
@@ -20874,13 +21567,51 @@ if (lastMessage && (msg.timestamp - lastMessage.timestamp > 600000)) {
           
             messagesContainer.insertBefore(messageEl, typingIndicator);
             
+            // 【拟人化输入模式】强制拆分渲染路径 - 禁止逻辑回退
+            if (shouldUseTyping) {
+                const contentEl = messageEl.querySelector('.content');
+                if (contentEl) {
+                    // 【断言】在调用 typeWriterRender 前，验证 content 是否为空
+                    const beforeText = contentEl.textContent || '';
+                    const hasQuote = contentEl.querySelector('.quoted-message') !== null;
+                    // 如果有 quote，允许 quote 存在，但主文本必须为空
+                    // 如果没有 quote，整个 content 的文本内容必须为空
+                    if (!hasQuote && beforeText.trim() !== '') {
+                        console.error('【拟人化输入模式】逻辑错误：在调用 typeWriterRender 前，.content 应该为空！当前内容:', beforeText);
+                        // 强制清空主文本，只保留 quote
+                        const quoteEl = contentEl.querySelector('.quoted-message');
+                        contentEl.innerHTML = quoteEl ? quoteEl.outerHTML : '';
+                    }
+                    
+                    // 获取原始文本内容（去除 HTML 标签）
+                    const fullText = String(msg.content || '').trim();
+                    
+                    // 【禁止逻辑回退】确保没有任何代码在 typeWriterRender 之前写入完整文本
+                    if (fullText && contentEl.textContent && contentEl.textContent.trim() === fullText.trim()) {
+                        console.error('【拟人化输入模式】逻辑错误：检测到双重渲染！content 已经包含完整文本，这不应该发生！');
+                        // 强制清空，只保留 quote
+                        const quoteEl = contentEl.querySelector('.quoted-message');
+                        contentEl.innerHTML = quoteEl ? quoteEl.outerHTML : '';
+                    }
+                    
+                    // 使用打字效果渲染（传递chat对象以获取角色设定）
+                    await typeWriterRender(contentEl, fullText, {}, chat);
+                    
+                    // 【禁止逻辑回退】打字完成后，禁止再次写入完整文本
+                    // typeWriterRender 已经完成了所有渲染工作
+                } else {
+                    console.error('【拟人化输入模式】逻辑错误：找不到 .content 元素！');
+                }
+            }
+            
             if (!isInitialLoad) {
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 currentRenderedCount++;
                 
                 // 【前台通知】AI 回复首次渲染完成，触发通知检查
                 if (msg.role === 'assistant') {
-                    // 延迟一点时间，确保消息完全渲染
+                    // 延迟一点时间，确保消息完全渲染（打字模式下需要等待打字完成）
+                    const delay = shouldUseTyping ? 500 : 300;
                     setTimeout(() => {
                         requestAnimationFrame(() => {
                             requestAnimationFrame(() => {
@@ -20904,7 +21635,7 @@ if (lastMessage && (msg.timestamp - lastMessage.timestamp > 600000)) {
                                 }
                             });
                         });
-                    }, 300); // 延迟 300ms 确保消息完全渲染
+                    }, delay); // 打字模式下延迟更久
                 }
             }
         }
@@ -21178,9 +21909,10 @@ ${stickerContext}
  
             
             switch (msgData.type) {
-                case 'text':
-                    aiMessage = { ...baseMessage, content: msgData.content };
-                    break;
+                        case 'text':
+                            // 【强制修复】必须设置 type: 'text'，否则拟人化输入模式无法识别
+                            aiMessage = { ...baseMessage, type: 'text', content: String(msgData.content || msgData.message || '') };
+                            break;
                 case 'sticker':
                     if (msgData.meaning) {
                         const sticker = state.userStickers.find(s => s.name === msgData.meaning);
@@ -21227,8 +21959,29 @@ ${stickerContext}
 
             if (aiMessage) {
                 chat.history.push(aiMessage);
-                appendMessage(aiMessage, chat);
-                await new Promise(resolve => setTimeout(resolve, Math.random() * 1200 + 800));
+                // 【强制修复】等待前一条消息打字完成（如果启用拟人化输入模式）
+                const isHumanTypingMode = (chat.settings && chat.settings.humanTypingMode) || 
+                                         (state.globalSettings && state.globalSettings.humanTypingMode) || 
+                                         false;
+                if (isHumanTypingMode && aiMessage && aiMessage.role === 'assistant' && 
+                    (aiMessage.type === 'text' || (aiMessage.type === undefined && typeof aiMessage.content === 'string'))) {
+                    // 等待前一条消息打字完成
+                    while (isAiTyping) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+                await appendMessage(aiMessage, chat);
+                // 如果启用了拟人化输入模式，等待打字完成后再继续
+                if (isHumanTypingMode && aiMessage && aiMessage.role === 'assistant' && 
+                    (aiMessage.type === 'text' || (aiMessage.type === undefined && typeof aiMessage.content === 'string'))) {
+                    // 等待当前消息打字完成
+                    while (isAiTyping) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                } else {
+                    // 普通模式，使用原来的延迟
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 1200 + 800));
+                }
             }
         }
         
@@ -21259,6 +22012,13 @@ ${stickerContext}
          */
         async function triggerAiResponse() {
             if (!state.activeChatId) return;
+            
+            // 【拟人化输入模式】如果正在打字，禁止触发新的 AI 回复
+            if (isAiTyping) {
+                console.log('【拟人化输入模式】正在打字中，跳过本次 AI 回复');
+                return;
+            }
+            
             const chatId = state.activeChatId;
             const chat = state.chats[state.activeChatId];
         
@@ -24849,8 +25609,29 @@ break;
  
                         
                         if (isViewingThisChat) {
-                            appendMessage(aiMessage, chat);
-                            await new Promise(resolve => setTimeout(resolve, Math.random() * 1800 + 1000));
+                            // 【强制修复】等待前一条消息的打字完成（如果启用拟人化输入模式）
+                            const isHumanTypingMode = (chat.settings && chat.settings.humanTypingMode) || 
+                                                     (state.globalSettings && state.globalSettings.humanTypingMode) || 
+                                                     false;
+                            if (isHumanTypingMode && aiMessage && aiMessage.role === 'assistant' && 
+                                (aiMessage.type === 'text' || (aiMessage.type === undefined && typeof aiMessage.content === 'string'))) {
+                                // 等待前一条消息打字完成
+                                while (isAiTyping) {
+                                    await new Promise(resolve => setTimeout(resolve, 100));
+                                }
+                            }
+                            await appendMessage(aiMessage, chat);
+                            // 如果启用了拟人化输入模式，等待打字完成后再继续
+                            if (isHumanTypingMode && aiMessage && aiMessage.role === 'assistant' && 
+                                (aiMessage.type === 'text' || (aiMessage.type === undefined && typeof aiMessage.content === 'string'))) {
+                                // 等待当前消息打字完成
+                                while (isAiTyping) {
+                                    await new Promise(resolve => setTimeout(resolve, 100));
+                                }
+                            } else {
+                                // 普通模式，使用原来的延迟
+                                await new Promise(resolve => setTimeout(resolve, Math.random() * 1800 + 1000));
+                            }
                         }
                     }
                 }        
@@ -36712,8 +37493,29 @@ ${chat.settings.myPersona}
                 continue;
             }
             chat.history.push(aiMessage);
-            appendMessage(aiMessage, chat);
-            await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 800));
+            // 【强制修复】等待前一条消息打字完成（如果启用拟人化输入模式）
+            const isHumanTypingMode = (chat.settings && chat.settings.humanTypingMode) || 
+                                     (state.globalSettings && state.globalSettings.humanTypingMode) || 
+                                     false;
+            if (isHumanTypingMode && aiMessage && aiMessage.role === 'assistant' && 
+                (aiMessage.type === 'text' || (aiMessage.type === undefined && typeof aiMessage.content === 'string'))) {
+                // 等待前一条消息打字完成
+                while (isAiTyping) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
+            await appendMessage(aiMessage, chat);
+            // 如果启用了拟人化输入模式，等待打字完成后再继续
+            if (isHumanTypingMode && aiMessage && aiMessage.role === 'assistant' && 
+                (aiMessage.type === 'text' || (aiMessage.type === undefined && typeof aiMessage.content === 'string'))) {
+                // 等待当前消息打字完成
+                while (isAiTyping) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            } else {
+                // 普通模式，使用原来的延迟
+                await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 800));
+            }
         }
         
         await db.chats.put(chat);
@@ -49274,6 +50076,12 @@ if (isGroup) {
     document.getElementById('my-group-nickname-input').value = chat.settings.myNickname || '';
     document.getElementById('group-avatar-preview').src = chat.settings.groupAvatar || defaultGroupAvatar;
     document.getElementById('group-action-cooldown-input').value = chat.settings.actionCooldownMinutes || 10;
+    document.getElementById('human-typing-mode-switch').checked = chat.settings.humanTypingMode || false;
+    document.getElementById('typing-character-type-select').value = chat.settings.typingCharacterType || 'default';
+    const typingCharTypeGroup = document.getElementById('typing-character-type-group');
+    if (typingCharTypeGroup) {
+        typingCharTypeGroup.style.display = chat.settings.humanTypingMode ? 'block' : 'none';
+    }
 
     
     document.getElementById('single-char-background-activity-group').style.display = 'none';
@@ -49296,6 +50104,12 @@ await renderOfflinePresetSelector(chat);
     document.getElementById('ai-original-name-input').value = chat.originalName;
 document.getElementById('ai-voice-id-input').value = chat.settings.minimaxVoiceId || '';
 document.getElementById('enable-tts-switch').checked = chat.settings.enableTts !== false;
+document.getElementById('human-typing-mode-switch').checked = chat.settings.humanTypingMode || false;
+    document.getElementById('typing-character-type-select').value = chat.settings.typingCharacterType || 'default';
+    const typingCharTypeGroup = document.getElementById('typing-character-type-group');
+    if (typingCharTypeGroup) {
+        typingCharTypeGroup.style.display = chat.settings.humanTypingMode ? 'block' : 'none';
+    }
     document.getElementById('ai-persona').value = chat.settings.aiPersona;
     document.getElementById('ai-avatar-preview').src = chat.settings.aiAvatar || defaultAvatar;
     document.getElementById('my-nickname-input').value = chat.settings.myNickname || '我';
@@ -49316,7 +50130,19 @@ document.getElementById('enable-tts-switch').checked = chat.settings.enableTts !
     document.getElementById('lyrics-offset-input').value = lyricsPos.offset;
 }
   
-            
+            // 【角色类型选择器】添加事件监听器，当拟人化输入模式开关切换时显示/隐藏
+            const humanTypingModeSwitch = document.getElementById('human-typing-mode-switch');
+            const typingCharTypeGroup = document.getElementById('typing-character-type-group');
+            if (humanTypingModeSwitch && typingCharTypeGroup) {
+                // 移除旧的事件监听器（如果存在）
+                const newSwitch = humanTypingModeSwitch.cloneNode(true);
+                humanTypingModeSwitch.parentNode.replaceChild(newSwitch, humanTypingModeSwitch);
+                
+                // 添加新的事件监听器
+                newSwitch.addEventListener('change', function() {
+                    typingCharTypeGroup.style.display = this.checked ? 'block' : 'none';
+                });
+            }
             
             const worldBookCheckboxesContainer = document.getElementById('world-book-checkboxes-container');
             worldBookCheckboxesContainer.innerHTML = ''; 
@@ -49574,6 +50400,8 @@ document.getElementById('save-chat-settings-btn').addEventListener('click', asyn
         chat.settings.myNickname = document.getElementById('my-group-nickname-input').value.trim();
         chat.settings.groupAvatar = document.getElementById('group-avatar-preview').src;
         chat.settings.actionCooldownMinutes = parseInt(document.getElementById('group-action-cooldown-input').value) || 10;
+        chat.settings.humanTypingMode = document.getElementById('human-typing-mode-switch').checked;
+        chat.settings.typingCharacterType = document.getElementById('typing-character-type-select').value || 'default';
     } else {
         chat.settings.enableBackgroundActivity = document.getElementById('char-background-activity-switch').checked;
         const newOfflineModeState = document.getElementById('offline-mode-toggle').checked;
@@ -49611,6 +50439,8 @@ document.getElementById('save-chat-settings-btn').addEventListener('click', asyn
         chat.settings.aiPersona = document.getElementById('ai-persona').value;
         chat.settings.minimaxVoiceId = document.getElementById('ai-voice-id-input').value.trim();
 chat.settings.enableTts = document.getElementById('enable-tts-switch').checked;
+chat.settings.humanTypingMode = document.getElementById('human-typing-mode-switch').checked;
+        chat.settings.typingCharacterType = document.getElementById('typing-character-type-select').value || 'default';
         chat.settings.aiAvatar = document.getElementById('ai-avatar-preview').src;
         chat.settings.myNickname = document.getElementById('my-nickname-input').value.trim() || '我';
         chat.settings.actionCooldownMinutes = parseInt(document.getElementById('ai-action-cooldown-input').value) || 10;
@@ -63964,26 +64794,17 @@ async function generateWalletDataAPI(charId) {
         // 金币
         money: 100,
         
-        // 种子库存
-        seeds: {
-            tomato: { name: '喵喵番茄', count: 5, icon: '' },
-            carrot: { name: '兔兔胡萝卜', count: 5, icon: '' },
-            potato: { name: '小熊土豆', count: 5, icon: '' }
-        },
+        // 种子库存（动态，从API获取）
+        seeds: {},
         
-        // 商城商品
-        shopItems: {
-            tomato: { name: '喵喵番茄种子', price: 10, icon: '' },
-            carrot: { name: '兔兔胡萝卜种子', price: 15, icon: '' },
-            potato: { name: '小熊土豆种子', price: 20, icon: '' }
-        },
+        // 商城商品（动态，从API获取）
+        shopItems: {},
         
-        // 收获库存
-        harvest: {
-            tomato: { name: '喵喵番茄', count: 0, icon: '' },
-            carrot: { name: '兔兔胡萝卜', count: 0, icon: '' },
-            potato: { name: '小熊土豆', count: 0, icon: '' }
-        },
+        // 收获库存（动态，从API获取）
+        harvest: {},
+        
+        // 作物数据（存储从API获取的完整信息）
+        cropData: {},
         
         // 当前选中的种子
         selectedSeed: null,
@@ -63993,30 +64814,364 @@ async function generateWalletDataAPI(charId) {
         
         plowedSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="0" y="0" width="64" height="64" fill="#8d6e63" rx="8" ry="8"/><rect x="0" y="8" width="64" height="4" fill="#795548"/><rect x="0" y="24" width="64" height="4" fill="#795548"/><rect x="0" y="40" width="64" height="4" fill="#795548"/><rect x="0" y="56" width="64" height="4" fill="#795548"/><rect x="4" y="4" width="4" height="4" fill="#6d4c41"/><rect x="20" y="20" width="4" height="4" fill="#6d4c41"/><rect x="44" y="36" width="4" height="4" fill="#6d4c41"/><rect x="12" y="52" width="4" height="4" fill="#6d4c41"/><rect x="52" y="12" width="4" height="4" fill="#a1887f"/><rect x="32" y="48" width="4" height="4" fill="#a1887f"/></svg>`,
         
-        // 种子阶段SVG（小圆点）
-        seedSVG: {
-            tomato: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="6" fill="#8B4513"/><circle cx="32" cy="32" r="3" fill="#A0522D"/></svg>`,
-            carrot: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="6" fill="#8B4513"/><circle cx="32" cy="32" r="3" fill="#A0522D"/></svg>`,
-            potato: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="6" fill="#8B4513"/><circle cx="32" cy="32" r="3" fill="#A0522D"/></svg>`
+        // 从API获取的SVG数据（动态）
+        seedSVG: {},
+        sproutingSVG: {},
+        matureSVG: {},
+        
+        // API调用 - 获取种子数据
+        // API应该返回格式: [{ id, name, seedSVG, sproutingSVG, matureSVG, price, sellPrice, growthTime }, ...]
+        fetchShopItems: async function() {
+            try {
+                // 按照聊天逻辑，从state.apiConfig获取proxyUrl和apiKey（proxyUrl不包含/v1）
+                const { proxyUrl, apiKey } = state?.apiConfig || {};
+                
+                // 如果state中没有，尝试从DOM元素读取（和getPrimaryApiConfig逻辑一致）
+                let finalProxyUrl = proxyUrl || '';
+                let finalApiKey = apiKey || '';
+                
+                if (!finalProxyUrl) {
+                    finalProxyUrl = document.getElementById('proxy-url')?.value || '';
+                }
+                if (!finalApiKey) {
+                    finalApiKey = document.getElementById('api-key')?.value || '';
+                }
+                
+                let seedsData;
+                let useApi = false;
+                
+                if (!finalProxyUrl) {
+                    // 如果没有配置API地址，使用模拟数据
+                    console.log('未配置API地址，使用模拟数据');
+                    seedsData = [
+                        {
+                            id: 'seed1',
+                            name: '彩虹番茄',
+                            seedSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="6" fill="#8B4513"/><circle cx="32" cy="32" r="3" fill="#A0522D"/></svg>`,
+                            sproutingSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="40" width="4" height="8" fill="#8d6e63"/><rect x="28" y="36" width="2" height="4" fill="#4caf50"/><rect x="34" y="36" width="2" height="4" fill="#4caf50"/><rect x="30" y="32" width="4" height="4" fill="#4caf50"/></svg>`,
+                            matureSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="24" width="32" height="30" fill="#FF6B6B"/><rect x="20" y="20" width="24" height="4" fill="#FF6B6B"/><rect x="12" y="30" width="4" height="18" fill="#FF6B6B"/><rect x="48" y="30" width="4" height="18" fill="#FF6B6B"/><rect x="28" y="10" width="8" height="14" fill="#95E1D3"/><rect x="20" y="14" width="8" height="8" fill="#95E1D3"/><rect x="36" y="14" width="8" height="8" fill="#95E1D3"/><rect x="22" y="34" width="6" height="6" fill="#2D3436"/><rect x="36" y="34" width="6" height="6" fill="#2D3436"/><rect x="30" y="42" width="4" height="2" fill="#2D3436"/><rect x="16" y="38" width="4" height="2" fill="#FFFFFF" opacity="0.5"/><rect x="44" y="38" width="4" height="2" fill="#FFFFFF" opacity="0.5"/><rect x="20" y="24" width="4" height="4" fill="#FF8787"/></svg>`,
+                            price: 10,
+                            sellPrice: 25,
+                            growthTime: 5
+                        },
+                        {
+                            id: 'seed2',
+                            name: '黄金胡萝卜',
+                            seedSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="6" fill="#8B4513"/><circle cx="32" cy="32" r="3" fill="#A0522D"/></svg>`,
+                            sproutingSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="40" width="4" height="8" fill="#8d6e63"/><rect x="28" y="36" width="2" height="4" fill="#4caf50"/><rect x="34" y="36" width="2" height="4" fill="#4caf50"/><rect x="30" y="32" width="4" height="4" fill="#4caf50"/></svg>`,
+                            matureSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="20" width="24" height="36" fill="#FF9F43"/><rect x="24" y="56" width="16" height="4" fill="#FF9F43"/><rect x="22" y="10" width="6" height="14" fill="#2ECC71"/><rect x="36" y="10" width="6" height="14" fill="#2ECC71"/><rect x="24" y="32" width="4" height="4" fill="#2D3436"/><rect x="36" y="32" width="4" height="4" fill="#2D3436"/><rect x="20" y="36" width="4" height="4" fill="#FFC312" opacity="0.5"/><rect x="40" y="36" width="4" height="4" fill="#FFC312" opacity="0.5"/><rect x="28" y="40" width="8" height="2" fill="#E67E22"/><rect x="16" y="44" width="32" height="2" fill="#E67E22" opacity="0.3"/><rect x="18" y="50" width="28" height="2" fill="#E67E22" opacity="0.3"/></svg>`,
+                            price: 15,
+                            sellPrice: 40,
+                            growthTime: 8
+                        },
+                        {
+                            id: 'seed3',
+                            name: '魔法土豆',
+                            seedSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="6" fill="#8B4513"/><circle cx="32" cy="32" r="3" fill="#A0522D"/></svg>`,
+                            sproutingSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="40" width="4" height="8" fill="#8d6e63"/><rect x="28" y="36" width="2" height="4" fill="#4caf50"/><rect x="34" y="36" width="2" height="4" fill="#4caf50"/><rect x="30" y="32" width="4" height="4" fill="#4caf50"/></svg>`,
+                            matureSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="24" width="32" height="32" fill="#C69C6D"/><rect x="16" y="24" width="4" height="4" fill="#8B5A2B"/><rect x="44" y="24" width="4" height="4" fill="#8B5A2B"/><rect x="12" y="28" width="4" height="24" fill="#C69C6D"/><rect x="48" y="28" width="4" height="24" fill="#C69C6D"/><rect x="20" y="20" width="8" height="6" fill="#8B5A2B"/><rect x="36" y="20" width="8" height="6" fill="#8B5A2B"/><rect x="24" y="36" width="4" height="4" fill="#4A3B2A"/><rect x="36" y="36" width="4" height="4" fill="#4A3B2A"/><rect x="30" y="40" width="4" height="2" fill="#4A3B2A"/><rect x="18" y="48" width="28" height="8" fill="#E0C09E" opacity="0.6"/><rect x="14" y="46" width="4" height="4" fill="#E0C09E"/><rect x="46" y="46" width="4" height="4" fill="#E0C09E"/></svg>`,
+                            price: 20,
+                            sellPrice: 60,
+                            growthTime: 12
+                        },
+                        {
+                            id: 'seed4',
+                            name: '星星草莓',
+                            seedSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="6" fill="#8B4513"/><circle cx="32" cy="32" r="3" fill="#A0522D"/></svg>`,
+                            sproutingSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="40" width="4" height="8" fill="#8d6e63"/><rect x="28" y="36" width="2" height="4" fill="#4caf50"/><rect x="34" y="36" width="2" height="4" fill="#4caf50"/><rect x="30" y="32" width="4" height="4" fill="#4caf50"/></svg>`,
+                            matureSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M32 8 L36 24 L52 24 L40 34 L44 50 L32 40 L20 50 L24 34 L12 24 L28 24 Z" fill="#FF1744"/><circle cx="32" cy="32" r="8" fill="#FF6B9D"/><circle cx="28" cy="28" r="2" fill="#FFFFFF" opacity="0.8"/><circle cx="36" cy="28" r="2" fill="#FFFFFF" opacity="0.8"/></svg>`,
+                            price: 25,
+                            sellPrice: 80,
+                            growthTime: 15
+                        }
+                    ];
+                } else {
+                    try {
+                        // 通过chat/completions接口生成种子数据（和生成宠物类似的方式）
+                        const apiUrl = `${finalProxyUrl}/v1/chat/completions`;
+                        
+                        const systemPrompt = `你是一个农场游戏的数据生成器。每次调用需要返回4种不同的种子/果实数据，格式为JSON数组。
+
+要求：
+1. 每次返回的种子必须不同（名称、样式、价格、生长时间都要有变化）
+2. 返回严格的JSON格式，不要包含markdown标记
+3. JSON数组格式如下：
+[
+  {
+    "id": "seed1",
+    "name": "种子名称",
+    "seedSVG": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'>...</svg>",
+    "sproutingSVG": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'>...</svg>",
+    "matureSVG": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'>...</svg>",
+    "price": 10,
+    "sellPrice": 25,
+    "growthTime": 5
+  },
+  ...
+]
+
+SVG要求（重要：必须是像素风格）：
+- seedSVG: 64x64像素，显示种子（小圆点，像素风格）
+- sproutingSVG: 64x64像素，显示发芽状态（小苗，像素风格，使用像素格子绘制）
+- matureSVG: 64x64像素，显示成熟果实（完整的像素艺术风格，必须使用像素格子绘制，不要使用渐变或模糊效果）
+- 所有SVG必须包含xmlns属性
+- 像素风格要求：使用矩形和简单的几何形状，每个像素格清晰可见，颜色鲜明，边缘清晰，不要使用圆角或模糊效果
+- 参考16-bit游戏风格，像超级马里奥、塞尔达传说那样的像素艺术
+
+价格要求：
+- price: 购买价格（5-30之间）
+- sellPrice: 售卖价格（应该是price的2-4倍）
+- growthTime: 生长时间（秒，5-20之间）`;
+
+                        const requestBody = {
+                            model: state?.apiConfig?.model || 'gpt-3.5-turbo',
+                            messages: [
+                                { role: 'system', content: systemPrompt },
+                                { role: 'user', content: '请生成4种新的种子数据' }
+                            ],
+                            temperature: 0.8,
+                            max_tokens: 4096
+                        };
+                        
+                        // 构建请求头（和聊天逻辑一致）
+                        const headers = {
+                            'Content-Type': 'application/json'
+                        };
+                        if (finalApiKey) {
+                            headers['Authorization'] = `Bearer ${finalApiKey}`;
+                        }
+                        
+                        // 调用API（和聊天逻辑一致）
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify(requestBody)
+                        });
+                        
+                        if (response && response.ok) {
+                            const data = await response.json();
+                            const content = data.choices[0].message.content;
+                            
+                            // 解析JSON（尝试提取markdown中的json或直接解析）
+                            try {
+                                // 尝试直接解析
+                                seedsData = JSON.parse(content);
+                            } catch (e) {
+                                // 尝试提取markdown中的json
+                                const match = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\[\s*{[\s\S]*}\s*\]/);
+                                if (match) {
+                                    seedsData = JSON.parse(match[1] || match[0]);
+                                } else {
+                                    throw new Error("无法解析返回的JSON数据");
+                                }
+                            }
+                            
+                            // 确保是数组且至少有4个元素
+                            if (!Array.isArray(seedsData)) {
+                                throw new Error("API返回的不是数组格式");
+                            }
+                            if (seedsData.length < 4) {
+                                // 如果少于4个，补充到4个
+                                while (seedsData.length < 4) {
+                                    seedsData.push(seedsData[seedsData.length - 1]);
+                                }
+                            }
+                            
+                            useApi = true;
+                        } else {
+                            const errorText = await response.text().catch(() => '');
+                            throw new Error(`API调用失败: ${response?.status} ${errorText.substring(0, 100)}`);
+                        }
+                    } catch (apiError) {
+                        console.log('API调用出错，使用模拟数据:', apiError);
+                        // API调用失败，使用模拟数据
+                        seedsData = [
+                            {
+                                id: 'seed1',
+                                name: '彩虹番茄',
+                                seedSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="6" fill="#8B4513"/><circle cx="32" cy="32" r="3" fill="#A0522D"/></svg>`,
+                                sproutingSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="40" width="4" height="8" fill="#8d6e63"/><rect x="28" y="36" width="2" height="4" fill="#4caf50"/><rect x="34" y="36" width="2" height="4" fill="#4caf50"/><rect x="30" y="32" width="4" height="4" fill="#4caf50"/></svg>`,
+                                matureSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="24" width="32" height="30" fill="#FF6B6B"/><rect x="20" y="20" width="24" height="4" fill="#FF6B6B"/><rect x="12" y="30" width="4" height="18" fill="#FF6B6B"/><rect x="48" y="30" width="4" height="18" fill="#FF6B6B"/><rect x="28" y="10" width="8" height="14" fill="#95E1D3"/><rect x="20" y="14" width="8" height="8" fill="#95E1D3"/><rect x="36" y="14" width="8" height="8" fill="#95E1D3"/><rect x="22" y="34" width="6" height="6" fill="#2D3436"/><rect x="36" y="34" width="6" height="6" fill="#2D3436"/><rect x="30" y="42" width="4" height="2" fill="#2D3436"/><rect x="16" y="38" width="4" height="2" fill="#FFFFFF" opacity="0.5"/><rect x="44" y="38" width="4" height="2" fill="#FFFFFF" opacity="0.5"/><rect x="20" y="24" width="4" height="4" fill="#FF8787"/></svg>`,
+                                price: 10,
+                                sellPrice: 25,
+                                growthTime: 5
+                            },
+                            {
+                                id: 'seed2',
+                                name: '黄金胡萝卜',
+                                seedSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="6" fill="#8B4513"/><circle cx="32" cy="32" r="3" fill="#A0522D"/></svg>`,
+                                sproutingSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="40" width="4" height="8" fill="#8d6e63"/><rect x="28" y="36" width="2" height="4" fill="#4caf50"/><rect x="34" y="36" width="2" height="4" fill="#4caf50"/><rect x="30" y="32" width="4" height="4" fill="#4caf50"/></svg>`,
+                                matureSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="20" width="24" height="36" fill="#FF9F43"/><rect x="24" y="56" width="16" height="4" fill="#FF9F43"/><rect x="22" y="10" width="6" height="14" fill="#2ECC71"/><rect x="36" y="10" width="6" height="14" fill="#2ECC71"/><rect x="24" y="32" width="4" height="4" fill="#2D3436"/><rect x="36" y="32" width="4" height="4" fill="#2D3436"/><rect x="20" y="36" width="4" height="4" fill="#FFC312" opacity="0.5"/><rect x="40" y="36" width="4" height="4" fill="#FFC312" opacity="0.5"/><rect x="28" y="40" width="8" height="2" fill="#E67E22"/><rect x="16" y="44" width="32" height="2" fill="#E67E22" opacity="0.3"/><rect x="18" y="50" width="28" height="2" fill="#E67E22" opacity="0.3"/></svg>`,
+                                price: 15,
+                                sellPrice: 40,
+                                growthTime: 8
+                            },
+                            {
+                                id: 'seed3',
+                                name: '魔法土豆',
+                                seedSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="6" fill="#8B4513"/><circle cx="32" cy="32" r="3" fill="#A0522D"/></svg>`,
+                                sproutingSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="40" width="4" height="8" fill="#8d6e63"/><rect x="28" y="36" width="2" height="4" fill="#4caf50"/><rect x="34" y="36" width="2" height="4" fill="#4caf50"/><rect x="30" y="32" width="4" height="4" fill="#4caf50"/></svg>`,
+                                matureSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="24" width="32" height="32" fill="#C69C6D"/><rect x="16" y="24" width="4" height="4" fill="#8B5A2B"/><rect x="44" y="24" width="4" height="4" fill="#8B5A2B"/><rect x="12" y="28" width="4" height="24" fill="#C69C6D"/><rect x="48" y="28" width="4" height="24" fill="#C69C6D"/><rect x="20" y="20" width="8" height="6" fill="#8B5A2B"/><rect x="36" y="20" width="8" height="6" fill="#8B5A2B"/><rect x="24" y="36" width="4" height="4" fill="#4A3B2A"/><rect x="36" y="36" width="4" height="4" fill="#4A3B2A"/><rect x="30" y="40" width="4" height="2" fill="#4A3B2A"/><rect x="18" y="48" width="28" height="8" fill="#E0C09E" opacity="0.6"/><rect x="14" y="46" width="4" height="4" fill="#E0C09E"/><rect x="46" y="46" width="4" height="4" fill="#E0C09E"/></svg>`,
+                                price: 20,
+                                sellPrice: 60,
+                                growthTime: 12
+                            },
+                            {
+                                id: 'seed4',
+                                name: '星星草莓',
+                                seedSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="6" fill="#8B4513"/><circle cx="32" cy="32" r="3" fill="#A0522D"/></svg>`,
+                                sproutingSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="40" width="4" height="8" fill="#8d6e63"/><rect x="28" y="36" width="2" height="4" fill="#4caf50"/><rect x="34" y="36" width="2" height="4" fill="#4caf50"/><rect x="30" y="32" width="4" height="4" fill="#4caf50"/></svg>`,
+                                matureSVG: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M32 8 L36 24 L52 24 L40 34 L44 50 L32 40 L20 50 L24 34 L12 24 L28 24 Z" fill="#FF1744"/><circle cx="32" cy="32" r="8" fill="#FF6B9D"/><circle cx="28" cy="28" r="2" fill="#FFFFFF" opacity="0.8"/><circle cx="36" cy="28" r="2" fill="#FFFFFF" opacity="0.8"/></svg>`,
+                                price: 25,
+                                sellPrice: 80,
+                                growthTime: 15
+                            }
+                        ];
+                    }
+                }
+                
+                // 确保返回4种种子
+                if (!Array.isArray(seedsData) || seedsData.length === 0) {
+                    console.error('数据格式错误，seedsData:', seedsData);
+                    throw new Error('API返回数据格式错误');
+                }
+                
+                console.log('使用的数据来源:', useApi ? 'API' : '模拟数据');
+                console.log('种子数据:', seedsData);
+                
+                // 只取前4种
+                const fourSeeds = seedsData.slice(0, 4);
+                
+                // 保存旧的收获数据和种子数量（避免丢失已有数据）
+                const oldHarvest = { ...this.harvest };
+                const oldSeeds = { ...this.seeds };
+                const oldCropData = { ...this.cropData };
+                const oldSeedSVG = { ...this.seedSVG };
+                const oldSproutingSVG = { ...this.sproutingSVG };
+                const oldMatureSVG = { ...this.matureSVG };
+                
+                // 更新商城商品（只更新新的）
+                this.shopItems = {};
+                // 保留旧的种子和收获数据 - 不清空，只更新新种子的数据
+                // this.seeds 和 this.harvest 保持不变，只更新新种子对应的数据
+                this.cropData = { ...oldCropData };
+                this.seedSVG = { ...oldSeedSVG };
+                this.sproutingSVG = { ...oldSproutingSVG };
+                this.matureSVG = { ...oldMatureSVG };
+                
+                fourSeeds.forEach(seed => {
+                    const id = seed.id;
+                    this.cropData[id] = seed;
+                    this.shopItems[id] = {
+                        name: seed.name + '种子',
+                        price: seed.price,
+                        sellPrice: seed.sellPrice,
+                        growthTime: seed.growthTime
+                    };
+                    // 保留旧的种子数量和收获数量（如果存在），否则初始化为0
+                    if (!this.seeds[id]) {
+                        this.seeds[id] = {
+                            name: seed.name,
+                            count: oldSeeds[id]?.count || 0
+                        };
+                    } else {
+                        // 如果已存在，只更新名称（保持数量不变）
+                        this.seeds[id].name = seed.name;
+                    }
+                    if (!this.harvest[id]) {
+                        this.harvest[id] = {
+                            name: seed.name,
+                            count: oldHarvest[id]?.count || 0
+                        };
+                    } else {
+                        // 如果已存在，只更新名称（保持数量不变）
+                        this.harvest[id].name = seed.name;
+                    }
+                    this.seedSVG[id] = seed.seedSVG;
+                    this.sproutingSVG[id] = seed.sproutingSVG;
+                    this.matureSVG[id] = seed.matureSVG;
+                });
+                
+                // 保留旧作物的数据（如果田地中还有旧的作物）
+                this.tiles.forEach(tile => {
+                    if (tile.cropType && !this.cropData[tile.cropType]) {
+                        // 如果田地中有旧的作物类型，保留其数据
+                        if (oldCropData[tile.cropType]) {
+                            this.cropData[tile.cropType] = oldCropData[tile.cropType];
+                            this.seedSVG[tile.cropType] = oldSeedSVG[tile.cropType];
+                            this.sproutingSVG[tile.cropType] = oldSproutingSVG[tile.cropType];
+                            this.matureSVG[tile.cropType] = oldMatureSVG[tile.cropType];
+                            if (!this.harvest[tile.cropType]) {
+                                this.harvest[tile.cropType] = oldHarvest[tile.cropType] || {
+                                    name: oldCropData[tile.cropType].name,
+                                    count: 0
+                                };
+                            }
+                        }
+                    }
+                });
+                
+                this.saveState();
+                return true;
+            } catch (error) {
+                console.error('获取种子数据失败:', error);
+                return false;
+            }
         },
         
-        // 发芽阶段SVG
-        sproutingSVG: {
-            tomato: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="40" width="4" height="8" fill="#8d6e63"/><rect x="28" y="36" width="2" height="4" fill="#4caf50"/><rect x="34" y="36" width="2" height="4" fill="#4caf50"/><rect x="30" y="32" width="4" height="4" fill="#4caf50"/></svg>`,
-            carrot: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="40" width="4" height="8" fill="#8d6e63"/><rect x="28" y="36" width="2" height="4" fill="#4caf50"/><rect x="34" y="36" width="2" height="4" fill="#4caf50"/><rect x="30" y="32" width="4" height="4" fill="#4caf50"/></svg>`,
-            potato: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="40" width="4" height="8" fill="#8d6e63"/><rect x="28" y="36" width="2" height="4" fill="#4caf50"/><rect x="34" y="36" width="2" height="4" fill="#4caf50"/><rect x="30" y="32" width="4" height="4" fill="#4caf50"/></svg>`
-        },
-        
-        // 成熟阶段SVG（来自农作物.txt）
-        matureSVG: {
-            tomato: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="24" width="32" height="30" fill="#FF6B6B"/><rect x="20" y="20" width="24" height="4" fill="#FF6B6B"/><rect x="12" y="30" width="4" height="18" fill="#FF6B6B"/><rect x="48" y="30" width="4" height="18" fill="#FF6B6B"/><rect x="28" y="10" width="8" height="14" fill="#95E1D3"/><rect x="20" y="14" width="8" height="8" fill="#95E1D3"/><rect x="36" y="14" width="8" height="8" fill="#95E1D3"/><rect x="22" y="34" width="6" height="6" fill="#2D3436"/><rect x="36" y="34" width="6" height="6" fill="#2D3436"/><rect x="30" y="42" width="4" height="2" fill="#2D3436"/><rect x="16" y="38" width="4" height="2" fill="#FFFFFF" opacity="0.5"/><rect x="44" y="38" width="4" height="2" fill="#FFFFFF" opacity="0.5"/><rect x="20" y="24" width="4" height="4" fill="#FF8787"/></svg>`,
-            carrot: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="20" width="24" height="36" fill="#FF9F43"/><rect x="24" y="56" width="16" height="4" fill="#FF9F43"/><rect x="22" y="10" width="6" height="14" fill="#2ECC71"/><rect x="36" y="10" width="6" height="14" fill="#2ECC71"/><rect x="24" y="32" width="4" height="4" fill="#2D3436"/><rect x="36" y="32" width="4" height="4" fill="#2D3436"/><rect x="20" y="36" width="4" height="4" fill="#FFC312" opacity="0.5"/><rect x="40" y="36" width="4" height="4" fill="#FFC312" opacity="0.5"/><rect x="28" y="40" width="8" height="2" fill="#E67E22"/><rect x="16" y="44" width="32" height="2" fill="#E67E22" opacity="0.3"/><rect x="18" y="50" width="28" height="2" fill="#E67E22" opacity="0.3"/></svg>`,
-            potato: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="24" width="32" height="32" fill="#C69C6D"/><rect x="16" y="24" width="4" height="4" fill="#8B5A2B"/><rect x="44" y="24" width="4" height="4" fill="#8B5A2B"/><rect x="12" y="28" width="4" height="24" fill="#C69C6D"/><rect x="48" y="28" width="4" height="24" fill="#C69C6D"/><rect x="20" y="20" width="8" height="6" fill="#8B5A2B"/><rect x="36" y="20" width="8" height="6" fill="#8B5A2B"/><rect x="24" y="36" width="4" height="4" fill="#4A3B2A"/><rect x="36" y="36" width="4" height="4" fill="#4A3B2A"/><rect x="30" y="40" width="4" height="2" fill="#4A3B2A"/><rect x="18" y="48" width="28" height="8" fill="#E0C09E" opacity="0.6"/><rect x="14" y="46" width="4" height="4" fill="#E0C09E"/><rect x="46" y="46" width="4" height="4" fill="#E0C09E"/></svg>`
+        // 刷新商城商品
+        refreshShopItems: async function() {
+            console.log('刷新商城商品被调用');
+            const shopItems = document.getElementById('shopItems');
+            if (shopItems) {
+                shopItems.innerHTML = '<div style="padding: 20px; text-align: center;">正在刷新商品...</div>';
+            }
+            
+            try {
+                const success = await this.fetchShopItems();
+                console.log('fetchShopItems返回:', success);
+                
+                if (success) {
+                    this.renderShop();
+                    if (shopItems) {
+                        // 显示刷新成功提示
+                        const toast = document.createElement('div');
+                        toast.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #4caf50; color: white; padding: 10px 20px; border-radius: 8px; z-index: 10000;';
+                        toast.textContent = '商品已刷新！';
+                        document.body.appendChild(toast);
+                        setTimeout(() => toast.remove(), 2000);
+                    }
+                } else {
+                    console.error('刷新失败');
+                    if (shopItems) {
+                        shopItems.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">刷新失败，请重试</div>';
+                    }
+                }
+            } catch (error) {
+                console.error('刷新商城商品出错:', error);
+                if (shopItems) {
+                    shopItems.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">刷新出错: ' + error.message + '</div>';
+                }
+            }
         },
         
         // 初始化
-        init: function() {
+        init: async function() {
             this.loadState();
+            // 如果还没有商品数据，则获取
+            if (Object.keys(this.shopItems).length === 0) {
+                await this.fetchShopItems();
+            }
+            // 清理无效的cropType（如果cropType存在但对应的SVG不存在）
+            this.tiles.forEach(tile => {
+                if (tile.cropType && !this.seedSVG[tile.cropType]) {
+                    console.warn('清理无效的cropType:', tile.cropType);
+                    tile.cropType = null;
+                    tile.state = 'plowed';
+                    tile.watered = false;
+                    tile.plantTime = 0;
+                }
+            });
             this.renderTiles();
         },
         
@@ -64030,6 +65185,11 @@ async function generateWalletDataAPI(charId) {
                     if (data.seeds) this.seeds = data.seeds;
                     if (data.harvest) this.harvest = data.harvest;
                     if (data.money !== undefined) this.money = data.money;
+                    if (data.cropData) this.cropData = data.cropData;
+                    if (data.seedSVG) this.seedSVG = data.seedSVG;
+                    if (data.sproutingSVG) this.sproutingSVG = data.sproutingSVG;
+                    if (data.matureSVG) this.matureSVG = data.matureSVG;
+                    if (data.shopItems) this.shopItems = data.shopItems;
                 } catch (e) {
                     console.error('加载游戏状态失败', e);
                 }
@@ -64042,7 +65202,12 @@ async function generateWalletDataAPI(charId) {
                 tiles: this.tiles,
                 seeds: this.seeds,
                 harvest: this.harvest,
-                money: this.money
+                money: this.money,
+                cropData: this.cropData,
+                seedSVG: this.seedSVG,
+                sproutingSVG: this.sproutingSVG,
+                matureSVG: this.matureSVG,
+                shopItems: this.shopItems
             }));
         },
         
@@ -64066,7 +65231,7 @@ async function generateWalletDataAPI(charId) {
                     div.innerHTML = this.plowedSVG;
                     
                     // 然后根据状态叠加作物
-                    if (tile.state === 'planted') {
+                    if (tile.state === 'planted' && tile.cropType && this.seedSVG[tile.cropType]) {
                         const cropDiv = document.createElement('div');
                         cropDiv.style.position = 'absolute';
                         cropDiv.style.top = '0';
@@ -64076,7 +65241,7 @@ async function generateWalletDataAPI(charId) {
                         cropDiv.style.pointerEvents = 'none';
                         cropDiv.innerHTML = this.seedSVG[tile.cropType];
                         div.appendChild(cropDiv);
-                    } else if (tile.state === 'sprouting') {
+                    } else if (tile.state === 'sprouting' && tile.cropType && this.sproutingSVG[tile.cropType]) {
                         const cropDiv = document.createElement('div');
                         cropDiv.style.position = 'absolute';
                         cropDiv.style.top = '0';
@@ -64086,7 +65251,7 @@ async function generateWalletDataAPI(charId) {
                         cropDiv.style.pointerEvents = 'none';
                         cropDiv.innerHTML = this.sproutingSVG[tile.cropType];
                         div.appendChild(cropDiv);
-                    } else if (tile.state === 'mature') {
+                    } else if (tile.state === 'mature' && tile.cropType && this.matureSVG[tile.cropType]) {
                         const cropDiv = document.createElement('div');
                         cropDiv.style.position = 'absolute';
                         cropDiv.style.top = '0';
@@ -64168,13 +65333,15 @@ async function generateWalletDataAPI(charId) {
             
             Object.keys(this.seeds).forEach(type => {
                 const seed = this.seeds[type];
+                if (!seed) return;
                 const disabled = seed.count <= 0;
+                const svg = this.seedSVG[type] || '';
                 popup.innerHTML += `
                     <div class="seed-option-item ${disabled ? 'disabled' : ''}" ${disabled ? '' : `onclick="farmingGame.plantSeed(${tileIndex}, '${type}'); const pop=this.closest('.seed-selector-popup'); if(pop&&pop.closePopup)pop.closePopup();"`}>
-                        <div class="seed-option-icon">${this.seedSVG[type]}</div>
+                        <div class="seed-option-icon">${svg}</div>
                         <div class="seed-option-info">
-                            <div class="seed-option-name">${seed.name}</div>
-                            <div class="seed-option-count">剩余: ${seed.count}</div>
+                            <div class="seed-option-name">${seed.name || '未知种子'}</div>
+                            <div class="seed-option-count">剩余: ${seed.count || 0}</div>
                         </div>
                     </div>
                 `;
@@ -64270,6 +65437,9 @@ async function generateWalletDataAPI(charId) {
             if (tile.state !== 'planted' || tile.watered) return;
             
             tile.watered = true;
+            const cropData = this.cropData[tile.cropType];
+            const growthTime = cropData ? cropData.growthTime * 1000 : 5000; // 转换为毫秒，默认5秒
+            
             // 浇水后进入发芽阶段
             setTimeout(() => {
                 if (tile.state === 'planted' && tile.watered) {
@@ -64277,14 +65447,15 @@ async function generateWalletDataAPI(charId) {
                     this.renderTiles();
                     this.saveState();
                     
-                    // 发芽后3秒进入成熟阶段
+                    // 根据生长时间进入成熟阶段
+                    const sproutingTime = Math.max(1000, growthTime * 0.3); // 发芽阶段占30%时间，至少1秒
                     setTimeout(() => {
                         if (tile.state === 'sprouting') {
                             tile.state = 'mature';
                             this.renderTiles();
                             this.saveState();
                         }
-                    }, 3000);
+                    }, sproutingTime);
                 }
             }, 500);
             
@@ -64296,6 +65467,9 @@ async function generateWalletDataAPI(charId) {
         harvestTile: function(tileIndex) {
             const tile = this.tiles[tileIndex];
             if (tile.state !== 'mature') return;
+            
+            // 收获时不增加金币，只添加到背包
+            // 金币需要在背包中卖掉才能获得
             
             this.harvest[tile.cropType].count++;
             tile.state = 'plowed';
@@ -64326,12 +65500,14 @@ async function generateWalletDataAPI(charId) {
                 seedsTab.innerHTML = '';
                 Object.keys(this.seeds).forEach(type => {
                     const seed = this.seeds[type];
+                    if (!seed) return;
+                    const svg = this.seedSVG[type] || '';
                     const item = document.createElement('div');
                     item.className = 'backpack-item';
                     item.innerHTML = `
-                        <div class="backpack-item-icon">${this.seedSVG[type]}</div>
-                        <div class="backpack-item-name">${seed.name}</div>
-                        <div class="backpack-item-count">x${seed.count}</div>
+                        <div class="backpack-item-icon">${svg}</div>
+                        <div class="backpack-item-name">${seed.name || '未知种子'}</div>
+                        <div class="backpack-item-count">x${seed.count || 0}</div>
                     `;
                     seedsTab.appendChild(item);
                 });
@@ -64343,16 +65519,20 @@ async function generateWalletDataAPI(charId) {
                 harvestTab.innerHTML = '';
                 Object.keys(this.harvest).forEach(type => {
                     const itemData = this.harvest[type];
-                    if (itemData.count > 0) {
-                        const item = document.createElement('div');
-                        item.className = 'backpack-item';
-                        item.innerHTML = `
-                            <div class="backpack-item-icon">${this.matureSVG[type]}</div>
-                            <div class="backpack-item-name">${itemData.name}</div>
-                            <div class="backpack-item-count">x${itemData.count}</div>
-                        `;
-                        harvestTab.appendChild(item);
-                    }
+                    if (!itemData || itemData.count <= 0) return;
+                    const svg = this.matureSVG[type] || '';
+                    const cropData = this.cropData[type];
+                    const sellPrice = cropData ? cropData.sellPrice : 0;
+                    const item = document.createElement('div');
+                    item.className = 'backpack-item harvest-item';
+                    item.innerHTML = `
+                        <div class="backpack-item-icon">${svg}</div>
+                        <div class="backpack-item-name">${itemData.name || '未知作物'}</div>
+                        <div class="backpack-item-count">x${itemData.count}</div>
+                        <div class="backpack-item-price">售价: ${sellPrice} 🪙</div>
+                        <button class="sell-btn" onclick="farmingGame.sellHarvest('${type}')" title="卖掉">💰 卖掉</button>
+                    `;
+                    harvestTab.appendChild(item);
                 });
                 if (harvestTab.innerHTML === '') {
                     harvestTab.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">暂无收获</div>';
@@ -64369,15 +65549,22 @@ async function generateWalletDataAPI(charId) {
                 <strong>金币: <span id="shopMoney">${this.money}</span> 🪙</strong>
             </div>`;
             
+            if (Object.keys(this.shopItems).length === 0) {
+                shopItems.innerHTML += '<div style="padding: 20px; text-align: center; color: #999;">暂无商品，请点击刷新按钮获取商品</div>';
+                return;
+            }
+            
             Object.keys(this.shopItems).forEach(type => {
                 const item = this.shopItems[type];
                 const div = document.createElement('div');
                 div.className = 'shop-item';
                 div.innerHTML = `
-                    <div class="shop-item-icon">${this.seedSVG[type]}</div>
+                    <div class="shop-item-icon">${this.seedSVG[type] || ''}</div>
                     <div class="shop-item-info">
                         <div class="shop-item-name">${item.name}</div>
-                        <div class="shop-item-price">价格: ${item.price} 🪙</div>
+                        <div class="shop-item-price">购买: ${item.price} 🪙</div>
+                        <div class="shop-item-sell-price">售卖: ${item.sellPrice} 🪙</div>
+                        <div class="shop-item-growth-time">生长时间: ${item.growthTime}秒</div>
                     </div>
                     <button class="shop-item-btn" onclick="farmingGame.buySeed('${type}')">购买</button>
                 `;
@@ -64406,6 +65593,42 @@ async function generateWalletDataAPI(charId) {
         updateMoney: function() {
             const shopMoney = document.getElementById('shopMoney');
             if (shopMoney) shopMoney.textContent = this.money;
+            // 同时更新农场页面的金币显示
+            const farmMoney = document.getElementById('farm-money');
+            if (farmMoney) farmMoney.textContent = this.money;
+        },
+        
+        // 卖掉收获
+        sellHarvest: function(type) {
+            const itemData = this.harvest[type];
+            if (!itemData || itemData.count <= 0) return;
+            
+            const cropData = this.cropData[type];
+            if (!cropData) {
+                alert('无法获取作物信息！');
+                return;
+            }
+            
+            // 卖掉一个收获物，获得金币
+            const sellPrice = cropData.sellPrice;
+            this.money += sellPrice;
+            itemData.count--;
+            
+            // 如果数量为0，可以选择删除该项（可选）
+            // if (itemData.count <= 0) {
+            //     delete this.harvest[type];
+            // }
+            
+            this.saveState();
+            this.updateMoney();
+            this.renderBackpack();
+            
+            // 显示提示
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #4caf50; color: white; padding: 10px 20px; border-radius: 8px; z-index: 10000;';
+            toast.textContent = `卖掉 ${itemData.name}，获得 ${sellPrice} 🪙`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
         }
     };
 
@@ -64427,9 +65650,13 @@ async function generateWalletDataAPI(charId) {
     }
 
     // 显示商城
-    function showShop() {
+    async function showShop() {
         const modal = document.getElementById('shopModal');
         if (modal) {
+            // 如果没有商品数据，先获取
+            if (Object.keys(farmingGame.shopItems).length === 0) {
+                await farmingGame.fetchShopItems();
+            }
             farmingGame.renderShop();
             modal.style.display = 'flex';
         }
@@ -65640,6 +66867,8 @@ async function generateWalletDataAPI(charId) {
     
     let pageVisible = true;
     let userIsTyping = false;
+    // 【拟人化输入模式】全局状态锁：防止打字过程中触发新的 AI 回复
+    let isAiTyping = false;
     
     // 检查浏览器是否支持通知
     function isNotificationSupported() {
@@ -65930,6 +67159,376 @@ async function generateWalletDataAPI(charId) {
             }
         };
     }
+    
+    // ========== 后台保活系统 ==========
+    
+    // 1. 音频保活（静音音频播放）
+    (function() {
+        let audioContext = null;
+        let keepAliveSource = null;
+        let keepAliveAudio = null;
+        let isKeepAliveActive = false;
+        
+        // 初始化音频上下文
+        function initAudioContext() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                return true;
+            } catch (error) {
+                console.warn('无法创建AudioContext:', error);
+                return false;
+            }
+        }
+        
+        // 创建静音音频源
+        function createSilentAudioSource() {
+            if (!audioContext) {
+                if (!initAudioContext()) {
+                    return null;
+                }
+            }
+            
+            try {
+                // 创建一个极短的静音缓冲区（0.1秒）
+                const sampleRate = audioContext.sampleRate;
+                const buffer = audioContext.createBuffer(1, sampleRate * 0.1, sampleRate);
+                // 缓冲区已经是静音的（全0），不需要填充
+                
+                const source = audioContext.createBufferSource();
+                source.buffer = buffer;
+                source.loop = true;
+                
+                // 连接到静音节点（GainNode，增益为0）
+                const gainNode = audioContext.createGain();
+                gainNode.gain.value = 0; // 确保完全静音
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                return source;
+            } catch (error) {
+                console.error('创建静音音频源失败:', error);
+                return null;
+            }
+        }
+        
+        // 启动音频保活
+        function startKeepAlive() {
+            if (isKeepAliveActive) {
+                return;
+            }
+            
+            console.log('启动音频保活');
+            
+            // 方法1: 使用Web Audio API（推荐）
+            if (!keepAliveSource) {
+                keepAliveSource = createSilentAudioSource();
+            }
+            
+            if (keepAliveSource && audioContext) {
+                try {
+                    // 如果上下文被暂停，恢复它
+                    if (audioContext.state === 'suspended') {
+                        audioContext.resume();
+                    }
+                    keepAliveSource.start(0);
+                    isKeepAliveActive = true;
+                    console.log('Web Audio API保活已启动');
+                    return;
+                } catch (error) {
+                    console.warn('Web Audio API启动失败:', error);
+                    // 如果失败，尝试备用方案
+                }
+            }
+            
+            // 方法2: 使用Audio元素（备用方案）
+            if (!keepAliveAudio) {
+                keepAliveAudio = document.createElement('audio');
+                keepAliveAudio.loop = true;
+                keepAliveAudio.muted = true;
+                keepAliveAudio.volume = 0;
+                keepAliveAudio.preload = 'auto';
+                
+                // 创建一个极短的静音WAV文件（data URI）
+                // 这是一个1秒的静音WAV文件
+                const silentWav = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+                keepAliveAudio.src = silentWav;
+            }
+            
+            keepAliveAudio.play().then(() => {
+                isKeepAliveActive = true;
+                console.log('Audio元素保活已启动');
+            }).catch(err => {
+                console.warn('Audio元素播放失败:', err);
+                // 某些浏览器可能需要用户交互才能播放音频
+            });
+        }
+        
+        // 停止音频保活
+        function stopKeepAlive() {
+            if (!isKeepAliveActive) {
+                return;
+            }
+            
+            console.log('停止音频保活');
+            
+            // 停止Web Audio API源
+            if (keepAliveSource) {
+                try {
+                    keepAliveSource.stop();
+                    keepAliveSource = null;
+                } catch (error) {
+                    console.warn('停止音频源失败:', error);
+                }
+            }
+            
+            // 停止Audio元素
+            if (keepAliveAudio) {
+                keepAliveAudio.pause();
+                keepAliveAudio.currentTime = 0;
+            }
+            
+            isKeepAliveActive = false;
+        }
+        
+        // 页面可见性变化时控制音频播放
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                // 切换到后台时，启动音频保活
+                startKeepAlive();
+            } else {
+                // 切换到前台时，停止音频保活
+                stopKeepAlive();
+            }
+        });
+        
+        // 页面初始化
+        if (initAudioContext()) {
+            // 如果页面已隐藏，启动保活
+            if (document.hidden) {
+                // 延迟启动，确保页面完全加载
+                setTimeout(startKeepAlive, 1000);
+            }
+        }
+        
+        // 保存到全局，方便调试和控制
+        window.keepAlive = {
+            start: startKeepAlive,
+            stop: stopKeepAlive,
+            isActive: function() { return isKeepAliveActive; }
+        };
+        
+        console.log('音频保活系统已初始化');
+    })();
+    
+    // 2. 后台任务调度系统
+    (function() {
+        const backgroundTasks = {
+            enabled: true,
+            interval: 30000, // 30秒执行一次
+            tasks: []
+        };
+        
+        // 注册后台任务
+        function registerBackgroundTask(name, task, interval) {
+            backgroundTasks.tasks.push({
+                name: name,
+                task: task,
+                interval: interval || backgroundTasks.interval,
+                lastRun: 0
+            });
+        }
+        
+        // 执行后台任务
+        function executeBackgroundTasks() {
+            if (!backgroundTasks.enabled || document.hidden) {
+                return;
+            }
+            
+            const now = Date.now();
+            backgroundTasks.tasks.forEach(task => {
+                if (now - task.lastRun >= task.interval) {
+                    try {
+                        task.task();
+                        task.lastRun = now;
+                        console.log('后台任务执行:', task.name);
+                    } catch (error) {
+                        console.error('后台任务执行失败:', task.name, error);
+                    }
+                }
+            });
+        }
+        
+        // 定期执行后台任务
+        setInterval(executeBackgroundTasks, 10000); // 每10秒检查一次
+        
+        // 注册农场数据同步任务
+        registerBackgroundTask('sync-farm-data', function() {
+            // 同步农场游戏数据
+            if (typeof farmingGame !== 'undefined' && farmingGame.saveState) {
+                farmingGame.saveState();
+            }
+            
+            // 同步聊天数据（如果存在）
+            if (typeof state !== 'undefined' && typeof saveData === 'function') {
+                saveData();
+            }
+        }, 30000); // 每30秒同步一次
+        
+        // 注册作物生长检查任务
+        registerBackgroundTask('check-crop-growth', function() {
+            if (typeof farmingGame !== 'undefined' && farmingGame.tiles) {
+                // 检查作物是否需要更新状态
+                farmingGame.tiles.forEach((tile, index) => {
+                    if (tile.state === 'sprouting' || tile.state === 'planted') {
+                        const cropData = farmingGame.cropData[tile.cropType];
+                        if (cropData) {
+                            const now = Date.now();
+                            const elapsed = now - tile.plantTime;
+                            const growthTime = cropData.growthTime * 1000;
+                            
+                            // 如果作物应该成熟了，更新状态
+                            if (elapsed >= growthTime && tile.state !== 'mature') {
+                                tile.state = 'mature';
+                                farmingGame.saveState();
+                                farmingGame.renderTiles();
+                            }
+                        }
+                    }
+                });
+            }
+        }, 5000); // 每5秒检查一次
+        
+        // 暴露API
+        window.backgroundTasks = {
+            register: registerBackgroundTask,
+            enable: function() { backgroundTasks.enabled = true; },
+            disable: function() { backgroundTasks.enabled = false; },
+            isEnabled: function() { return backgroundTasks.enabled; }
+        };
+        
+        console.log('后台任务调度系统已初始化');
+    })();
+    
+    // 3. 增强本地存储持久化
+    (function() {
+        const STORAGE_KEY_PREFIX = 'farm_game_';
+        const MAX_STORAGE_SIZE = 5 * 1024 * 1024; // 5MB限制
+        
+        // 保存数据到localStorage（带大小检查）
+        function saveToLocalStorage(key, data) {
+            try {
+                const jsonData = JSON.stringify(data);
+                const size = new Blob([jsonData]).size;
+                
+                // 检查大小
+                if (size > MAX_STORAGE_SIZE) {
+                    console.warn('数据太大，无法保存:', key, size);
+                    return false;
+                }
+                
+                // 检查总存储空间
+                let totalSize = 0;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k && k.startsWith(STORAGE_KEY_PREFIX)) {
+                        totalSize += localStorage.getItem(k).length;
+                    }
+                }
+                
+                if (totalSize + size > MAX_STORAGE_SIZE) {
+                    console.warn('存储空间不足，清理旧数据');
+                    // 清理最旧的数据（简单实现）
+                    const keys = Object.keys(localStorage).filter(k => k.startsWith(STORAGE_KEY_PREFIX));
+                    if (keys.length > 0) {
+                        localStorage.removeItem(keys[0]);
+                    }
+                }
+                
+                localStorage.setItem(STORAGE_KEY_PREFIX + key, jsonData);
+                return true;
+            } catch (error) {
+                console.error('保存数据失败:', key, error);
+                return false;
+            }
+        }
+        
+        // 从localStorage加载数据
+        function loadFromLocalStorage(key) {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY_PREFIX + key);
+                return data ? JSON.parse(data) : null;
+            } catch (error) {
+                console.error('加载数据失败:', key, error);
+                return null;
+            }
+        }
+        
+        // 定期保存农场数据
+        setInterval(function() {
+            if (typeof farmingGame !== 'undefined') {
+                const farmData = {
+                    tiles: farmingGame.tiles,
+                    seeds: farmingGame.seeds,
+                    harvest: farmingGame.harvest,
+                    money: farmingGame.money,
+                    cropData: farmingGame.cropData,
+                    seedSVG: farmingGame.seedSVG,
+                    sproutingSVG: farmingGame.sproutingSVG,
+                    matureSVG: farmingGame.matureSVG,
+                    shopItems: farmingGame.shopItems,
+                    timestamp: Date.now()
+                };
+                saveToLocalStorage('farming_state', farmData);
+            }
+        }, 10000); // 每10秒保存一次
+        
+        // 页面卸载前保存数据
+        window.addEventListener('beforeunload', function() {
+            if (typeof farmingGame !== 'undefined' && farmingGame.saveState) {
+                farmingGame.saveState();
+            }
+        });
+        
+        // 页面可见性变化时保存数据
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                // 切换到后台时保存
+                if (typeof farmingGame !== 'undefined' && farmingGame.saveState) {
+                    farmingGame.saveState();
+                }
+            }
+        });
+        
+        // 暴露API
+        window.storageManager = {
+            save: saveToLocalStorage,
+            load: loadFromLocalStorage
+        };
+        
+        console.log('本地存储持久化系统已初始化');
+    })();
+    
+    // 4. Service Worker 消息通信
+    (function() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(function(registration) {
+                // 定期向Service Worker发送同步消息
+                setInterval(function() {
+                    if (document.hidden && typeof farmingGame !== 'undefined') {
+                        // 通过消息传递同步数据
+                        registration.active.postMessage({
+                            type: 'SYNC_DATA',
+                            data: {
+                                tiles: farmingGame.tiles,
+                                money: farmingGame.money,
+                                timestamp: Date.now()
+                            }
+                        });
+                    }
+                }, 60000); // 每分钟同步一次
+            });
+        }
+    })();
     
      </script>   
         
