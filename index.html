@@ -24504,9 +24504,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
  // 摄像头功能
  let cameraStream = null;
- let cameraInterval = null;
  let isCameraActive = false;
- let capturedFrames = []; // 存储截取的画面
 
  if (wechatCameraBtn) {
    wechatCameraBtn.addEventListener('click', async () => {
@@ -24560,15 +24558,7 @@ document.addEventListener('DOMContentLoaded', () => {
          wechatCameraBtn.classList.add('active');
          isCameraActive = true;
          
-         // 开始定期截图（每5秒一次，但不立即发送）
-         cameraInterval = setInterval(() => {
-           captureAndSendFrame();
-         }, 5000);
-         
-         // 立即截取第一张
-         captureAndSendFrame();
-         
-         console.log('✅ 摄像头已开启，将每5秒截取画面（仅在你发送消息时一起发送给AI）');
+         console.log('✅ 摄像头已开启，发送消息时会截取当前画面发送给AI');
          
        } catch (error) {
          console.error('❌ 摄像头权限被拒绝或出错:', error);
@@ -24581,46 +24571,46 @@ document.addEventListener('DOMContentLoaded', () => {
    });
  }
 
- // 截取画面（只保存，不发送）
- async function captureAndSendFrame() {
-   if (!isCameraActive || !cameraStream) return;
+ // 立即截取当前画面
+ window.captureCurrentFrame = function() {
+   if (!isCameraActive || !cameraStream) {
+     console.log('⚠️ 摄像头未激活');
+     return null;
+   }
    
    const video = document.getElementById('wechat-camera-video');
    const canvas = document.getElementById('wechat-camera-canvas');
+   
+   if (!video || !canvas) {
+     console.error('❌ 找不到video或canvas元素');
+     return null;
+   }
+   
    const ctx = canvas.getContext('2d');
    
    // 设置canvas尺寸
    canvas.width = video.videoWidth;
    canvas.height = video.videoHeight;
    
+   if (canvas.width === 0 || canvas.height === 0) {
+     console.error('❌ 视频尺寸为0，可能还未加载');
+     return null;
+   }
+   
+   console.log('📸 截取当前画面，视频尺寸:', video.videoWidth, 'x', video.videoHeight);
+   
    // 绘制当前帧
    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
    
    // 转换为base64
-   const imageData = canvas.toDataURL('image/jpeg', 0.7);
+   const imageData = canvas.toDataURL('image/jpeg', 0.8);
    
-   // 只保存截图，不发送
-   capturedFrames.push({
+   console.log('✅ 截图完成，数据大小:', (imageData.length / 1024).toFixed(2), 'KB');
+   
+   return {
      imageData: imageData,
      timestamp: Date.now()
-   });
-   
-   // 只保留最近3张截图
-   if (capturedFrames.length > 3) {
-     capturedFrames.shift();
-   }
-   
-   console.log('📸 截取画面已保存，当前共有', capturedFrames.length, '张画面');
- }
- 
- // 获取最新的截图并清空队列
- window.getLatestCameraFrames = function() {
-   if (capturedFrames.length === 0) return [];
-   
-   const frames = [...capturedFrames];
-   capturedFrames = []; // 清空已使用的截图
-   console.log('📤 发送', frames.length, '张摄像头画面给AI');
-   return frames;
+   };
  };
 
  // 停止摄像头
@@ -24629,14 +24619,6 @@ document.addEventListener('DOMContentLoaded', () => {
      cameraStream.getTracks().forEach(track => track.stop());
      cameraStream = null;
    }
-   
-   if (cameraInterval) {
-     clearInterval(cameraInterval);
-     cameraInterval = null;
-   }
-   
-   // 清空未使用的截图
-   capturedFrames = [];
    
    const video = document.getElementById('wechat-camera-video');
    if (video) {
@@ -43895,25 +43877,29 @@ ${linkedContents}
         timestamp: userTimestamp
       });
       
-      // 如果有摄像头截图，将其添加到通话历史
-      if (typeof window.getLatestCameraFrames === 'function') {
-        const frames = window.getLatestCameraFrames();
-        if (frames.length > 0) {
+      // 如果摄像头开启，截取当前画面
+      if (typeof window.captureCurrentFrame === 'function') {
+        const frame = window.captureCurrentFrame();
+        
+        if (frame) {
           // 添加系统提示和截图
-          frames.forEach((frame, index) => {
-            const frameMsg = {
-              role: 'system',
-              content: index === 0 
-                ? '[系统提示：用户开启了摄像头。以下是用户最近的摄像头画面，请根据画面中的内容（如用户的表情、动作、周围环境等）自然地做出反应。]'
-                : '[系统提示：这是用户的另一张摄像头画面]',
-              image: frame.imageData,
-              timestamp: frame.timestamp,
-              isHidden: false
-            };
-            videoCallState.callHistory.push(frameMsg);
-          });
+          const frameMsg = {
+            role: 'system',
+            content: '[系统提示：用户开启了摄像头。这是用户当前的画面，请根据画面中的内容（如用户的表情、动作、周围环境等）自然地做出反应。]',
+            image: frame.imageData,
+            timestamp: frame.timestamp
+          };
+          videoCallState.callHistory.push(frameMsg);
           
-          console.log('✅ 已将', frames.length, '张摄像头画面添加到本次消息中');
+          console.log('📸 已截取并添加摄像头画面:', {
+            role: frameMsg.role,
+            content: frameMsg.content.substring(0, 50) + '...',
+            hasImage: !!frameMsg.image,
+            imageSize: (frameMsg.image.length / 1024).toFixed(2) + ' KB'
+          });
+          console.log('✅ 摄像头画面已添加到本次消息中');
+        } else {
+          console.log('⚠️ 摄像头已开启但截图失败');
         }
       }
     }
@@ -43975,7 +43961,9 @@ ${linkedContents}
         };
         
         // 如果有图片，添加图片内容（支持视觉模型）
-        if (h.image && !h.isHidden) {
+        if (h.image) {
+          console.log('🖼️ 发现带图片的消息:', h.content.substring(0, 50));
+          
           if (Array.isArray(msg.content)) {
             msg.content.push({
               type: 'image_url',
@@ -43987,11 +43975,19 @@ ${linkedContents}
               { type: 'image_url', image_url: { url: h.image } }
             ];
           }
+          
+          console.log('✅ 图片已添加到API请求中，格式:', msg.content);
         }
         
         return msg;
       })
     ];
+    
+    // 检查是否有图片被添加
+    const messagesWithImages = messagesForApi.filter(m => Array.isArray(m.content));
+    if (messagesWithImages.length > 0) {
+      console.log('📸 本次API请求包含', messagesWithImages.length, '条带图片的消息');
+    }
 
     if (videoCallState.callHistory.length === 0) {
       const firstLineTrigger = videoCallState.initiator === 'user' ? `*你按下了接听键...*` : `*对方按下了接听键...*`;
