@@ -1979,139 +1979,289 @@
             70% { box-shadow: 0 0 0 15px rgba(76, 217, 100, 0); }
             100% { box-shadow: 0 0 0 0 rgba(76, 217, 100, 0); }
         }
+        /* 1. 视频通话主屏幕（替换原深色背景） */
         #video-call-screen {
-            background-color: #1c1c1e;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            background-color: #ffffff !important; 
+            color: #333333 !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
         }
+        
+        /* 2. 顶部状态栏（改为白色极简） */
         .video-call-top-bar {
-            position: absolute;
-            top: 0; left: 0; width: 100%;
-            padding: 15px 20px;
-            padding-top: 50px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
-            z-index: 10;
-            text-align: center;
-            box-sizing: border-box;
-            pointer-events: none;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.9), transparent) !important;
+            padding: 12px 16px !important;
+            padding-top: 40px !important;
         }
         #call-timer {
-            font-size: 16px;
-            font-weight: 500;
-            letter-spacing: 1px;
+            font-size: 14px !important;
+            color: #666666 !important;
+            font-weight: 400 !important;
         }
-        .video-call-controls {
-            position: absolute;
-            bottom: 0; left: 0; width: 100%;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 20px;
-            padding-bottom: 40px;
-            background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
-            z-index: 10;
-            box-sizing: border-box;
-        }
+        
+        /* 3. 参与者头像区域（简化风格） */
         .video-call-avatar-area {
-            flex-grow: 1; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            padding-top: 80px; 
-            box-sizing: border-box;
-            overflow-y: auto; 
+            padding: 15px !important;
+            padding-top: 70px !important;
         }
         #participant-avatars-grid {
-            display: flex;
-            flex-wrap: wrap; 
-            justify-content: center;
-            align-items: center;
-            gap: 15px; 
-            max-width: 100%;
+            gap: 12px !important;
         }
         .participant-avatar-wrapper {
-            position: relative;
-            text-align: center;
-            flex-shrink: 0;
+            text-align: left !important;
         }
         .participant-avatar {
-            width: 70px;   
-            height: 70px;  
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
+            width: 60px !important;
+            height: 60px !important;
+            border: 2px solid #f0f0f0 !important;
+            border-radius: 12px !important; /* 从圆形改为圆角矩形，更Ins */
         }
         .participant-name {
-            margin-top: 8px;
-            font-size: 12px;
-            color: #ccc;
+            margin-top: 6px !important;
+            font-size: 13px !important;
+            color: #555555 !important;
         }
+        /* 说话者高亮（改为浅灰边框+轻微阴影） */
         .participant-avatar.speaking {
-            border-color: #4cd964;
-            box-shadow: 0 0 20px rgba(76, 217, 100, 0.6);
-            transform: scale(1.05);
+            border-color: #e0e0e0 !important;
+            box-shadow: 0 0 10px rgba(0,0,0,0.08) !important;
+            transform: scale(1.03) !important;
         }
+        
+        /* 4. 通话消息区域（简化气泡） */
         #video-call-main {
-            flex-shrink: 0; 
-            height: 30%;   
-            margin: 15px 15px 130px 15px; 
-            overflow-y: auto;
-            padding: 15px;
-            background-color: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            box-sizing: border-box;
-        }
-        .control-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            background-repeat: no-repeat;
-            background-position: center;
-            transition: transform 0.2s, background-color 0.2s;
-        }
-        .control-btn:active {
-            transform: scale(0.9);
-        }
-        .control-btn.speak-btn {
-            background-color: rgba(255,255,255,0.2);
-            background-size: 55%;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>');
-        }
-        .control-btn.hangup-btn {
-            background-color: #ff3b30;
-            background-size: 50%;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 16.5L3 6m18 6l-5.6-5.6a1.2 1.2 0 0 0-1.7 0L3 18.2a1.2 1.2 0 0 0-.3 1.2l1.2 3.6a1.2 1.2 0 0 0 1.2.9h15.6a1.2 1.2 0 0 0 1.2-1.2V7.7a1.2 1.2 0 0 0-.3-1.1z"/></svg>');
-        }
-        .control-btn.join-btn {
-            background-color: #007bff;
-            background-size: 50%;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="17" y1="11" x2="23" y2="11"></line></svg>');
+            height: 35% !important;
+            margin: 12px 12px 120px 12px !important;
+            background-color: #f8f8f8 !important;
+            border-radius: 16px !important;
+            padding: 12px !important;
+            gap: 12px !important;
         }
         .call-message-bubble {
-            padding: 10px 15px;
-            border-radius: 12px;
-            max-width: 85%;
-            line-height: 1.6;
-            word-break: break-word;
-            white-space: pre-wrap;
+            padding: 8px 12px !important;
+            border-radius: 10px !important;
+            max-width: 90% !important;
+            font-size: 14px !important;
         }
         .call-message-bubble.ai-speech {
-            background-color: rgba(255, 255, 255, 0.15);
-            align-self: flex-start; 
+            background-color: #ffffff !important;
+            border: 1px solid #f0f0f0 !important;
+            align-self: flex-start !important;
         }
         .call-message-bubble.user-speech {
-            background-color: #4cd964; 
-            align-self: flex-end;   
-            text-align: left; 
+            background-color: #f0f0f0 !important;
+            color: #333333 !important;
+            align-self: flex-end !important;
+        }
+        
+        /* 5. 底部控制栏（极简按钮） */
+        .video-call-controls {
+            background: linear-gradient(to top, rgba(255,255,255,0.95), transparent) !important;
+            padding: 15px !important;
+            padding-bottom: 30px !important;
+        }
+        .control-btn {
+            width: 55px !important;
+            height: 55px !important;
+            border-radius: 14px !important; /* 圆角矩形按钮 */
+            background-color: #f0f0f0 !important;
+        }
+        /* 麦克风按钮 */
+        .control-btn.speak-btn {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="%23666" stroke="%23666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>') !important;
+        }
+        /* 挂断按钮（低饱和红色） */
+        .control-btn.hangup-btn {
+            background-color: #ffe5e5 !important;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="%23e57373" stroke="%23e57373" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 16.5L3 6m18 6l-5.6-5.6a1.2 1.2 0 0 0-1.7 0L3 18.2a1.2 1.2 0 0 0-.3 1.2l1.2 3.6a1.2 1.2 0 0 0 1.2.9h15.6a1.2 1.2 0 0 0 1.2-1.2V7.7a1.2 1.2 0 0 0-.3-1.1z"/></svg>') !important;
+        }
+        /* 加入按钮（低饱和蓝色） */
+        .control-btn.join-btn {
+            background-color: #e3f2fd !important;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="%2364b5f6" stroke="%2364b5f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="17" y1="11" x2="23" y2="11"></line></svg>') !important;
+        }
+
+        /* 微信风格视频通话容器 */
+        .wechat-video-call-container {
+            display: none !important;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #f0f0f0;
+            z-index: 20;
+        }
+        #video-call-screen.wechat-style .wechat-video-call-container {
+            display: flex !important;
+            flex-direction: column;
+        }
+        #video-call-screen.wechat-style .video-call-avatar-area,
+        #video-call-screen.wechat-style .video-call-main {
+            display: none !important;
+        }
+        #video-call-screen.wechat-style .video-call-top-bar {
+            display: none !important;
+        }
+        #video-call-screen.wechat-style .video-call-controls {
+            display: none !important;
+        }
+
+        /* 微信风格顶部信息栏 */
+        .wechat-call-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 50px 20px 20px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3), transparent);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .wechat-call-name {
+            font-size: 18px;
+            font-weight: 500;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .wechat-call-status {
+            font-size: 14px;
+            color: rgba(255,255,255,0.9);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        /* 微信风格大视频区域（对方） */
+        .wechat-main-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #2c2c2e;
+            overflow: hidden;
+        }
+        .wechat-main-video img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 微信风格小视频窗口（自己） */
+        .wechat-small-video {
+            position: absolute;
+            top: 80px;
+            right: 15px;
+            width: 100px;
+            height: 150px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 11;
+            background-color: #1c1c1e;
+        }
+        .wechat-small-video img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 微信风格消息显示区域 */
+        .wechat-call-messages {
+            position: absolute;
+            bottom: 120px;
+            left: 15px;
+            right: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 12;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px;
+        }
+        .wechat-call-message {
+            padding: 8px 12px;
+            border-radius: 10px;
+            max-width: 85%;
+            font-size: 14px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .wechat-call-message.ai {
+            background-color: white;
+            align-self: flex-start;
+            color: #333;
+        }
+        .wechat-call-message.user {
+            background-color: #95ec69;
+            align-self: flex-end;
+            color: #333;
+        }
+
+        /* 微信风格底部控制栏 */
+        .wechat-call-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 30px 20px;
+            padding-bottom: 50px;
+            background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            z-index: 10;
+        }
+        .wechat-control-btn {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            border: none;
+            background-color: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        .wechat-control-btn:active {
+            transform: scale(0.9);
+        }
+        .wechat-hangup-btn {
+            background-color: #ff3b30;
+        }
+        .wechat-speak-btn {
+            background-color: rgba(255,255,255,0.25);
+        }
+        .wechat-regenerate-btn {
+            background-color: rgba(255,255,255,0.25);
+        }
+        .wechat-camera-btn {
+            background-color: rgba(255,255,255,0.25);
+        }
+        .wechat-camera-btn.active {
+            background-color: #4cd964;
+        }
+        
+        /* 6. 最小化/恢复按钮（极简风格） */
+        .video-call-top-bar #minimize-call-btn {
+            color: #666666 !important;
+            font-size: 18px !important;
+            top: 38px !important;
+        }
+        #video-call-restore-btn {
+            background-color: #f0f0f0 !important;
+            border: none !important;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.08) !important;
+            animation: none !important; /* 去掉呼吸动画，更极简 */
         }
         #outgoing-call-screen {
             background-color: #1c1c1e;
@@ -9964,6 +10114,29 @@ body.minimal-chat-ui-active.chat-actions-expanded #chat-interface-screen #chat-m
 }
 #phone-screen.dark-mode .settings-mini-btn:active {
     background-color: #48484a;
+}
+
+/* 视频通话形象预览样式 */
+.video-call-image-preview {
+    width: 100%;
+    height: 180px;
+    border: 2px dashed #e5e5ea;
+    border-radius: 12px;
+    background-color: #f9f9f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+.video-call-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+#phone-screen.dark-mode .video-call-image-preview {
+    background-color: #2c2c2e;
+    border-color: #48484a;
 }
 
 /* 修复头像大小，确保不会过大 */
@@ -19224,8 +19397,9 @@ body.frame-mode-active .cphone-dock-container {
             <div class="settings-item">
                 <label>模型</label>
                 <div class="settings-right">
-                    <input type="text" id="model-select" list="model-list" placeholder="输入或拉取模型..." style="width: 100%; padding: 8px;">
-<datalist id="model-list"></datalist>
+                    <select id="model-select" style="width: 100%; padding: 8px;">
+                        <option value="">请先拉取模型列表...</option>
+                    </select>
                     <button id="fetch-models-btn" class="settings-mini-btn">拉取</button>
                 </div>
             </div>
@@ -19251,8 +19425,9 @@ body.frame-mode-active .cphone-dock-container {
                 <label>模型</label>
                 <div class="settings-right">
                      <!-- 下拉框占据剩余空间 -->
-                    <input type="text" id="secondary-model-select" list="secondary-model-list" placeholder="输入或拉取模型..." style="width: 100%; padding: 8px;">
-<datalist id="secondary-model-list"></datalist>
+                    <select id="secondary-model-select" style="width: 100%; padding: 8px;">
+                        <option value="">请先拉取模型列表...</option>
+                    </select>
                     <!-- 按钮放在旁边 -->
                     <button id="fetch-secondary-models-btn" class="settings-mini-btn">拉取</button>
                 </div>
@@ -20390,6 +20565,61 @@ body.frame-mode-active .cphone-dock-container {
       <div id="video-call-main" class="video-call-main"> </div>
       <div class="video-call-controls"> <button id="user-speak-btn" class="control-btn speak-btn"></button> <button id="hang-up-btn" class="control-btn hangup-btn"></button> <button id="regenerate-call-btn" class="control-btn regenerate-btn"></button> <button id="join-call-btn"
           class="control-btn join-btn" style="display: none;"></button> </div>
+      
+      <!-- 微信风格视频通话界面 -->
+      <div class="wechat-video-call-container">
+        <!-- 顶部信息 -->
+        <div class="wechat-call-header">
+          <div class="wechat-call-name" id="wechat-call-name">{{char}}</div>
+          <div class="wechat-call-status" id="wechat-call-status">视频通话中 <span id="wechat-call-timer">0:04</span></div>
+        </div>
+        
+        <!-- 大画面（对方） -->
+        <div class="wechat-main-video" id="wechat-main-video">
+          <img id="wechat-ai-video-image" src="" alt="对方视频画面">
+        </div>
+        
+        <!-- 小画面（自己） -->
+        <div class="wechat-small-video" id="wechat-small-video">
+          <img id="wechat-my-video-image" src="" alt="我的视频画面">
+        </div>
+        
+        <!-- 消息显示区域 -->
+        <div class="wechat-call-messages" id="wechat-call-messages"></div>
+        
+        <!-- 底部控制栏 -->
+        <div class="wechat-call-controls">
+          <button class="wechat-control-btn wechat-camera-btn" id="wechat-camera-btn">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </button>
+          <button class="wechat-control-btn wechat-speak-btn" id="wechat-speak-btn">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
+          <button class="wechat-control-btn wechat-hangup-btn" id="wechat-hang-up-btn">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
+              <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91z"/>
+            </svg>
+          </button>
+          <button class="wechat-control-btn wechat-regenerate-btn" id="wechat-regenerate-btn">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M20 11A8.1 8.1 0 0 0 4.5 9M4 5v4h4"/>
+              <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- 隐藏的video和canvas用于摄像头 -->
+        <video id="wechat-camera-video" style="display: none;" autoplay playsinline></video>
+        <canvas id="wechat-camera-canvas" style="display: none;"></canvas>
+      </div>
     </div>
     <div id="outgoing-call-screen" class="screen">
       <div class="outgoing-call-content"> <img id="outgoing-call-avatar" class="caller-avatar" src="">
@@ -20588,6 +20818,46 @@ body.frame-mode-active .cphone-dock-container {
                 <div class="settings-right"> 
                     <select id="assign-group-select" class="settings-select"></select> 
                     <button id="manage-groups-btn" class="settings-icon-btn">⚙️</button> 
+                </div>
+            </div>
+
+            <!-- 视频通话形象设置 -->
+            <div class="settings-item" id="video-call-avatar-switch-item" style="display: flex !important; justify-content: space-between !important; align-items: center !important; flex-direction: row !important;">
+                <div style="flex: 1; padding-right: 10px; display: flex; flex-direction: column; align-items: flex-start;">
+                    <label style="margin-bottom: 2px;">视频通话形象</label>
+                    <div class="settings-desc">启用后可设置微信风格的视频通话画面</div>
+                </div>
+                <label class="toggle-switch" style="margin: 0;"> 
+                    <input type="checkbox" id="video-call-avatar-toggle"> 
+                    <span class="slider"></span> 
+                </label>
+            </div>
+
+            <div class="settings-item-block" id="video-call-avatar-config" style="display: none;">
+                <label>视频通话形象设置</label>
+                <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 10px;">
+                    <!-- 对方形象 -->
+                    <div class="video-call-image-wrapper">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 14px; color: #666;">对方形象</span>
+                            <button class="settings-mini-btn" onclick="document.getElementById('ai-video-call-image-input').click()">上传图片</button>
+                        </div>
+                        <div class="video-call-image-preview" id="ai-video-call-image-preview">
+                            <span style="color: #999; font-size: 13px;">点击上传按钮添加图片</span>
+                        </div>
+                        <input type="file" id="ai-video-call-image-input" accept="image/*" hidden>
+                    </div>
+                    <!-- 我的形象 -->
+                    <div class="video-call-image-wrapper">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 14px; color: #666;">我的形象</span>
+                            <button class="settings-mini-btn" onclick="document.getElementById('my-video-call-image-input').click()">上传图片</button>
+                        </div>
+                        <div class="video-call-image-preview" id="my-video-call-image-preview">
+                            <span style="color: #999; font-size: 13px;">点击上传按钮添加图片</span>
+                        </div>
+                        <input type="file" id="my-video-call-image-input" accept="image/*" hidden>
+                    </div>
                 </div>
             </div>
         </div>
@@ -24090,6 +24360,344 @@ function getGeminiResponseText(data) {
 
 document.addEventListener('DOMContentLoaded', () => {
 
+ // 视频通话形象功能
+ const videoCallAvatarToggle = document.getElementById('video-call-avatar-toggle');
+ const videoCallAvatarConfig = document.getElementById('video-call-avatar-config');
+ const aiVideoCallImageInput = document.getElementById('ai-video-call-image-input');
+ const myVideoCallImageInput = document.getElementById('my-video-call-image-input');
+ const aiVideoCallImagePreview = document.getElementById('ai-video-call-image-preview');
+ const myVideoCallImagePreview = document.getElementById('my-video-call-image-preview');
+
+ // 开关切换
+ if (videoCallAvatarToggle) {
+   videoCallAvatarToggle.addEventListener('change', async function() {
+     const chatId = state.activeChatId;
+     if (!chatId) return;
+     
+     if (this.checked) {
+       videoCallAvatarConfig.style.display = 'block';
+     } else {
+       videoCallAvatarConfig.style.display = 'none';
+     }
+     
+     // 保存到Dexie和state
+     const chat = await db.chats.get(chatId);
+     if (chat) {
+       if (!chat.settings.videoCallAvatar) {
+         chat.settings.videoCallAvatar = {};
+       }
+       chat.settings.videoCallAvatar.enabled = this.checked;
+       await db.chats.put(chat);
+       
+       // 同步到state
+       if (state.chats[chatId]) {
+         if (!state.chats[chatId].settings.videoCallAvatar) {
+           state.chats[chatId].settings.videoCallAvatar = {};
+         }
+         state.chats[chatId].settings.videoCallAvatar.enabled = this.checked;
+       }
+       
+       console.log('视频通话形象开关已保存:', this.checked);
+     }
+   });
+ }
+
+ // 上传对方形象
+ if (aiVideoCallImageInput) {
+   aiVideoCallImageInput.addEventListener('change', async function(e) {
+     const file = e.target.files[0];
+     if (file) {
+       const reader = new FileReader();
+       reader.onload = async function(event) {
+         const imageData = event.target.result;
+         aiVideoCallImagePreview.innerHTML = `<img src="${imageData}" alt="对方形象">`;
+         
+         // 保存到Dexie和state
+         const chatId = state.activeChatId;
+         if (chatId) {
+           const chat = await db.chats.get(chatId);
+           if (chat) {
+             if (!chat.settings.videoCallAvatar) {
+               chat.settings.videoCallAvatar = {};
+             }
+             chat.settings.videoCallAvatar.aiImage = imageData;
+             await db.chats.put(chat);
+             
+             // 同步到state
+             if (state.chats[chatId]) {
+               if (!state.chats[chatId].settings.videoCallAvatar) {
+                 state.chats[chatId].settings.videoCallAvatar = {};
+               }
+               state.chats[chatId].settings.videoCallAvatar.aiImage = imageData;
+             }
+             
+             console.log('对方视频形象已保存');
+           }
+         }
+       };
+       reader.readAsDataURL(file);
+     }
+   });
+ }
+
+ // 上传我的形象
+ if (myVideoCallImageInput) {
+   myVideoCallImageInput.addEventListener('change', async function(e) {
+     const file = e.target.files[0];
+     if (file) {
+       const reader = new FileReader();
+       reader.onload = async function(event) {
+         const imageData = event.target.result;
+         myVideoCallImagePreview.innerHTML = `<img src="${imageData}" alt="我的形象">`;
+         
+         // 保存到Dexie和state
+         const chatId = state.activeChatId;
+         if (chatId) {
+           const chat = await db.chats.get(chatId);
+           if (chat) {
+             if (!chat.settings.videoCallAvatar) {
+               chat.settings.videoCallAvatar = {};
+             }
+             chat.settings.videoCallAvatar.myImage = imageData;
+             await db.chats.put(chat);
+             
+             // 同步到state
+             if (state.chats[chatId]) {
+               if (!state.chats[chatId].settings.videoCallAvatar) {
+                 state.chats[chatId].settings.videoCallAvatar = {};
+               }
+               state.chats[chatId].settings.videoCallAvatar.myImage = imageData;
+             }
+             
+             console.log('我的视频形象已保存');
+           }
+         }
+       };
+       reader.readAsDataURL(file);
+     }
+   });
+ }
+
+ // 绑定微信风格按钮事件
+ const wechatSpeakBtn = document.getElementById('wechat-speak-btn');
+ const wechatHangUpBtn = document.getElementById('wechat-hang-up-btn');
+ const wechatRegenerateBtn = document.getElementById('wechat-regenerate-btn');
+ const wechatCameraBtn = document.getElementById('wechat-camera-btn');
+
+ if (wechatSpeakBtn) {
+   wechatSpeakBtn.addEventListener('click', () => {
+     document.getElementById('user-speak-btn').click();
+   });
+ }
+
+ if (wechatHangUpBtn) {
+   wechatHangUpBtn.addEventListener('click', () => {
+     document.getElementById('hang-up-btn').click();
+   });
+ }
+
+ if (wechatRegenerateBtn) {
+   wechatRegenerateBtn.addEventListener('click', () => {
+     document.getElementById('regenerate-call-btn').click();
+   });
+ }
+
+ // 摄像头功能
+ let cameraStream = null;
+ let cameraInterval = null;
+ let isCameraActive = false;
+ let capturedFrames = []; // 存储截取的画面
+
+ if (wechatCameraBtn) {
+   wechatCameraBtn.addEventListener('click', async () => {
+     if (!isCameraActive) {
+       // 打开摄像头
+       try {
+         const stream = await navigator.mediaDevices.getUserMedia({ 
+           video: { 
+             width: { ideal: 1280 }, 
+             height: { ideal: 720 } 
+           } 
+         });
+         
+         cameraStream = stream;
+         const video = document.getElementById('wechat-camera-video');
+         video.srcObject = stream;
+         
+         // 等待视频加载
+         await new Promise(resolve => {
+           video.onloadedmetadata = () => {
+             video.play();
+             resolve();
+           };
+         });
+         
+         // 显示摄像头画面在小窗口
+         const wechatMyImage = document.getElementById('wechat-my-video-image');
+         if (wechatMyImage) {
+           wechatMyImage.style.display = 'none';
+         }
+         
+         const wechatSmallVideo = document.getElementById('wechat-small-video');
+         if (wechatSmallVideo) {
+           // 移除video元素之前的父元素引用
+           if (video.parentElement && video.parentElement !== wechatSmallVideo) {
+             video.remove();
+           }
+           
+           video.style.position = 'absolute';
+           video.style.top = '0';
+           video.style.left = '0';
+           video.style.display = 'block';
+           video.style.width = '100%';
+           video.style.height = '100%';
+           video.style.objectFit = 'cover';
+           video.style.transform = 'scaleX(-1)'; // 镜像显示
+           wechatSmallVideo.appendChild(video);
+         }
+         
+         // 激活按钮
+         wechatCameraBtn.classList.add('active');
+         isCameraActive = true;
+         
+         // 开始定期截图（每5秒一次，但不立即发送）
+         cameraInterval = setInterval(() => {
+           captureAndSendFrame();
+         }, 5000);
+         
+         // 立即截取第一张
+         captureAndSendFrame();
+         
+         console.log('✅ 摄像头已开启，将每5秒截取画面（仅在你发送消息时一起发送给AI）');
+         
+       } catch (error) {
+         console.error('❌ 摄像头权限被拒绝或出错:', error);
+         alert('无法访问摄像头，请检查权限设置。');
+       }
+     } else {
+       // 关闭摄像头
+       stopCamera();
+     }
+   });
+ }
+
+ // 截取画面（只保存，不发送）
+ async function captureAndSendFrame() {
+   if (!isCameraActive || !cameraStream) return;
+   
+   const video = document.getElementById('wechat-camera-video');
+   const canvas = document.getElementById('wechat-camera-canvas');
+   const ctx = canvas.getContext('2d');
+   
+   // 设置canvas尺寸
+   canvas.width = video.videoWidth;
+   canvas.height = video.videoHeight;
+   
+   // 绘制当前帧
+   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+   
+   // 转换为base64
+   const imageData = canvas.toDataURL('image/jpeg', 0.7);
+   
+   // 只保存截图，不发送
+   capturedFrames.push({
+     imageData: imageData,
+     timestamp: Date.now()
+   });
+   
+   // 只保留最近3张截图
+   if (capturedFrames.length > 3) {
+     capturedFrames.shift();
+   }
+   
+   console.log('📸 截取画面已保存，当前共有', capturedFrames.length, '张画面');
+ }
+ 
+ // 获取最新的截图并清空队列
+ window.getLatestCameraFrames = function() {
+   if (capturedFrames.length === 0) return [];
+   
+   const frames = [...capturedFrames];
+   capturedFrames = []; // 清空已使用的截图
+   console.log('📤 发送', frames.length, '张摄像头画面给AI');
+   return frames;
+ };
+
+ // 停止摄像头
+ function stopCamera() {
+   if (cameraStream) {
+     cameraStream.getTracks().forEach(track => track.stop());
+     cameraStream = null;
+   }
+   
+   if (cameraInterval) {
+     clearInterval(cameraInterval);
+     cameraInterval = null;
+   }
+   
+   // 清空未使用的截图
+   capturedFrames = [];
+   
+   const video = document.getElementById('wechat-camera-video');
+   if (video) {
+     video.srcObject = null;
+     video.style.display = 'none';
+     
+     // 从小窗口移除视频元素
+     if (video.parentElement && video.parentElement.id === 'wechat-small-video') {
+       video.remove();
+       // 重新添加到body中以便下次使用
+       document.body.appendChild(video);
+     }
+   }
+   
+   // 恢复静态图片
+   const wechatMyImage = document.getElementById('wechat-my-video-image');
+   if (wechatMyImage) {
+     wechatMyImage.style.display = 'block';
+   }
+   
+   const wechatCameraBtn = document.getElementById('wechat-camera-btn');
+   if (wechatCameraBtn) {
+     wechatCameraBtn.classList.remove('active');
+   }
+   
+   isCameraActive = false;
+   console.log('📷 摄像头已关闭，已清空未使用的截图');
+ }
+
+ // 挂断电话时自动关闭摄像头
+ window.stopCameraOnHangup = stopCamera;
+
+ // 加载视频通话设置
+ window.loadVideoCallSettings = async function(chatId) {
+   if (!chatId) return null;
+   
+   const chat = await db.chats.get(chatId);
+   if (!chat) return null;
+   
+   const settings = chat.settings.videoCallAvatar || { enabled: false, aiImage: '', myImage: '' };
+   
+   if (videoCallAvatarToggle) {
+     videoCallAvatarToggle.checked = settings.enabled || false;
+     videoCallAvatarConfig.style.display = settings.enabled ? 'block' : 'none';
+   }
+   
+   if (settings.aiImage && aiVideoCallImagePreview) {
+     aiVideoCallImagePreview.innerHTML = `<img src="${settings.aiImage}" alt="对方形象">`;
+   } else if (aiVideoCallImagePreview) {
+     aiVideoCallImagePreview.innerHTML = '<span style="color: #999; font-size: 13px;">点击上传按钮添加图片</span>';
+   }
+   
+   if (settings.myImage && myVideoCallImagePreview) {
+     myVideoCallImagePreview.innerHTML = `<img src="${settings.myImage}" alt="我的形象">`;
+   } else if (myVideoCallImagePreview) {
+     myVideoCallImagePreview.innerHTML = '<span style="color: #999; font-size: 13px;">点击上传按钮添加图片</span>';
+   }
+   
+   return settings;
+ };
+
  document.getElementById('user-city-search-btn').addEventListener('click', async () => {
     const query = document.getElementById('user-real-city-search').value.trim();
     if(!query) return alert("请输入真实城市拼音或英文名称");
@@ -26932,6 +27540,13 @@ function initDatabase(userId) {
       loadFontPresetsDropdown();
       document.getElementById('font-url-input').value = state.globalSettings.fontUrl || '';
       applyCustomFont(state.globalSettings.fontUrl || '', true);
+    }
+    
+    // 加载视频通话形象设置
+    if (screenId === 'chat-settings-screen' && state.activeChatId) {
+      if (typeof window.loadVideoCallSettings === 'function') {
+        window.loadVideoCallSettings(state.activeChatId);
+      }
     }
     
     // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 观影室角色列表刷新 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
@@ -42894,7 +43509,7 @@ ${longTermMemoryContext}
   }
 
 
-  function startVideoCall() {
+  async function startVideoCall() {
     const chat = state.chats[videoCallState.activeChatId];
     if (!chat) return;
 
@@ -42914,6 +43529,59 @@ ${longTermMemoryContext}
     updateParticipantAvatars();
 
     document.getElementById('video-call-main').innerHTML = `<em>${videoCallState.isGroupCall ? '群聊已建立...' : '正在接通...'}</em>`;
+    
+    // 清空微信风格消息区域
+    const wechatCallMessages = document.getElementById('wechat-call-messages');
+    if (wechatCallMessages) {
+      wechatCallMessages.innerHTML = '';
+    }
+    
+    // 从state读取视频通话形象设置
+    const videoCallSettings = chat.settings.videoCallAvatar || { enabled: false, aiImage: '', myImage: '' };
+    
+    console.log('=== 视频通话设置检查 ===');
+    console.log('启用状态:', videoCallSettings.enabled);
+    console.log('对方形象存在:', !!videoCallSettings.aiImage);
+    console.log('我的形象存在:', !!videoCallSettings.myImage);
+    console.log('完整设置:', videoCallSettings);
+    
+    const videoCallScreen = document.getElementById('video-call-screen');
+    if (videoCallSettings.enabled && videoCallSettings.aiImage && videoCallSettings.myImage) {
+      // 启用微信风格
+      videoCallScreen.classList.add('wechat-style');
+      console.log('✅ 启用微信风格视频通话');
+      
+      // 设置对方形象
+      const wechatAiImage = document.getElementById('wechat-ai-video-image');
+      if (wechatAiImage) {
+        wechatAiImage.src = videoCallSettings.aiImage;
+        console.log('✅ 对方形象已设置');
+      } else {
+        console.warn('⚠️ 未找到对方形象元素');
+      }
+      
+      // 设置我的形象
+      const wechatMyImage = document.getElementById('wechat-my-video-image');
+      if (wechatMyImage) {
+        wechatMyImage.src = videoCallSettings.myImage;
+        console.log('✅ 我的形象已设置');
+      } else {
+        console.warn('⚠️ 未找到我的形象元素');
+      }
+      
+      // 设置名称
+      const wechatCallName = document.getElementById('wechat-call-name');
+      if (wechatCallName) wechatCallName.textContent = chat.name;
+    } else {
+      // 使用原有样式
+      videoCallScreen.classList.remove('wechat-style');
+      console.log('❌ 使用原有视频通话样式');
+      if (!videoCallSettings.enabled) console.log('原因: 未启用');
+      if (!videoCallSettings.aiImage) console.log('原因: 缺少对方形象');
+      if (!videoCallSettings.myImage) console.log('原因: 缺少我的形象');
+    }
+    console.log('=== 视频通话设置检查结束 ===');
+    
     showScreen('video-call-screen');
 
     document.getElementById('user-speak-btn').style.display = videoCallState.isUserParticipating ? 'block' : 'none';
@@ -43034,6 +43702,12 @@ function restoreVideoCall() {
 
     clearInterval(callTimerInterval);
     callTimerInterval = null;
+    
+    // 关闭摄像头
+    if (typeof window.stopCameraOnHangup === 'function') {
+      window.stopCameraOnHangup();
+    }
+    
     videoCallState = {
       isActive: false,
       isAwaitingResponse: false,
@@ -43120,7 +43794,15 @@ function restoreVideoCall() {
     const elapsed = Math.floor((Date.now() - videoCallState.startTime) / 1000);
     const minutes = Math.floor(elapsed / 60);
     const seconds = elapsed % 60;
-    document.getElementById('call-timer').textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    const timeText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    
+    document.getElementById('call-timer').textContent = timeText;
+    
+    // 同时更新微信风格的计时器
+    const wechatTimer = document.getElementById('wechat-call-timer');
+    if (wechatTimer) {
+      wechatTimer.textContent = `${minutes}:${String(seconds).padStart(2, '0')}`;
+    }
   }
 
 
@@ -43194,11 +43876,46 @@ ${linkedContents}
       addLongPressListener(userBubble, () => showCallMessageActions(userTimestamp));
       callFeed.appendChild(userBubble);
       callFeed.scrollTop = callFeed.scrollHeight;
+      
+      // 同时添加到微信风格消息区域
+      const wechatCallMessages = document.getElementById('wechat-call-messages');
+      if (wechatCallMessages) {
+        const wechatBubble = document.createElement('div');
+        wechatBubble.className = 'wechat-call-message user';
+        wechatBubble.textContent = userInput;
+        wechatBubble.dataset.timestamp = userTimestamp;
+        addLongPressListener(wechatBubble, () => showCallMessageActions(userTimestamp));
+        wechatCallMessages.appendChild(wechatBubble);
+        wechatCallMessages.scrollTop = wechatCallMessages.scrollHeight;
+      }
+      
       videoCallState.callHistory.push({
         role: 'user',
         content: userInput,
         timestamp: userTimestamp
       });
+      
+      // 如果有摄像头截图，将其添加到通话历史
+      if (typeof window.getLatestCameraFrames === 'function') {
+        const frames = window.getLatestCameraFrames();
+        if (frames.length > 0) {
+          // 添加系统提示和截图
+          frames.forEach((frame, index) => {
+            const frameMsg = {
+              role: 'system',
+              content: index === 0 
+                ? '[系统提示：用户开启了摄像头。以下是用户最近的摄像头画面，请根据画面中的内容（如用户的表情、动作、周围环境等）自然地做出反应。]'
+                : '[系统提示：这是用户的另一张摄像头画面]',
+              image: frame.imageData,
+              timestamp: frame.timestamp,
+              isHidden: false
+            };
+            videoCallState.callHistory.push(frameMsg);
+          });
+          
+          console.log('✅ 已将', frames.length, '张摄像头画面添加到本次消息中');
+        }
+      }
     }
 
 
@@ -43251,10 +43968,29 @@ ${linkedContents}
         role: 'system',
         content: inCallPrompt
       },
-      ...videoCallState.callHistory.map(h => ({
-        role: h.role,
-        content: h.content
-      }))
+      ...videoCallState.callHistory.map(h => {
+        const msg = {
+          role: h.role,
+          content: h.content
+        };
+        
+        // 如果有图片，添加图片内容（支持视觉模型）
+        if (h.image && !h.isHidden) {
+          if (Array.isArray(msg.content)) {
+            msg.content.push({
+              type: 'image_url',
+              image_url: { url: h.image }
+            });
+          } else {
+            msg.content = [
+              { type: 'text', text: msg.content },
+              { type: 'image_url', image_url: { url: h.image } }
+            ];
+          }
+        }
+        
+        return msg;
+      })
     ];
 
     if (videoCallState.callHistory.length === 0) {
@@ -43298,6 +44034,19 @@ ${linkedContents}
           aiBubble.dataset.timestamp = aiTimestamp;
           addLongPressListener(aiBubble, () => showCallMessageActions(aiTimestamp));
           callFeed.appendChild(aiBubble);
+          
+          // 同时添加到微信风格消息区域
+          const wechatCallMessages = document.getElementById('wechat-call-messages');
+          if (wechatCallMessages) {
+            const wechatBubble = document.createElement('div');
+            wechatBubble.className = 'wechat-call-message ai';
+            wechatBubble.innerHTML = `<strong>${turn.name}:</strong> ${turn.speech}`;
+            wechatBubble.dataset.timestamp = aiTimestamp;
+            addLongPressListener(wechatBubble, () => showCallMessageActions(aiTimestamp));
+            wechatCallMessages.appendChild(wechatBubble);
+            wechatCallMessages.scrollTop = wechatCallMessages.scrollHeight;
+          }
+          
           videoCallState.callHistory.push({
             role: 'assistant',
             content: `${turn.name}: ${turn.speech}`,
@@ -43321,6 +44070,19 @@ ${linkedContents}
         aiBubble.dataset.timestamp = aiTimestamp;
         addLongPressListener(aiBubble, () => showCallMessageActions(aiTimestamp));
         callFeed.appendChild(aiBubble);
+        
+        // 同时添加到微信风格消息区域
+        const wechatCallMessages = document.getElementById('wechat-call-messages');
+        if (wechatCallMessages) {
+          const wechatBubble = document.createElement('div');
+          wechatBubble.className = 'wechat-call-message ai';
+          wechatBubble.textContent = aiResponse;
+          wechatBubble.dataset.timestamp = aiTimestamp;
+          addLongPressListener(wechatBubble, () => showCallMessageActions(aiTimestamp));
+          wechatCallMessages.appendChild(wechatBubble);
+          wechatCallMessages.scrollTop = wechatCallMessages.scrollHeight;
+        }
+        
         videoCallState.callHistory.push({
           role: 'assistant',
           content: aiResponse,
@@ -43356,6 +44118,18 @@ ${linkedContents}
       errorBubble.textContent = `[ERROR: ${error.message}]`;
       callFeed.appendChild(errorBubble);
       callFeed.scrollTop = callFeed.scrollHeight;
+      
+      // 同时添加到微信风格消息区域
+      const wechatCallMessages = document.getElementById('wechat-call-messages');
+      if (wechatCallMessages) {
+        const wechatErrorBubble = document.createElement('div');
+        wechatErrorBubble.className = 'wechat-call-message ai';
+        wechatErrorBubble.style.color = '#ff8a80';
+        wechatErrorBubble.textContent = `[ERROR: ${error.message}]`;
+        wechatCallMessages.appendChild(wechatErrorBubble);
+        wechatCallMessages.scrollTop = wechatCallMessages.scrollHeight;
+      }
+      
       videoCallState.callHistory.push({
         role: 'assistant',
         content: `[ERROR: ${error.message}]`
@@ -51267,12 +52041,18 @@ async function handleSilentUploadNaiImage(timestamp, buttonElement) {
 
     const callFeed = document.getElementById('video-call-main');
     callFeed.innerHTML = '';
+    
+    // 同时更新微信风格的消息区域
+    const wechatCallMessages = document.getElementById('wechat-call-messages');
+    if (wechatCallMessages) {
+      wechatCallMessages.innerHTML = '';
+    }
+    
     videoCallState.callHistory.forEach(msg => {
+      // 原有样式的气泡
       const bubble = document.createElement('div');
-
       const speechClass = msg.role === 'assistant' ? 'ai-speech' : 'user-speech';
       bubble.className = `call-message-bubble ${speechClass}`;
-
       bubble.dataset.timestamp = msg.timestamp;
       if (msg.role === 'user') {
         bubble.textContent = msg.content;
@@ -51282,8 +52062,27 @@ async function handleSilentUploadNaiImage(timestamp, buttonElement) {
       }
       addLongPressListener(bubble, () => showCallMessageActions(msg.timestamp));
       callFeed.appendChild(bubble);
+      
+      // 微信风格的消息
+      if (wechatCallMessages) {
+        const wechatBubble = document.createElement('div');
+        const wechatClass = msg.role === 'assistant' ? 'ai' : 'user';
+        wechatBubble.className = `wechat-call-message ${wechatClass}`;
+        wechatBubble.dataset.timestamp = msg.timestamp;
+        if (msg.role === 'user') {
+          wechatBubble.textContent = msg.content;
+        } else {
+          wechatBubble.innerHTML = msg.content;
+        }
+        addLongPressListener(wechatBubble, () => showCallMessageActions(msg.timestamp));
+        wechatCallMessages.appendChild(wechatBubble);
+      }
     });
+    
     callFeed.scrollTop = callFeed.scrollHeight;
+    if (wechatCallMessages) {
+      wechatCallMessages.scrollTop = wechatCallMessages.scrollHeight;
+    }
 
 
     triggerAiInCallAction(null);
@@ -72285,19 +73084,45 @@ ${recentHistoryWithUser}
           id: model.name.split('/')[1] || model.name
         })) : data.data;
 
-        const modelSelect = document.getElementById(selectId);
-        modelSelect.innerHTML = '';
+        console.log('📥 获取到', models.length, '个模型');
+
+        // 填充select
+        const selectElement = document.getElementById(selectId);
+        
+        if (!selectElement) {
+          console.error('❌ 找不到select元素:', selectId);
+          return alert('错误：找不到模型下拉列表');
+        }
+        
+        selectElement.innerHTML = '';
+        
+        // 添加默认选项
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = '-- 请选择模型 --';
+        selectElement.appendChild(defaultOption);
 
         const savedModel = selectId === 'model-select' ? state.apiConfig.model : state.apiConfig.secondaryModel;
 
-        models.forEach(model => {
+        // 添加所有模型
+        models.forEach((model, index) => {
           const option = document.createElement('option');
           option.value = model.id;
           option.textContent = model.id;
-          if (model.id === savedModel) option.selected = true;
-          modelSelect.appendChild(option);
+          if (model.id === savedModel) {
+            option.selected = true;
+          }
+          selectElement.appendChild(option);
+          
+          if (index < 5) {
+            console.log(`✅ 添加模型:`, model.id);
+          }
         });
-        alert('模型列表已更新');
+        
+        console.log('✅ 已添加', models.length, '个模型到下拉列表');
+        console.log('📋 Select选项数量:', selectElement.options.length);
+        
+        alert(`模型列表已更新（共${models.length}个模型）`);
       } catch (error) {
         alert(`拉取模型失败: ${error.message}`);
       }
